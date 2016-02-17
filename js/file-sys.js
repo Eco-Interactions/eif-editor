@@ -3,28 +3,34 @@
   var curFiles = { open: false, appData: false, meta: {} };
   var msgRouter = { fileSysId: {}, responseObj: {} };
   var tagMap = {};
-  ECO_INT_NAMESPACE.fileSys = {
-    getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) { 
-      userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) 
+  var ein = ECO_INT_NAMESPACE;
+  ein.fileSys = {
+    getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) {
+      userSelectFileSys(params, idHandler, objHandler, fileTxtHandler)
     },
-    getFileObj: function (fSysId, objHandler, fileTxtHandler) { fSysEntryFromId(fSysId, fileObjFromEntry, objHandler, fileTxtHandler) },
+    getFileObj: function (fSysId, objHandler, fileTxtHandler) {
+      fSysEntryFromId(fSysId, fileObjFromEntry, objHandler, fileTxtHandler)
+    },
     saveFile: function (params) { fileSysRequest(params, saveFileEntry) },
     createFile: function (params) { fileSysRequest(params, createNewFile) },
-    getFolderData: function (params) { fileSysRequest(params, postFolderData) },
+    getFolderData: function (fSysId, objHandler, fileTxtHandler) {
+      fSysEntryFromId(fSysId, postFolderData, objHandler, fileTxtHandler)
+    },
     createFolder: function (params) { fileSysRequest(params, createNewFolder) },
-    readFile: function(fileObj, fileTxtHandler) { 
-      readFile(fileObj, function (event) {  
+    readFile: function(fileObj, fileTxtHandler) {
+      readFile(fileObj, function (event) {
         fileTxtHandler(event.target.result);
         // curFiles.open = fileId;
       });
-    }
+    },
+    readFolder: function(folderObj) { logFolderData(folderObj) }
   };
 
   /* ============================================================== */
   /* === File System Access Point functions ======================= */
   /* ============================================================== */
 
-  /* requsts a user gesture to select a file or folder (depending on * 
+  /* requsts a user gesture to select a file or folder (depending on *
    * params passed) and posts the ID to the sandbox                  */
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) {
@@ -44,20 +50,20 @@
       } else {
         objHandler(null);
       }
-    });  
+    });
   }
 
   function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler) {                              //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fileObj, fileTxtHandler);   
-    });   
+      objHandler(fileObj, fileTxtHandler);
+    });
   }
 
-  function readFile(fileObj, fileTxtHandler) { 
+  function readFile(fileObj, fileTxtHandler) {
     var reader = new FileReader();
     reader.onerror = errorHandler;
-    reader.onload = fileTxtHandler;  
-    reader.readAsText(fileObj);   
+    reader.onload = fileTxtHandler;
+    reader.readAsText(fileObj);
   }
 
   function errorHandler(e) {
@@ -65,26 +71,93 @@
   }
 
 
-
-
-
-
-
-
-
-
   /* ============================================================== */
   /* === File System Entry Handler functions ====================== */
   /* ============================================================== */
 
-  function postFolderData(reqPkg) { // console.log('postFolderData called. reqPkg%O', reqPkg);
-    if (reqPkg.fSysEntry.isDirectory) {
-      reqPkg.folderPkg = pkgFolder(reqPkg);
-      readFolderData(reqPkg);
+  function postFolderData(fSysEntry, objHandler, fileTxtHandler) {  console.log('postFolderData called.');
+    if (fSysEntry.isDirectory) {      console.log('fSysEntry.isDirectory');
+      readFolderData(fSysEntry, objHandler, fileTxtHandler);
     } else {
       folderReadFail(fSysEntry);
     }
   }
+
+  function readFolderData(fSysEntry, objHandler, fileTxtHandler) {
+    var folderObj = { /* other members: fSysId, path */
+      fSysId: chrome.fileSystem.retainEntry(fSysEntry),
+      path: fSysEntry.fullPath,
+      entries: []
+    };        console.log('readFolderData called. folderObj = %s', JSON.stringify(folderObj));
+
+    var dirReader = fSysEntry.createReader();
+    readEntriesThenPost();
+
+    function readEntriesThenPost() {      console.log('readEntriesThenPost called.');
+      dirReader.readEntries(function (entryBatch) {
+        if (entryBatch.length > 0) {
+          entryBatch.forEach(function (fSysEntry) {
+            folderObj.entries.push(pkgEntryData(fSysEntry));
+          });
+          readEntriesThenPost();
+        } else {
+          objHandler(folderObj);
+        }
+      }, errorHandler);
+    }
+  }
+
+  function pkgEntryData(fSysEntry) {
+    return {
+        name: fSysEntry.name,
+        fSysId: chrome.fileSystem.retainEntry(fSysEntry),
+        isFile: fSysEntry.isFile,
+        isDirectory: fSysEntry.isDirectory,
+        path: fSysEntry.fullPath
+      };
+  }
+
+  function logFolderData(folderObj) {     console.log('logFolderData called. folderObj = %O', folderObj);
+    var folderMap = mapFolderData(folderObj);
+    ein.ui.devLog('folder data for ' + folderObj.path, folderMap);
+  }
+
+  function mapFolderData(folderObj) {
+    var folderMap = {
+        id: folderObj.fSysId,
+        path: folderObj.path,
+        files: {},
+        folders: {}
+      };
+    folderObj.entries.forEach(function (entry) {
+      if (entry.isFile) {
+        folderMap.files[entry.name] = mapFolderEntry(entry);
+      } else {
+        folderMap.folders[entry.name] = mapFolderEntry(entry);
+      }
+    })
+    return folderMap;
+  }
+
+  function mapFolderEntry(entry) {
+    return {
+        id: entry.fSysId,
+        path: entry.path
+      };
+  }
+
+  function pkgFolder(reqPkg) {
+    var responseObj = { fSysId: reqPkg.fSysId, path: reqPkg.fSysEntry.fullPath, entries: [] };
+    return pkgFSysResponse(reqPkg, responseObj);
+  }
+
+
+
+  // function pkgFSysResponse(reqPkg, responseObj) {
+  //   return { fSysId: reqPkg.fSysId, responseObj: responseObj };
+  // }
+
+
 
   function saveFileEntry(reqPkg) {  // TODO convert to reqPkg
     chrome.fileSystem.getWritableEntry(reqPkg.fSysEntry, function (writableEntry) {
@@ -119,20 +192,12 @@
   /* === File System Helper functions ============================= */
   /* ============================================================== */
 
-  function pkgFSysResponse(reqPkg, responseObj) {
-    return { fSysId: reqPkg.fSysId, responseObj: responseObj };
-  }
-
-  function pkgFolder(reqPkg) {
-    var responseObj = { fSysId: reqPkg.fSysId, path: reqPkg.fSysEntry.fullPath, entries: [] };
-    return pkgFSysResponse(reqPkg, responseObj);
-  }
 
   function writeFileEntry(reqPkg, writableEntry) {
     var fileBlob = new Blob([reqPkg.fileText], {type: 'text/plain'});
     writableEntry.createWriter(function(writer) {
       writer.onerror = errorHandler;
-      writer.onwriteend = function () { 
+      writer.onwriteend = function () {
             postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
           };
         writer.truncate(fileBlob.size);
@@ -141,34 +206,6 @@
             writer.write(fileBlob);
           });
     }, errorHandler);
-  }
-
-  function readFolderData(reqPkg) {
-    var dirReader = reqPkg.fSysEntry.createReader();
-    var readComplete = false;
-    readEntriesThenPost();
-    
-    function readEntriesThenPost() {
-      dirReader.readEntries (function (entryBatch) {
-        if (entryBatch.length > 0) {
-          entryBatch.forEach(function (fSysEntry) {
-            reqPkg.folderPkg.responseObj.entries.push(pkgEntryData(fSysEntry));        
-          });
-          readEntriesThenPost();
-        } else {
-          postMsg('folderData', reqPkg.folderPkg);
-        }
-      }, errorHandler);      
-    }
-  }
-
-  function pkgEntryData(fSysEntry) {
-    return {
-        name: fSysEntry.name,
-        fSysId: chrome.fileSystem.retainEntry(fSysEntry),
-        isFile: fSysEntry.isFile,
-        path: fSysEntry.fullPath
-      };
   }
 
   function waitForIO(writer, callback) {
@@ -184,7 +221,7 @@
         console.error("Write operation taking too long, aborting!"+
           " (current writer readyState is "+writer.readyState+")");
         writer.abort();
-      } 
+      }
       else {
         callback();
       }
@@ -208,12 +245,12 @@
       return true;
     } else {
       return false;
-    }    
+    }
   }
 
   function folderReadFail(folderEntry) {
     console.log('Expected folder entry, instead recieved:%O', folderEntry);
-    postMsg('statusMsg', 'Tried to read folder contents but obj is not a folder entry. See console for details.');    
+    postMsg('statusMsg', 'Tried to read folder contents but obj is not a folder entry. See console for details.');
   }
 
   function errorHandler(e) {
@@ -225,29 +262,34 @@
   /* === Old Code ================================================= */
   /* ============================================================== */
 
-  function mapFolderData(folderObj) {
-    var folderMap = { 
-        id: folderObj.fSysId, 
-        path: folderObj.path,
-        files: {}, 
-        folders: {} 
-      };
-    folderObj.entries.forEach(function (entry) {
-      if (entry.isFile) {
-        folderMap.files[entry.name] = mapFolderEntry(entry);
-      } else {
-        folderMap.folders[entry.name] = mapFolderEntry(entry);
-      }
-    })
-    return folderMap;
-  }
+  // function logFolderData(fSysId, folderObj) {
+  //   var folderMap = mapFolderData(folderObj);
+  //   ein.ui.devLog('folder data for ' + folderObj.path, folderMap);
+  // }
 
-  function mapFolderEntry(entry) {
-    return { 
-        id: entry.fSysId,
-        path: entry.path
-      };
-  }
+  // function mapFolderData(folderObj) {
+  //   var folderMap = {
+  //       id: folderObj.fSysId,
+  //       path: folderObj.path,
+  //       files: {},
+  //       folders: {}
+  //     };
+  //   folderObj.entries.forEach(function (entry) {
+  //     if (entry.isFile) {
+  //       folderMap.files[entry.name] = mapFolderEntry(entry);
+  //     } else {
+  //       folderMap.folders[entry.name] = mapFolderEntry(entry);
+  //     }
+  //   })
+  //   return folderMap;
+  // }
+
+  // function mapFolderEntry(entry) {
+  //   return {
+  //       id: entry.fSysId,
+  //       path: entry.path
+  //     };
+  // }
 
 }());  /* end of namespacing anonymous function */
 

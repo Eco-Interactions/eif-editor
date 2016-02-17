@@ -17,12 +17,8 @@
     };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
-
-
-
-
   function openFileParams() {
-    return { 
+    return {
         type: 'openFile',
         accepts: [{
             mimeTypes: ['text/*'],
@@ -55,25 +51,18 @@
     ein.fileSys.getFileSysId(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
   }
 
-
-
-
-
-
-
-
-
-
-  function openFolderCmd() {
-    msgRouter.fileSysId.idHandler = requestFolderData;
-    msgRouter.fileSysId.objHandler = logFolderData;
-    localCmd('getFileSysId', openFolderParams());
+  function openFolderCmd() {/* params,           idHandler,                    objHandler,           fileTxtHandler */
+    ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.show);
   }
 
-  function logFolderData(fSysId, folderObj) {
-    var folderMap = mapFolderData(folderObj);
-    ein.ui.devLog('folder data for ' + folderObj.path, folderMap);
-  }
+
+
+
+
+
+
+
+
 
   function saveFileCmd() {
     codeMirrorObj.save();
@@ -81,13 +70,13 @@
   }
 
   function createTestFolderCmd() {
-    var newFilePkg =  { 
-        cmd: 'createFolder', 
-        params: { 
-          fSysId: 'D847F49FAB46E7921D7406B085DDAFD3:ardZart', 
+    var newFilePkg =  {
+        cmd: 'createFolder',
+        params: {
+          fSysId: 'D847F49FAB46E7921D7406B085DDAFD3:ardZart',
           fileText: '',
-          name: 'Test' 
-        } 
+          name: 'Test'
+        }
       };
     localWin.postMessage(newFilePkg, '*');
   }
@@ -96,11 +85,11 @@
 /* =================== Local API Access (postMsg) ======================= */
 
   function savePkg(fileId, fileContent) {
-    return { 
-      cmd: 'saveFile', 
-      params: { 
-        fSysId: fileId, 
-        fileText: fileContent } 
+    return {
+      cmd: 'saveFile',
+      params: {
+        fSysId: fileId,
+        fileText: fileContent }
     };
   }
 
