@@ -1,0 +1,30 @@
+{
+  "manifest_version": 2,
+  "minimum_chrome_version": "23",
+  "name": "eco-interactions editor",
+  "version_name": "0.0.1 unicorn",
+  "version": "0.0.1",
+  "app": {
+    "background": {
+      "scripts": ["js/background.js"]
+    }
+  },
+  "permissions": [ { "fileSystem": [
+                        "write", 
+                        "retainEntries", 
+                        "directory"
+                      ] 
+                    },
+                  "contextMenus",
+                  "clipboardWrite",
+                  "clipboardRead",
+                  "storage"
+                  ],
+  "icons": { 
+      "16": "img/eco-int-logo-16.png",
+			"32": "img/eco-int-logo-32.png",
+			"48": "img/eco-int-logo-48.png",
+			"64": "img/eco-int-logo-64.png",
+		 "128": "img/eco-int-logo-128.png" 
+    }
+}

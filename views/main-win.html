@@ -1,0 +1,38 @@
+<html><!-- webview.html is the default view file loaded by app-win.html 
+            in a webview element that holds most of enso's UI  -->
+  <head>
+    <script src="../js/app-init.js"></script>
+    <script src="../js/file-sys.js"></script>
+    <script src="../js/toolbar.js"></script>
+    <script src="../js/main-win.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/main-win.css">
+
+
+    <title>Eco-Interactions Editor alpha 0.0.1</title>
+  </head>
+  <body>
+    <div id="toolbar">
+      <button id="openFile">Open File</button>
+      <button id="openFolder">Open Folder</button>
+      <button id="saveFile">Save File</button>
+      <button id="reload">Reload Editor</button>
+      <button id="clearDevLog">Clear Dev-Log</button>
+      <button id="logAppData">log appData</button>
+      <button id="unsetLocal">Unset Local Storage</button>
+      <button id="setLocal">Set Local Storage Key</button>
+      <button id="getLocal">Get Local Storage</button>
+    </div>
+    <div id="status-bar">status text goes here</div>
+    <div id="outer">
+        <div id="left-pane" class="col">
+          <textarea id="dev-log"></textarea>
+          
+          <div id="drag-bar"></div>
+        </div>
+        <div id="right-pane" class="col">
+          <textarea id="editor"></textarea>
+          
+        </div>
+    </div>
+  </body>
+</html>
