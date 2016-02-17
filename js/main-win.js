@@ -9,7 +9,7 @@
         devLogTxtArea.value += label + ' = ' + JSON.stringify(obj, null, 2) + '\n \n';
         devLogTxtArea.scrollTop = devLogTxtArea.scrollHeight;
       },
-      show: function(obj) {    console.log("show obj= %O", obj);
+      show: function(obj) {   // console.log("show obj= %O", obj);
         editorTxtArea.value = JSON.stringify(obj, null, 2);
       },
       setStatus: function(statusStr) {

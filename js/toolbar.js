@@ -51,23 +51,17 @@
     ein.fileSys.getFileSysId(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
   }
 
-  function openFolderCmd() {/* params,           idHandler,                    objHandler,           fileTxtHandler */
-    ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.show);
+  function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
+    ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
+  }
+
+  function saveFileCmd() {/* params, idHandler,            objHandler,    fileTxtHandler */
+    ein.fileSys.getFileSysId(fSysId, ein.fileSys.saveFile, saveFileEntry, fileTxtHandler);
   }
 
 
 
 
-
-
-
-
-
-
-  function saveFileCmd() {
-    codeMirrorObj.save();
-    localWin.postMessage(savePkg(curFiles.open, editorTxtArea.value), '*');
-  }
 
   function createTestFolderCmd() {
     var newFilePkg =  {

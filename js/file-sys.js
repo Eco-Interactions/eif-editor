@@ -11,7 +11,9 @@
     getFileObj: function (fSysId, objHandler, fileTxtHandler) {
       fSysEntryFromId(fSysId, fileObjFromEntry, objHandler, fileTxtHandler)
     },
-    saveFile: function (params) { fileSysRequest(params, saveFileEntry) },
+    saveFile: function (fSysId, objHandler, fileTxtHandler) {
+      fSysEntryFromId(fSysId, saveFileEntry, objHandler, fileTxtHandler)
+    },
     createFile: function (params) { fileSysRequest(params, createNewFile) },
     getFolderData: function (fSysId, objHandler, fileTxtHandler) {
       fSysEntryFromId(fSysId, postFolderData, objHandler, fileTxtHandler)
@@ -23,7 +25,7 @@
         // curFiles.open = fileId;
       });
     },
-    readFolder: function(folderObj) { logFolderData(folderObj) }
+    readFolder: function(folderObj, fileTxtHandler) { logFolderData(folderObj, fileTxtHandler) }
   };
 
   /* ============================================================== */
@@ -33,9 +35,9 @@
   /* requsts a user gesture to select a file or folder (depending on *
    * params passed) and posts the ID to the sandbox                  */
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
-    chrome.fileSystem.chooseEntry(params, function (fSysEntry) {
+    chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  //console.log("fSysEntry = ", fSysEntry);
       var fSysId = chrome.fileSystem.retainEntry(fSysEntry);
-      asyncErr() || idHandler(fSysId, objHandler, fileTxtHandler);
+      asyncErr() || idHandler(fSysId, objHandler, fileTxtHandler, fSysEntry);
     });
   }
 
@@ -53,7 +55,7 @@
     });
   }
 
-  function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler) {                              //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
+  function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
       objHandler(fileObj, fileTxtHandler);
     });
@@ -66,17 +68,12 @@
     reader.readAsText(fileObj);
   }
 
-  function errorHandler(e) {
-    console.error(e);
-  }
-
-
   /* ============================================================== */
   /* === File System Entry Handler functions ====================== */
   /* ============================================================== */
 
-  function postFolderData(fSysEntry, objHandler, fileTxtHandler) {  console.log('postFolderData called.');
-    if (fSysEntry.isDirectory) {      console.log('fSysEntry.isDirectory');
+  function postFolderData(fSysEntry, objHandler, fileTxtHandler) {
+    if (fSysEntry.isDirectory) {
       readFolderData(fSysEntry, objHandler, fileTxtHandler);
     } else {
       folderReadFail(fSysEntry);
@@ -84,12 +81,11 @@
   }
 
   function readFolderData(fSysEntry, objHandler, fileTxtHandler) {
-    var folderObj = { /* other members: fSysId, path */
+    var folderObj = {
       fSysId: chrome.fileSystem.retainEntry(fSysEntry),
       path: fSysEntry.fullPath,
       entries: []
-    };        console.log('readFolderData called. folderObj = %s', JSON.stringify(folderObj));
-
+    };
     var dirReader = fSysEntry.createReader();
     readEntriesThenPost();
 
@@ -101,7 +97,7 @@
           });
           readEntriesThenPost();
         } else {
-          objHandler(folderObj);
+          objHandler(folderObj, fileTxtHandler);
         }
       }, errorHandler);
     }
@@ -117,9 +113,9 @@
       };
   }
 
-  function logFolderData(folderObj) {     console.log('logFolderData called. folderObj = %O', folderObj);
+  function logFolderData(folderObj, fileTxtHandler) {     //console.log('logFolderData called. folderObj = %O', folderObj);
     var folderMap = mapFolderData(folderObj);
-    ein.ui.devLog('folder data for ' + folderObj.path, folderMap);
+    fileTxtHandler('folder data for ' + folderObj.path, folderMap);
   }
 
   function mapFolderData(folderObj) {
@@ -146,21 +142,8 @@
       };
   }
 
-  function pkgFolder(reqPkg) {
-    var responseObj = { fSysId: reqPkg.fSysId, path: reqPkg.fSysEntry.fullPath, entries: [] };
-    return pkgFSysResponse(reqPkg, responseObj);
-  }
-
-
-
-  // function pkgFSysResponse(reqPkg, responseObj) {
-  //   return { fSysId: reqPkg.fSysId, responseObj: responseObj };
-  // }
-
-
-
-  function saveFileEntry(reqPkg) {  // TODO convert to reqPkg
-    chrome.fileSystem.getWritableEntry(reqPkg.fSysEntry, function (writableEntry) {
+  function saveFileEntry(fSysEntry, objHandler, fileTxtHandler) {
+    chrome.fileSystem.getWritableEntry(fSysEntry, function (writableEntry) {
       if (writableEntry) {
         writeFileEntry(reqPkg, writableEntry);
       } else {
@@ -168,6 +151,22 @@
       }
     });
   }
+
+  function writeFileEntry(reqPkg, writableEntry) {
+    var fileBlob = new Blob([reqPkg.fileText], {type: 'text/plain'});
+    writableEntry.createWriter(function(writer) {
+      writer.onerror = errorHandler;
+      writer.onwriteend = function () {
+            postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
+          };
+        writer.truncate(fileBlob.size);
+        waitForIO(writer, function() {
+            writer.seek(0);
+            writer.write(fileBlob);
+          });
+    }, errorHandler);
+  }
+
 
   function createNewFile(reqPkg) {
     chrome.fileSystem.getWritableEntry(reqPkg.fSysEntry, function(writableFolderEntry) {
@@ -193,20 +192,6 @@
   /* ============================================================== */
 
 
-  function writeFileEntry(reqPkg, writableEntry) {
-    var fileBlob = new Blob([reqPkg.fileText], {type: 'text/plain'});
-    writableEntry.createWriter(function(writer) {
-      writer.onerror = errorHandler;
-      writer.onwriteend = function () {
-            postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
-          };
-        writer.truncate(fileBlob.size);
-        waitForIO(writer, function() {
-            writer.seek(0);
-            writer.write(fileBlob);
-          });
-    }, errorHandler);
-  }
 
   function waitForIO(writer, callback) {
     // set a watchdog to avoid eventual locking:
@@ -237,10 +222,9 @@
     var asynchErrorMsgDict = { 'User cancelled': 'User canceled opening a file' };
     if(chrome.runtime.lastError) {
       if (chrome.runtime.lastError.message in asynchErrorMsgDict) {
-        postMsg('statusMsg', asynchErrorMsgDict[chrome.runtime.lastError.message]);
+        console.log('statusMsg', asynchErrorMsgDict[chrome.runtime.lastError.message]);
       } else {
         console.log('local error caught. errorObj:%O', chrome.runtime.lastError);
-        postMsg('statusMsg', 'Local Error - see console for details');
       }
       return true;
     } else {
@@ -250,12 +234,10 @@
 
   function folderReadFail(folderEntry) {
     console.log('Expected folder entry, instead recieved:%O', folderEntry);
-    postMsg('statusMsg', 'Tried to read folder contents but obj is not a folder entry. See console for details.');
   }
 
   function errorHandler(e) {
     console.error(e);
-    postMsg('statusMsg', 'An Error occurred. See Console for details.');
   }
 
   /* ============================================================== */
