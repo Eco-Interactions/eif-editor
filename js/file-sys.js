@@ -8,8 +8,8 @@
     getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) {
       userSelectFileSys(params, idHandler, objHandler, fileTxtHandler)
     },
-    getFileObj: function (fSysId, objHandler, fileTxtHandler) {
-      fSysEntryFromId(fSysId, fileObjFromEntry, objHandler, fileTxtHandler)
+    getFileObj: function (fSysId, fSysEntry, objHandler, fileTxtHandler) {
+      fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler)
     },
     saveFile: function (fSysId, objHandler, fileTxtHandler) {
       fSysEntryFromId(fSysId, saveFileEntry, objHandler, fileTxtHandler)
@@ -37,7 +37,7 @@
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  console.log("fSysEntry = ", fSysEntry);
       var fSysId = chrome.fileSystem.retainEntry(fSysEntry);    console.log("fSysID = ", fSysId);
-      asyncErr() || idHandler(fSysId, objHandler, fileTxtHandler, fSysEntry);
+      asyncErr() || idHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);
     });
   }
 
@@ -46,7 +46,7 @@
       if (isRestorable) {
         chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) { // console.log("fSysID = ", fSysId);
           if (!asyncErr())  {
-            entryHandler(fSysEntry, objHandler, fileTxtHandler, fSysId);   //console.log('entryHandler, fileTxtHandler = %O', fileTxtHandler);
+            entryHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);   //console.log('entryHandler, fileTxtHandler = %O', fileTxtHandler);
           }
         });
       } else {
@@ -55,13 +55,13 @@
     });
   }
 
-  function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler, fSysId) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
+  function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {      console.log('fileObjFromEntry called. fileTxtHandler = %O', fileTxtHandler);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fSysId, fileObj, fileTxtHandler);
+      objHandler(fSysId, fileObj, fileTxtHandler);  console.log('objHandler called. fileTxtHandler = %O', fileTxtHandler);
     });
   }
 
-  function readFile(fSysId, fileObj, fileTxtHandler) {console.log("readfile"); console.log("fSysID = ", fSysId);
+  function readFile(fSysId, fileObj, fileTxtHandler) {  console.log("readfile called"); console.log("fSysID = %s, fileObj = %O, fileTxtHandler = %O", fSysId, fileObj, fileTxtHandler);
     var reader = new FileReader();
     reader.onerror = errorHandler;
     reader.onload = fileTxtHandler;
