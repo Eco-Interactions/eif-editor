@@ -1,6 +1,7 @@
 (function(){
   var ein = ECO_INT_NAMESPACE;
   var curFiles = { open: false, appData: false, meta: {} };
+  var curFileId;
   var msgRouter = { fileSysId: {}, responseObj: {} };
   var toolbarBtnMap = {
       openFile: openFileCmd,

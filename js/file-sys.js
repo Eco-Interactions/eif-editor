@@ -4,6 +4,7 @@
   var msgRouter = { fileSysId: {}, responseObj: {} };
   var tagMap = {};
   var ein = ECO_INT_NAMESPACE;
+  var curFile = ein.ui.curFileId;
   ein.fileSys = {
     getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) {
       userSelectFileSys(params, idHandler, objHandler, fileTxtHandler)
@@ -46,7 +47,7 @@
       if (isRestorable) {
         chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) {
           if (!asyncErr())  {
-            entryHandler(fSysEntry, objHandler, fileTxtHandler);   //console.log('entryHandler, fileTxtHandler = %O', fileTxtHandler);
+            entryHandler(fSysEntry, objHandler, fileTxtHandler, fSysId);   //console.log('entryHandler, fileTxtHandler = %O', fileTxtHandler);
           }
         });
       } else {
@@ -55,7 +56,7 @@
     });
   }
 
-  function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
+  function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler, fSysId) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
       objHandler(fileObj, fileTxtHandler);
     });
