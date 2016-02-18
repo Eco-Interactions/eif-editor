@@ -5,13 +5,13 @@
   function onDomLoaded() {
     setDomElementVars();
     ECO_INT_NAMESPACE.ui = {
-      curFileId: ,
+      curFileId: "",
       devLog: function(label, obj) {  console.log('devLog called. obj = %O', obj);
         devLogTxtArea.value += label + ' = ' + JSON.stringify(obj, null, 2) + '\n \n';
         devLogTxtArea.scrollTop = devLogTxtArea.scrollHeight;
       },
       show: function(obj, fileId) {   // console.log("show obj= %O", obj);
-        ECO_INT_NAMESPACE.ui.curFileId = fileId;
+        ECO_INT_NAMESPACE.ui.curFileId = fileId;  console.log("show curFileId= ", curFileId);
         editorTxtArea.value = JSON.stringify(obj, null, 2);
       },
       setStatus: function(statusStr) {

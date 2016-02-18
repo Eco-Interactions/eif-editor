@@ -4,7 +4,6 @@
   var msgRouter = { fileSysId: {}, responseObj: {} };
   var tagMap = {};
   var ein = ECO_INT_NAMESPACE;
-  var curFile = ein.ui.curFileId;
   ein.fileSys = {
     getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) {
       userSelectFileSys(params, idHandler, objHandler, fileTxtHandler)
@@ -36,8 +35,8 @@
   /* requsts a user gesture to select a file or folder (depending on *
    * params passed) and posts the ID to the sandbox                  */
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
-    chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  //console.log("fSysEntry = ", fSysEntry);
-      var fSysId = chrome.fileSystem.retainEntry(fSysEntry);
+    chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  console.log("fSysEntry = ", fSysEntry);
+      var fSysId = chrome.fileSystem.retainEntry(fSysEntry);    console.log("fSysID = ", fSysId);
       asyncErr() || idHandler(fSysId, objHandler, fileTxtHandler, fSysEntry);
     });
   }
@@ -58,15 +57,21 @@
 
   function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler, fSysId) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fileObj, fileTxtHandler);
+      objHandler(fSysId, fileObj, fileTxtHandler);
     });
   }
 
-  function readFile(fileObj, fileTxtHandler) {
+  function readFile(fSysId, fileObj, fileTxtHandler) {console.log("readfile");
     var reader = new FileReader();
     reader.onerror = errorHandler;
-    reader.onload = fileTxtHandler;
+    reader.onload = function(event) {
+      fileTxtHandler(fSysId, event.target.result); console.log("onload");
+    };
     reader.readAsText(fileObj);
+  }
+
+  function readFileHandler() {
+
   }
 
   /* ============================================================== */
