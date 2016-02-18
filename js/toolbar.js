@@ -9,7 +9,7 @@
       saveFile: saveFileCmd,
       saveAsFile: saveAsFileCmd,
       reload: function () { chrome.runtime.reload(); },
-      createFile: createFileCmd,
+      // createFile: createFileCmd,
       getLocal: function () { localCmd('getStorage') },
       setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -44,10 +44,14 @@
     ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
   }
 
-  function saveFileCmd() { ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value); }
+  function saveFileCmd() {
+    console.log("FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.saveFile(ein.ui.curFileId, null, null, ECO_INT_NAMESPACE.editorTxtArea.value);
+  }
 
   function saveAsFileCmd() {/*   params,          idHandler ,         objH, fileH,  file Text             */
     ein.fileSys.getFileSysId(saveAsFileParams(), ein.fileSys.saveFile, null, null, ECO_INT_NAMESPACE.editorTxtArea.value);
+    console.log('saveAsFileCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
 

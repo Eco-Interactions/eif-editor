@@ -5,8 +5,8 @@
   var tagMap = {};
   var ein = ECO_INT_NAMESPACE;
   ein.fileSys = {
-    getFileSysId: function (params, idHandler, objHandler, fileTxtHandler) {
-      userSelectFileSys(params, idHandler, objHandler, fileTxtHandler)
+    getFileSysId: function (params, idHandler, objHandler, fileTxtHandler, fileText) { console.log('getFileSysId fileText = ', fileText);
+      userSelectFileSys(params, idHandler, objHandler, fileTxtHandler, fileText)
     },
     getFileObj: function (fSysId, fSysEntry, objHandler, fileTxtHandler) {
       fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler)
@@ -14,7 +14,11 @@
     getFolderData: function (fSysId, fSysEntry, objHandler, fileTxtHandler) {
       postFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler)
     },
-    saveFile: function (fSysId, fileText) { fSysEntryFromId(fSysId, saveFileEntry, fileText) },
+    saveFile: function (fSysId, objHandler, fileTxtHandler, fileText) {
+    //objHandler, fileTxtHandler are only here, and further down this chain, as placeholders so filetext can make it through.
+      console.log('saveFile fileText = ', fileText);
+      fSysEntryFromId(fSysId, saveFileEntry, objHandler, fileTxtHandler, fileText);
+    },
     createFile: function (params) { fileSysRequest(params, createNewFile) },
     createFolder: function (params) { fileSysRequest(params, createNewFolder) },
     readFile: function(fSysId, fileObj, fileTxtHandler) { fileTxtFromObj(fSysId, fileObj, fileTxtHandler) },
@@ -27,22 +31,22 @@
 
   /* requsts a user gesture to select a file or folder (depending on *
    * params passed) and posts the ID to the sandbox                  */
-  function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
+  function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler, fileText) {
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  //console.log("fSysEntry = ", fSysEntry);
       if(chrome.runtime.lastError) { asyncErr() }
         else {
           var fSysId = chrome.fileSystem.retainEntry(fSysEntry);    //console.log("fSysID = ", fSysId);
-          idHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);
+          idHandler(fSysId, fSysEntry, objHandler, fileTxtHandler, fileText);  console.log('userSelectFileSys fileText = ', fileText);
         }
     });
   }
 
-  function fSysEntryFromId(fSysId, entryHandler, objHandler, fileTxtHandler) {
+  function fSysEntryFromId(fSysId, entryHandler, objHandler, fileTxtHandler, fileText) {
     chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
       if (isRestorable) {
         chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) {
           if (!asyncErr())  {
-            entryHandler(fSysId, fSysEntry, fileText, objHandler, fileTxtHandler);   console.log('entryHandler, fSysEntry = %O', fSysEntry);
+            entryHandler(fSysId, fSysEntry, objHandler, fileTxtHandler, fileText);   console.log('fSysEntryFromId fileText = ', fileText);
           }
         });
       } else {
@@ -141,8 +145,8 @@
       };
   }
 
-  function saveFileEntry(fSysId, fSysEntry, fileText, objHandler, fileTxtHandler) {
-    chrome.fileSystem.getWritableEntry(fSysEntry, function (writableEntry) {
+  function saveFileEntry(fSysId, fSysEntry, objHandler, fileTxtHandler, fileText) {
+    chrome.fileSystem.getWritableEntry(fSysEntry, function (writableEntry) { console.log(fileText);
       if (writableEntry) {
         writeFileEntry(fSysEntry, fileText, writableEntry);
       } else {

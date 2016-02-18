@@ -1,10 +1,10 @@
 (function(){
   var statusBar, devLogTxtArea, editorTxtArea;
   document.addEventListener("DOMContentLoaded", onDomLoaded);
-  ECO_INT_NAMESPACE.editorTxtArea = document.getElementById("editor");
 
   function onDomLoaded() {
     setDomElementVars();
+    ECO_INT_NAMESPACE.editorTxtArea = document.getElementById("editor");
     ECO_INT_NAMESPACE.ui = {
       curFileId: null,
       devLog: function(label, obj) {  console.log('devLog called. obj = %O', obj);
