@@ -7,7 +7,9 @@
       openFile: openFileCmd,
       openFolder: openFolderCmd,
       saveFile: saveFileCmd,
+      saveAsFile: saveAsFileCmd,
       reload: function () { chrome.runtime.reload(); },
+      createFile: createFileCmd,
       getLocal: function () { localCmd('getStorage') },
       setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -17,20 +19,6 @@
       createTestFolder: createTestFolderCmd
     };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
-
-  function openFileParams() {
-    return {
-        type: 'openFile',
-        accepts: [{
-            mimeTypes: ['text/*'],
-            extensions: ['js', 'css', 'txt', 'html', 'json', 'svg', 'md']
-          }]
-    };
-  }
-
-  function openFolderParams() {
-    return {type: 'openDirectory'};
-  }
 
   /* onDomLoaded and it's helpers run after DOM-loaded code for local (outer window) */
 
@@ -56,8 +44,10 @@
     ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
   }
 
-  function saveFileCmd() {/* params,      idHandler,            objHandler,    fileTxtHandler */
-    ein.fileSys.getFileSysId("Save File", ein.fileSys.saveFile, saveFileEntry, null);
+  function saveFileCmd() { ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value); }
+
+  function saveAsFileCmd() {/*   params,          idHandler ,         objH, fileH,  file Text             */
+    ein.fileSys.getFileSysId(saveAsFileParams(), ein.fileSys.saveFile, null, null, ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
 
@@ -77,18 +67,30 @@
   }
 
 
-/* =================== Local API Access (postMsg) ======================= */
+/* =================== Build Params Packages ======================= */
 
-  function savePkg(fileId, fileContent) {
+  function openFileParams() {
     return {
-      cmd: 'saveFile',
-      params: {
-        fSysId: fileId,
-        fileText: fileContent }
+      type: 'openFile',
+      accepts: [{
+        mimeTypes: ['text/*'],
+        extensions: ['js', 'css', 'txt', 'html', 'json', 'svg', 'md']
+      }]
     };
   }
 
-/* =================== Zartens UI Behaviors (self-contained) ======================= */
+  function openFolderParams() {
+    return {type: 'openDirectory'};
+  }
 
+  function saveAsFileParams() {
+    return {
+      type: 'saveFile',
+      accepts: [{
+        mimeTypes: ['text/*'],
+        extensions: ['js', 'css', 'txt', 'html', 'json', 'svg', 'md']
+      }]
+    };
+  }
 
 }());  /* end of namespacing anonymous function */

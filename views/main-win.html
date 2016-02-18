@@ -1,4 +1,4 @@
-<html><!-- webview.html is the default view file loaded by app-win.html 
+<html><!-- webview.html is the default view file loaded by app-win.html
             in a webview element that holds most of enso's UI  -->
   <head>
     <script src="../js/app-init.js"></script>
@@ -15,7 +15,9 @@
       <button id="openFile">Open File</button>
       <button id="openFolder">Open Folder</button>
       <button id="saveFile">Save File</button>
+      <button id="saveAsFile">Save File As</button>
       <button id="reload">Reload Editor</button>
+      <button id="createFile">Create File</button>
       <button id="clearDevLog">Clear Dev-Log</button>
       <button id="logAppData">log appData</button>
       <button id="unsetLocal">Unset Local Storage</button>
@@ -26,12 +28,12 @@
     <div id="outer">
         <div id="left-pane" class="col">
           <textarea id="dev-log"></textarea>
-          
+
           <div id="drag-bar"></div>
         </div>
         <div id="right-pane" class="col">
           <textarea id="editor"></textarea>
-          
+
         </div>
     </div>
   </body>
