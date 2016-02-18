@@ -57,7 +57,7 @@
 
   function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler, fSysId) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fSysId, fileObj, fileTxtHandler);
+      objHandler(fSysId, fileObj, fileTxtHandler);    //testing
     });
   }
 
