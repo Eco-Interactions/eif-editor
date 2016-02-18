@@ -42,9 +42,9 @@
   }
 
   function fSysEntryFromId(fSysId, entryHandler, objHandler, fileTxtHandler) {
-    chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
+    chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {//  console.log("fSysID = ", fSysId);
       if (isRestorable) {
-        chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) {
+        chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) { // console.log("fSysID = ", fSysId);
           if (!asyncErr())  {
             entryHandler(fSysEntry, objHandler, fileTxtHandler, fSysId);   //console.log('entryHandler, fileTxtHandler = %O', fileTxtHandler);
           }
@@ -57,21 +57,18 @@
 
   function fileObjFromEntry(fSysEntry, objHandler, fileTxtHandler, fSysId) {    //  console.log('fileObjFromEntry called. fSysEntry = %O', fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fSysId, fileObj, fileTxtHandler);    //testing
+      objHandler(fSysId, fileObj, fileTxtHandler);
     });
   }
 
-  function readFile(fSysId, fileObj, fileTxtHandler) {console.log("readfile");
+  function readFile(fSysId, fileObj, fileTxtHandler) {console.log("readfile"); console.log("fSysID = ", fSysId);
     var reader = new FileReader();
     reader.onerror = errorHandler;
-    reader.onload = function(event) {
-      fileTxtHandler(fSysId, event.target.result); console.log("onload");
-    };
+    reader.onload = fileTxtHandler;
+    // function(event) { console.log("onload");
+    //   fileTxtHandler(fSysId, event.target.result);
+    // };
     reader.readAsText(fileObj);
-  }
-
-  function readFileHandler() {
-
   }
 
   /* ============================================================== */
@@ -244,6 +241,7 @@
 
   function errorHandler(e) {
     console.error(e);
+    console.log("errorHandler");
   }
 
   /* ============================================================== */

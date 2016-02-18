@@ -56,8 +56,8 @@
     ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
   }
 
-  function saveFileCmd() {/* params, idHandler,            objHandler,    fileTxtHandler */
-    ein.fileSys.getFileSysId(fSysId, ein.fileSys.saveFile, saveFileEntry, fileTxtHandler);
+  function saveFileCmd() {/* params,      idHandler,            objHandler,    fileTxtHandler */
+    ein.fileSys.getFileSysId("Save File", ein.fileSys.saveFile, saveFileEntry, null);
   }
 
 

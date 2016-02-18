@@ -10,7 +10,7 @@
         devLogTxtArea.value += label + ' = ' + JSON.stringify(obj, null, 2) + '\n \n';
         devLogTxtArea.scrollTop = devLogTxtArea.scrollHeight;
       },
-      show: function(obj, fileId) {   // console.log("show obj= %O", obj);
+      show: function(fileId, obj) {   // console.log("show obj= %O", obj);
         ECO_INT_NAMESPACE.ui.curFileId = fileId;  console.log("show curFileId= ", curFileId);
         editorTxtArea.value = JSON.stringify(obj, null, 2);
       },
