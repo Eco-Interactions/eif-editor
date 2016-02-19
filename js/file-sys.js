@@ -28,8 +28,7 @@
    * params passed) and posts the ID to the sandbox                  */
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  //console.log("fSysEntry = ", fSysEntry);
-      if(chrome.runtime.lastError) { asyncErr() }
-        else {
+      if(!asyncErr()) {
           var fSysId = chrome.fileSystem.retainEntry(fSysEntry);    //console.log("fSysID = ", fSysId);
           idHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);
         }
@@ -196,14 +195,18 @@
 // -          postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
 
 
-  function createNewFile(folderId, fileName, fileText) {                                              console.log("createNewFile called.");
+  function createNewFile(folderId, fileName, fileText, callback) {                                              console.log("createNewFile called.");
     chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
-      if (isRestorable) {                                                                       console.log("isRestorable");
-        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {                             console.log("restoreEntry");
+      if (isRestorable) {
+        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {
           if (!asyncErr())  {
             chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
               if (!asyncErr()) {                                                                console.log("no async error");
                 writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
+                  if (callback) {
+                    var fSysId = chrome.fileSystem.retainEntry(fileEntry);
+                    callback(fSysId);
+                  }
                   fileEntry.createWriter(function(writer) {
                     writer.write(new Blob([fileText], {type: 'text/plain'}));                   console.log('File ' + fileName + ' saved');
                   });

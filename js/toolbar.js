@@ -52,8 +52,8 @@
     ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
-  function createFileCmd() {  /*    ID,                                        name,  fileText */
-    ein.fileSys.createFile("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", "Test", "test content");
+  function createFileCmd() {  /*    ID,                                        name,  fileText,         callback          */
+    ein.fileSys.createFile("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", "Test", "test content", function(newFileId) { console.log('newFileId: %s', newFileId)});
   }
 
   function createTestFileParams() {
