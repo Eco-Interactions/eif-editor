@@ -195,13 +195,8 @@
 // -          postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
 
 
-  function createNewFile(folderId, fileName, fileText, callback) {                                              console.log("createNewFile called.");
-    chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
-      if (isRestorable) {
-        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {
-          if (!asyncErr())  {
-            chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
-              if (!asyncErr()) {                                                                console.log("no async error");
+  function createNewFile(folderId, fileName, callback, fileText) {                                              console.log("createNewFile called.");
+                                               console.log("no async error");
                 writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
                   if (callback) {
                     var fSysId = chrome.fileSystem.retainEntry(fileEntry);
@@ -217,6 +212,15 @@
         });
       }
     });
+  }
+  
+  function writableFolderFromId (folderId, writeHandler, name, callback, fileText) {    
+    chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
+      if (isRestorable) {
+        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {
+          if (!asyncErr())  {
+            chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
+              if (!asyncErr()) { writeHandler(writableFolderEntry, name, callback, fileText) }              
   }
 
 
