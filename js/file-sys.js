@@ -188,36 +188,24 @@
     }, errorHandler);
   }
 
-
-  // function createNewFile(params) {  console.log("createNewFile called. Params = %O", params);
-  //   window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {   console.log("fs", fs);
-  //    fs.root.getDirectory('', {create: false}, function(dirEntry) { console.log("dirEntry", dirEntry);
-  //        chrome.fileSystem.getWritableEntry(dirEntry, function(writableFolderEntry) {
-  //         if (!asyncErr()) {
-  //           writableFolderEntry.getFile(params.name, {create:true}, function(fileEntry) {   console.log("fileEntry", fileEntry);
-  //             fileEntry.createWriter(function(writer) {
-  //               writer.write(new Blob([params.fileText], {type: 'text/plain'}));
-  //               console.log('File ' + params.name + ' saved');
-  //             });
-  //           });
-  //         }
-  //       });
-  //     });
-  //   });
-  // }
+// -  function createNewFile(reqPkg) {
+// -    chrome.fileSystem.getWritableEntry(reqPkg.fSysEntry, function(writableFolderEntry) {
+// -      writableFolderEntry.getFile(reqPkg.name, {create:true}, function(fileEntry) {
+// -        fileEntry.createWriter(function(writer) {
+// -          writer.write(new Blob([reqPkg.fileText], {type: 'text/plain'}));
+// -          postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
 
 
-  function createNewFile(fSysId, name, fileText) {  console.log("createNewFile called.");
-    chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
-      if (isRestorable) {         console.log("isRestorable")
-        chrome.fileSystem.restoreEntry(fSysId, function(dirEntry) {  console.log("restoreEntry");
+  function createNewFile(folderId, fileName, fileText) {                                              console.log("createNewFile called.");
+    chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
+      if (isRestorable) {                                                                       console.log("isRestorable");
+        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {                             console.log("restoreEntry");
           if (!asyncErr())  {
-            chrome.fileSystem.getWritableEntry(dirEntry, function(writableFolderEntry) { console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
-              if (!asyncErr()) { console.log("no async error");
-                writableFolderEntry.getFile(name, {create:true}, function(fileEntry) {   console.log("fileEntry", fileEntry);
+            chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
+              if (!asyncErr()) {                                                                console.log("no async error");
+                writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
                   fileEntry.createWriter(function(writer) {
-                    writer.write(new Blob([fileText], {type: 'text/plain'}));
-                    console.log('File ' + name + ' saved');
+                    writer.write(new Blob([fileText], {type: 'text/plain'}));                   console.log('File ' + fileName + ' saved');
                   });
                 });
               }
