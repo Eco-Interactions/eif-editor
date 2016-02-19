@@ -7,9 +7,9 @@
       openFile: openFileCmd,
       openFolder: openFolderCmd,
       saveFile: saveFileCmd,
-      saveAsFile: saveAsFileCmd,
+      fileSaveAs: fileSaveAsCmd,
       reload: function () { chrome.runtime.reload(); },
-      // createFile: createFileCmd,
+      createFile: createFileCmd,
       getLocal: function () { localCmd('getStorage') },
       setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -37,37 +37,41 @@
   }
 
   function openFileCmd() {/* params,           idHandler,                objHandler,        fileTxtHandler */
-    ein.fileSys.getFileSysId(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
   }
 
   function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
-    ein.fileSys.getFileSysId(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
+    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
   }
 
-  function saveFileCmd() {
-    console.log("FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
-    ein.fileSys.saveFile(ein.ui.curFileId, null, null, ECO_INT_NAMESPACE.editorTxtArea.value);
+  function saveFileCmd() {  console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
-  function saveAsFileCmd() {/*   params,          idHandler ,         objH, fileH,  file Text             */
-    ein.fileSys.getFileSysId(saveAsFileParams(), ein.fileSys.saveFile, null, null, ECO_INT_NAMESPACE.editorTxtArea.value);
-    console.log('saveAsFileCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
+  function fileSaveAsCmd() {/*  file Text   */    console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
+  function createFileCmd() {  /*    ID,                                        name,  fileText */
+    ein.fileSys.createFile("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", "Test", "test content");
+  }
 
-
-
-
+  function createTestFileParams() {
+    return {
+      dirId: "A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor",   //  A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor
+      fileText: 'abcdefghiljklmnopqrstuvwxyz',
+      name: 'Test'
+    };
+  }
   function createTestFolderCmd() {
     var newFilePkg =  {
-        cmd: 'createFolder',
-        params: {
-          fSysId: 'D847F49FAB46E7921D7406B085DDAFD3:ardZart',
-          fileText: '',
-          name: 'Test'
-        }
-      };
-    localWin.postMessage(newFilePkg, '*');
+      cmd: 'createFolder',
+      params: {
+        fSysId: 'D847F49FAB46E7921D7406B085DDAFD3:ardZart',
+        fileText: '',
+        name: 'Test'
+      }
+    };
   }
 
 
@@ -85,16 +89,6 @@
 
   function openFolderParams() {
     return {type: 'openDirectory'};
-  }
-
-  function saveAsFileParams() {
-    return {
-      type: 'saveFile',
-      accepts: [{
-        mimeTypes: ['text/*'],
-        extensions: ['js', 'css', 'txt', 'html', 'json', 'svg', 'md']
-      }]
-    };
   }
 
 }());  /* end of namespacing anonymous function */
