@@ -10,13 +10,15 @@
       fileSaveAs: fileSaveAsCmd,
       reload: function () { chrome.runtime.reload(); },
       createFile: createFileCmd,
-      getLocal: function () { localCmd('getStorage') },
-      setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
-      unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
-      clearDevLog: function () { devLogTxtArea.value = ''; },
-      logAppData: function () { ein.ui.devLog('appData', appData) },
-      getZartensRoot: function () { console.log('stub for getZartensRoot') },
-      createTestFolder: createTestFolderCmd
+      setUpTests: initTests,
+      runTests: launchTests,
+      // getLocal: function () { localCmd('getStorage') },
+      // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
+      // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
+      // clearDevLog: function () { devLogTxtArea.value = ''; },
+      // logAppData: function () { ein.ui.devLog('appData', appData) },
+      // getZartensRoot: function () { console.log('stub for getZartensRoot') },
+      // createTestFolder: createTestFolderCmd
     };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
@@ -54,6 +56,26 @@
 
   function createFileCmd() {  /*    ID,                                        name,  fileText,         callback          */
     ein.fileSys.createFile("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", "Test", "test content", function(newFileId) { console.log('newFileId: %s', newFileId)});
+  }
+
+  function initTests() {
+    var width = 900;
+    var height = 300;
+    var left = (screen.width/2)-(width/2);
+    var top = (screen.height/2)-(height/2);
+    chrome.app.window.create('jasmine/testEnv-init.html', {
+    id: 'test-win',
+      outerBounds: { top: top, left: left, width: width, height: height }});
+  }
+
+  function launchTests() {
+    var width = 1100;
+    var height = 600;
+    var left = (screen.width/2)-(width/2);
+    var top = (screen.height/2)-(height/2);
+    chrome.app.window.create('jasmine/SpecRunner.html', {
+      id: 'spec-win',
+      outerBounds: { top: top, left: left, width: width, height: height }});
   }
 
   function createTestFileParams() {

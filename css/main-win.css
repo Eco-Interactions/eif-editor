@@ -1,21 +1,27 @@
 /* CSS Reset */
-html { 
-	box-sizing: border-box; 
-	margin: 0; 
-	padding: 0; 
-	border:0; 
-	width:100%; 
+html {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border:0;
+	width:100%;
 }
-body { 
-	margin: 0; 
-	padding: 0; 
-	border:0; 
-	width:100%; 
+body {
+	margin: 0;
+	padding: 0;
+	border:0;
+	width:100%;
 }
-*, *:before, *:after { 
-	box-sizing: inherit; 
+*, *:before, *:after {
+	box-sizing: inherit;
 }
-
+a.button {
+    -webkit-appearance: button;
+		height: 20px;
+		margin: 5px 0 0 5px;
+    text-decoration: none;
+    color: initial;
+}
 /* Core UI Styles */
 button {
 	height: 20px;

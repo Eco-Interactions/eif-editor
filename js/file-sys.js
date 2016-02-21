@@ -5,13 +5,10 @@
   var tagMap = {};
   var ein = ECO_INT_NAMESPACE;
   ein.fileSys = {
-    selectFileSys: userSelectFileSys, //CHECK------------------------------------------------------------->>>>|||<<<<<-----------
-    getFileObj: function (fSysId, fSysEntry, objHandler, fileTxtHandler) {
-      fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler)
-    },
-    getFolderData: function (fSysId, fSysEntry, objHandler, fileTxtHandler) {
-      postFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler)
-    },
+    selectFileSys: userSelectFileSys,
+    selectFileById: fSysEntryFromId,
+    getFileObj: fileObjFromEntry,
+    getFolderData: postFolderData,
     saveFile: restoreEntryToSave,
     fileSaveAs: selectFileSaveAs,
     createFile: createNewFile,
@@ -159,7 +156,7 @@
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) { // console.log("selectFileSaveAs fSysEntry = ", fSysEntry);
       if(chrome.runtime.lastError) { asyncErr() }
         else {
-          saveFileEntry(fSysEntry, fileText);
+          saveFileEntry(fSysEntry, fileText);   console.log ("File Text", fileText);
         }
     });
   }
