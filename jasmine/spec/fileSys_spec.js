@@ -5,28 +5,74 @@ describe('Allows access to the File System', function() {
 	ein.jsmFileSysTsts = {
 		ids: progIdData,
 		testPassed: false
-	};
-	var fileTests = ein.jsmFileSysTsts;
+	};					console.log(ein.jsmFileSysTsts.ids);
+	var fileSysTests = ein.jsmFileSysTsts;
 
-	var testPassed = fileTests.testPassed;
+	var testPassed = fileSysTests.testPassed;
 
   beforeEach(function() {
-    fileTests.testPassed = false;
+    fileSysTests.testPassed = false;
   });
 
   it("Opens and Reads Files", function(done) {
-  		/* id, idHandler,      objHandler,        fileTxtHandler */
-  	ein.fileSys.selectFileById(
-  		fileTests.ids.file,
-  		ein.fileSys.getFileObj,
-  		ein.fileSys.readFile,
-  		function(){
-  			fileTests.testPassed = true; console.log("successful read and testPassed = ", fileTests.testPassed);
-  			done(expect(fileTests.testPassed).toBe(true));
+  	ein.fileSys.entryFromId(
+  		fileSysTests.ids.file,					// Id
+  		ein.fileSys.getFileObj,					// idHandler
+  		ein.fileSys.readFile,						// objHandler
+  		function(){											// success callback
+  			fileSysTests.testPassed = true;
+  			done(expect(fileSysTests.testPassed).toBe(true));
   		}
   	)
-
   });
+
+  it("Opens and Reads Folders", function(done) {
+  	ein.fileSys.entryFromId(
+  		fileSysTests.ids.folder,					// Id
+  		ein.fileSys.getFolderData,				// idHandler
+  		ein.fileSys.readFolder,						// objHandler
+  		function(){												// success callback
+  			fileSysTests.testPassed = true;
+  			done(expect(fileSysTests.testPassed).toBe(true));
+  		}
+  	)
+  });
+
+  it("Writes and Saves Files", function(done) {
+  	ein.fileSys.saveFile(
+  		fileSysTests.ids.file,					// Id
+  		"Jasmine Test File Text",				// fileText
+  		function(){											// success callback
+  			fileSysTests.testPassed = true;
+  			done(expect(fileSysTests.testPassed).toBe(true));
+  		}
+  	)
+  });
+
+  it("Creates Files", function(done) {
+  	ein.fileSys.getFolderEntry(
+  		fileSysTests.ids.folder,				// Id
+  		ein.fileSys.createFile,					// writeHandler
+  		"Spec Test File", 							// name
+  		function(){											// success callback
+  			fileSysTests.testPassed = true;
+  			done(expect(fileSysTests.testPassed).toBe(true));
+  		}
+  	)
+  });
+
+  it("Creates Folders", function(done) {
+  	ein.fileSys.getFolderEntry(
+  		fileSysTests.ids.folder,				// Id
+  		ein.fileSys.createFolder,				// writeHandler
+  		"Spec Test Folder", 						// fileText
+  		function(){											// success callback
+  			fileSysTests.testPassed = true;
+  			done(expect(fileSysTests.testPassed).toBe(true));
+  		}
+  	)
+  });
+
 });
 
 // describe('Allows users to select a file', function() {

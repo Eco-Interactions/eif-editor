@@ -6,13 +6,14 @@
   var ein = ECO_INT_NAMESPACE;
   ein.fileSys = {
     selectFileSys: userSelectFileSys,
-    selectFileById: fSysEntryFromId,
+    entryFromId: fSysEntryFromId,
     getFileObj: fileObjFromEntry,
     getFolderData: postFolderData,
     saveFile: restoreEntryToSave,
     fileSaveAs: selectFileSaveAs,
+    getFolderEntry: writableFolderFromId,
     createFile: createNewFile,
-    createFolder: function (params) { fileSysRequest(params, createNewFolder) },
+    createFolder: createNewFolder,
     readFile: function(fSysId, fileObj, fileTxtHandler) { fileTxtFromObj(fSysId, fileObj, fileTxtHandler) },
     readFolder: function(fSysId, folderObj, fileTxtHandler) { logFolderData(fSysId, folderObj, fileTxtHandler) }
   };
@@ -36,7 +37,7 @@
     chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
       if (isRestorable) {
         chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) {
-          if (!asyncErr())  {
+          if (!asyncErr())  {   console.log("successful entry");
             entryHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);
           }
         });
@@ -136,11 +137,11 @@
       };
   }
 
-  function restoreEntryToSave(fileId, fileText) {  //console.log('selectFileSaveAs fileText = ', fileText);
+  function restoreEntryToSave(fileId, fileText, callback) {  //console.log('selectFileSaveAs fileText = ', fileText);
     chrome.fileSystem.restoreEntry(fileId, function (fSysEntry) {  //console.log("selectFileSaveAs fSysEntry = ", fSysEntry);
       if(chrome.runtime.lastError) { asyncErr() }
         else {
-          saveFileEntry(fSysEntry, fileText);
+          saveFileEntry(fSysEntry, fileText, callback);
         }
     });
   }
@@ -161,21 +162,21 @@
     });
   }
 
-  function saveFileEntry(fSysEntry, fileText) {   // console.log('saveFileEntry fileText = ', fileText);
+  function saveFileEntry(fSysEntry, fileText, callback) {   // console.log('saveFileEntry fileText = ', fileText);
     chrome.fileSystem.getWritableEntry(fSysEntry, function (writableEntry) {
       if (writableEntry) {
-        writeFileEntry(fSysEntry, fileText, writableEntry);
+        writeFileEntry(fSysEntry, fileText, writableEntry, callback);
       } else {
         console.log('No writable entry');
       }
     });
   }
 
-  function writeFileEntry(fSysEntry, fileText, writableEntry) {
+  function writeFileEntry(fSysEntry, fileText, writableEntry, callback) {
     var fileBlob = new Blob([fileText], {type: 'text/plain'});
     writableEntry.createWriter(function(writer) {
       writer.onerror = errorHandler;
-      writer.onwriteend = function () { console.log('File ' + fSysEntry.name + ' saved'); };
+      writer.onwriteend = callback || function () { console.log('File ' + fSysEntry.name + ' saved'); };
       writer.truncate(fileBlob.size);
       waitForIO(writer, function() {
         writer.seek(0);
@@ -192,42 +193,37 @@
 // -          postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
 
 
-  function createNewFile(folderId, fileName, callback, fileText) {                                              console.log("createNewFile called.");
-                                               console.log("no async error");
-                writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
-                  if (callback) {
-                    var fSysId = chrome.fileSystem.retainEntry(fileEntry);
-                    callback(fSysId);
-                  }
-                  fileEntry.createWriter(function(writer) {
-                    writer.write(new Blob([fileText], {type: 'text/plain'}));                   console.log('File ' + fileName + ' saved');
-                  });
-                });
-              }
+  function createNewFile(writableFolderEntry, fileName, callback, fileText) { console.log("no async error");
+    writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
+      if (callback) {
+        var fSysId = chrome.fileSystem.retainEntry(fileEntry);
+        callback(fSysId);
+      }
+      fileEntry.createWriter(function(writer) {
+        writer.write(new Blob([fileText], {type: 'text/plain'}));                   console.log('File ' + fileName + ' saved');
+      });
+    });
+  }
+
+
+  function writableFolderFromId (folderId, writeHandler, name, callback, fileText) {
+    chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
+      if (isRestorable) {
+        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {
+          if (!asyncErr())  {
+            chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
+              if (!asyncErr()) { writeHandler(writableFolderEntry, name, callback, fileText) }
             });
           }
         });
       }
     });
   }
-  
-  function writableFolderFromId (folderId, writeHandler, name, callback, fileText) {    
-    chrome.fileSystem.isRestorable(folderId, function(isRestorable) {
-      if (isRestorable) {
-        chrome.fileSystem.restoreEntry(folderId, function(folderEntry) {
-          if (!asyncErr())  {
-            chrome.fileSystem.getWritableEntry(folderEntry, function(writableFolderEntry) {        console.log("getWritableEntry. writableFolderEntry", writableFolderEntry);
-              if (!asyncErr()) { writeHandler(writableFolderEntry, name, callback, fileText) }              
-  }
 
-
-
-
-  function createNewFolder(reqPkg) {
-    chrome.fileSystem.getWritableEntry(reqPkg.fSysEntry, function(writableFolderEntry) {
-      writableFolderEntry.getDirectory(reqPkg.name, {create:true}, function(folderEntry) {
-        postMsg('statusMsg', 'Folder ' + reqPkg.name + ' created');
-      });
+  function createNewFolder(writableFolderEntry, name, callback) { console.log("createNewFolder called");
+    writableFolderEntry.getDirectory(name, {create:true}, function(folderEntry) { console.log("getDirectory", name, callback);
+      var fSysId = chrome.fileSystem.retainEntry(fileEntry);
+      callback(fSysId);
     });
   }
 

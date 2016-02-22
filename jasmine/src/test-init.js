@@ -7,8 +7,8 @@
 		writeFile: writeJSONfile
 	};
 	var toolbarBtnMap = {
-    fileId: openFileCmd,
-    folderId: openFolderCmd,
+    fileId: selectFileCmd,
+    folderId: selectFolderCmd,
     writeJSON: saveFileCmd,
     runTests: launchTests
   }
@@ -24,11 +24,11 @@
 
 	}
 
-  function openFileCmd() {/* params,           idHandler,                Type   */
+  function selectFileCmd() {/* params,           idHandler,                Type   */
     ein.fileSys.selectFileSys(openFileParams(), ein.jsmTstConfig.saveId, "File");
   }
 
-  function openFolderCmd() {/* params,           idHandler,                Type   */
+  function selectFolderCmd() {/* params,           idHandler,              Type   */
     ein.fileSys.selectFileSys(openFolderParams(), ein.jsmTstConfig.saveId, "Folder");
   }
 
@@ -39,11 +39,11 @@
   /* 'spaceHolder' is used to capture the FSysEntry being returned
 		 from the fileSystem to allow type to come through.
   */
-  function saveId(fSysId, spaceHolder, type) {
+  function saveId(fSysId, spaceHolder, type) { console.log("saveId called");
   	if (type === "Folder") {
-  		idObj.appIds.folder = fSysId;				console.log("Folder", idObj.appIds.folder);
+  		idObj.folder = fSysId;				console.log("Folder", idObj.folder);
   	} else {
-  		idObj.appIds.file = fSysId;					console.log("File", idObj.appIds.file);
+  		idObj.file = fSysId;					console.log("File", idObj.file);
   	}
   }
 

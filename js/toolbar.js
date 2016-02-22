@@ -10,6 +10,7 @@
       fileSaveAs: fileSaveAsCmd,
       reload: function () { chrome.runtime.reload(); },
       createFile: createFileCmd,
+      createFolder: createFolderCmd,
       setUpTests: initTests,
       runTests: launchTests,
       // getLocal: function () { localCmd('getStorage') },
@@ -18,7 +19,6 @@
       // clearDevLog: function () { devLogTxtArea.value = ''; },
       // logAppData: function () { ein.ui.devLog('appData', appData) },
       // getZartensRoot: function () { console.log('stub for getZartensRoot') },
-      // createTestFolder: createTestFolderCmd
     };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
@@ -54,8 +54,12 @@
     ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
-  function createFileCmd() {  /*    ID,                                        name,  fileText,         callback          */
-    ein.fileSys.createFile("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", "Test", "test content", function(newFileId) { console.log('newFileId: %s', newFileId)});
+  function createFileCmd() {  /*    ID,                                           writeHandler,            name,     callback                                                         fileText   */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFile, "Test", function(newFileId) { console.log('newFileId: %s', newFileId)}, "test content" );
+  }
+
+  function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
 
   function initTests() {
@@ -78,13 +82,6 @@
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
 
-  function createTestFileParams() {
-    return {
-      dirId: "A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor",   //  A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor
-      fileText: 'abcdefghiljklmnopqrstuvwxyz',
-      name: 'Test'
-    };
-  }
   function createTestFolderCmd() {
     var newFilePkg =  {
       cmd: 'createFolder',
