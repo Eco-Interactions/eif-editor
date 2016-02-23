@@ -11,9 +11,9 @@
         devLogTxtArea.value += label + ' = ' + JSON.stringify(obj, null, 2) + '\n \n';
         devLogTxtArea.scrollTop = devLogTxtArea.scrollHeight;
       },
-      show: function(fileId, obj) {   // console.log("show obj= %O", obj);
+      show: function(fileId, fileText) {   // console.log("show obj= %O", obj);
         ECO_INT_NAMESPACE.ui.curFileId = fileId;  console.log("show curFileId= ", ECO_INT_NAMESPACE.ui.curFileId);
-        editorTxtArea.value = JSON.stringify(obj, null, 2);
+        editorTxtArea.value = fileText;
       },
       setStatus: function(statusStr) {
         statusBar.value = statusStr;

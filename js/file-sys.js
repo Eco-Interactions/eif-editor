@@ -56,7 +56,7 @@
   function fileTxtFromObj(fSysId, fileObj, fileTxtHandler) {
     var reader = new FileReader();
     reader.onerror = errorHandler;
-    reader.onload = function(event) {
+    reader.onload = function(event) { console.log('file text = %s', event.target.result);
       fileTxtHandler(fSysId, event.target.result);
     };
     reader.readAsText(fileObj);

@@ -38,7 +38,7 @@ describe('Allows access to the File System', function() {
   	)
   });
 
-  it("Writes and Saves Files", function(done) {
+  it("Writes Content to Files", function(done) {
   	ein.fileSys.saveFile(
   		fileSysTests.ids.file,					// Id
   		"Jasmine Test File Text",				// fileText
@@ -61,17 +61,17 @@ describe('Allows access to the File System', function() {
   	)
   });
 
-  it("Creates Folders", function(done) {
-  	ein.fileSys.getFolderEntry(
-  		fileSysTests.ids.folder,				// Id
-  		ein.fileSys.createFolder,				// writeHandler
-  		"Spec Test Folder", 						// fileText
-  		function(){											// success callback
-  			fileSysTests.testPassed = true;
-  			done(expect(fileSysTests.testPassed).toBe(true));
-  		}
-  	)
-  });
+  // it("Creates Folders", function(done) {
+  // 	ein.fileSys.getFolderEntry(
+  // 		fileSysTests.ids.folder,				// Id
+  // 		ein.fileSys.createFolder,				// writeHandler
+  // 		"Spec Test Folder", 						// fileText
+  // 		function(){											// success callback
+  // 			fileSysTests.testPassed = true;
+  // 			done(expect(fileSysTests.testPassed).toBe(true));
+  // 		}
+  // 	)
+  // });
 
 });
 
