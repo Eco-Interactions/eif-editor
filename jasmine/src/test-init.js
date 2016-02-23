@@ -49,7 +49,7 @@
 
   function writeJSONfile(idObj) {
   	console.log(JSON.stringify(idObj, null, 2));
-  	return "var progIdData = " + JSON.stringify(idObj);
+  	return "var progIdData = " + JSON.stringify(idObj, null, 2);
   }
 
   function launchTests() {
