@@ -1,21 +1,23 @@
 (function(){
-  var rxIsInt = /^\d+$/,
-      rxIsFloat = /^\d*\.\d+$|^\d+\.\d*$/,
+  var ein = ECO_INT_NAMESPACE;
+  var csvHlpr;
+  var rxIsInt = /^\d+$/;
+  var rxIsFloat = /^\d*\.\d+$|^\d+\.\d*$/;
       // If a string has leading or trailing space,
       // contains a comma double quote or a newline
       // it needs to be quoted in CSV output
-      rxNeedsQuoting = /^\s|\s$|,|"|\n/,
-      trim = function (s) {
-            return s.trim();
-          };
-  var ein = ECO_INT_NAMESPACE;
-      ein.csvHlpr = {};             // members are csvToObject and csvToArray
-  var csvHlpr = ein.csvHlpr;
+  var rxNeedsQuoting = /^\s|\s$|,|"|\n/;
   var uniqKeys = {
     authors: "Short Name",
     citations: "",
     interactions: ""
   };
+  ein.csvHlpr = {
+    csvToObject: functionName,
+    csvToArray: functionName
+  };             // members are csvToObject and csvToArray
+  csvHlpr = ein.csvHlpr;
+
 
   /*
     Converts a Comma Separated Values string into an array of objects.
@@ -34,14 +36,13 @@
     var parsedObj = csvArray.map(function (row) {  console.log("row = ", row);
       var obj = {};
       var len = columns.length;
-      for (i = 0; i < len; i += 1) {  console.log("obj = %O ", obj);
+      for (var i = 0; i < len; i += 1) {  console.log("obj = %O ", obj);
         obj[columns[i]] = row[i];
       }
       return obj;
     });
 
     var uniqdObj = removeDuplicates(parsedObj);
-    // var validObj = validateInput(uniqdObj);
 
     ein.ui.show(null, JSON.stringify(uniqdObj, null, 2));
   }
@@ -56,35 +57,17 @@
   */
   csvHlpr.csvToArray = function (s) {  console.log("String = ", s);
 
-    var cur = '', // The character we are currently processing.
-      inQuote = false,
-      fieldQuoted = false,
-      field = '', // Buffer for building up the current field
-      row = [],
-      out = [],
-      processField = function (field) {
-        var trimmedField = trim(field);
-        if (fieldQuoted !== true) {
-          // If field is empty set to null
-          if (field === '') {
-            field = null;
-          // If the field was not quoted, trim it
-          } else {
-            field = trimmedField;
-          }
+    var cur = ''; // The character we are currently processing.
+    var inQuote = false;
+    var fieldQuoted = false;
+    var field = ''; // Buffer for building up the current field
+    var row = [];
+    var out = [];
 
-          // Convert unquoted numbers to numbers
-          if (rxIsInt.test(trimmedField) || rxIsFloat.test(trimmedField)) {
-            field = +trimmedField;
-          }
-        }
-        return field;
-      };
-
-    for (i = 0; i < s.length; i += 1) {
+    for (var i = 0; i < s.length; i += 1) {
       cur = s.charAt(i);
 
-      // If we are at a EOF or EOR
+      // If we are at a EndOfField or EndOfRow
       if (inQuote === false && (cur === ',' || cur === "\n")) {
         field = processField(field);
         // Add the current field to the current row
@@ -126,26 +109,45 @@
     return out;
   };
 
+  function processField(field) {
+    var trimmedField = field.trim();
+    if (fieldQuoted !== true) {
+      // If field is empty set to null
+      if (field === '') {
+        field = null;
+      // If the field was not quoted, trim it
+      } else {
+        field = trimmedField;
+      }
+
+      // Convert unquoted numbers to numbers
+      if (rxIsInt.test(trimmedField) || rxIsFloat.test(trimmedField)) {
+        field = +trimmedField;
+      }
+    }
+    return field;
+  };
+
   /**
    * Remove duplicates from the parsed CSV object
-   * @param  {Array} orgObj The CSV parsed as an array of objects
+   * @param  {Array} records The CSV parsed as an array of objects
    * @return {Array} The CSV as an array of objects with identified duplicates removed
    */
-  function removeDuplicates(orgObj) {
-    var arrResult = {};                                 console.log("org length = ", orgObj.length);
+  function removeDuplicates(records) {
+    var result = {};                                 console.log("org length = ", records.length);
 
-    for (i = 0; i < orgObj.length; i++) {
-        var item = orgObj[i];
+    for (i = 0; i < records.length; i++) {
+        var record = records[i];
         var uniqFild = uniqKeys.authors;
-        arrResult[ item[uniqFild] ] = item;
+        result[ record[uniqFild] ] = record;
     }
     var i = 0;
-    var nonDuplicatedArray = [];
-    for(var item in arrResult) {
-        nonDuplicatedArray[i++] = arrResult[item];
-    }                                                   console.log("new length = ", nonDuplicatedArray.length);
+    var uniqRecordsAry = [];
+    for(var record in result) {
+        uniqRecordsAry[i++] = result[record];
+    }                                               console.log("new length = ", uniqRecordsAry.length);
 
-    return nonDuplicatedArray;
+    return uniqRecordsAry;
 
   }
 
