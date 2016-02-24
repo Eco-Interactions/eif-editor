@@ -1,10 +1,11 @@
+var ein = ECO_INT_NAMESPACE;
 
 describe('Allows access to the File System', function() {
-	var ein = ECO_INT_NAMESPACE;
 
 	ein.jsmFileSysTsts = {
 		ids: progIdData,
-		testPassed: false
+		testPassed: false,
+    newFileId: ""
 	};					console.log(ein.jsmFileSysTsts.ids);
 	var fileSysTests = ein.jsmFileSysTsts;
 
@@ -14,33 +15,36 @@ describe('Allows access to the File System', function() {
     fileSysTests.testPassed = false;
   });
 
-  it("Opens and Reads Files", function(done) {
+  it("Opens and Reads Folders", function(done) {
   	ein.fileSys.entryFromId(
-  		fileSysTests.ids.file,					// Id
-  		ein.fileSys.getFileObj,					// idHandler
-  		ein.fileSys.readFile,						// objHandler
-  		function(){											// success callback
+  		fileSysTests.ids.folder,					// Should be the jasmine folder id, the root folder for testing
+  		ein.fileSys.getFolderData,				// idHandler
+  		ein.fileSys.readFolder,						// objHandler
+  		function(spH, folderObj){					// success callback
+        // if ()
+        console.log("folderObj", folderObj);
   			fileSysTests.testPassed = true;
   			done(expect(fileSysTests.testPassed).toBe(true));
   		}
   	)
   });
 
-  it("Opens and Reads Folders", function(done) {
-  	ein.fileSys.entryFromId(
-  		fileSysTests.ids.folder,					// Id
-  		ein.fileSys.getFolderData,				// idHandler
-  		ein.fileSys.readFolder,						// objHandler
-  		function(){												// success callback
-  			fileSysTests.testPassed = true;
-  			done(expect(fileSysTests.testPassed).toBe(true));
-  		}
-  	)
+  it("Creates Files", function(done) {
+    ein.fileSys.getFolderEntry(
+      fileSysTests.ids.folder,        // Should be the jasmine folder id, the root folder for testing
+      ein.fileSys.createFile,         // writeHandler
+      "Test File",                    // name
+      function(fSysId){                     // success callback
+        fileSysTests.newFileId = fSysId;        console.log("newFileId", fileSysTests.newFileId);
+        fileSysTests.testPassed = true;
+        done(expect(fileSysTests.testPassed).toBe(true));
+      }
+    )
   });
 
   it("Writes Content to Files", function(done) {
   	ein.fileSys.saveFile(
-  		fileSysTests.ids.file,					// Id
+  		fileSysTests.newFileId,					// Id of file generate in previous test
   		"Jasmine Test File Text",				// fileText
   		function(){											// success callback
   			fileSysTests.testPassed = true;
@@ -49,21 +53,21 @@ describe('Allows access to the File System', function() {
   	)
   });
 
-  it("Creates Files", function(done) {
-  	ein.fileSys.getFolderEntry(
-  		fileSysTests.ids.folder,				// Id
-  		ein.fileSys.createFile,					// writeHandler
-  		"Spec Test File", 							// name
-  		function(){											// success callback
-  			fileSysTests.testPassed = true;
-  			done(expect(fileSysTests.testPassed).toBe(true));
-  		}
-  	)
+  it("Opens and Reads Files", function(done) {
+    ein.fileSys.entryFromId(
+      fileSysTests.ids.file,          // Should a csv file chosen for testing
+      ein.fileSys.getFileObj,         // idHandler
+      ein.fileSys.readFile,           // objHandler
+      function(){                     // success callback
+        fileSysTests.testPassed = true;
+        done(expect(fileSysTests.testPassed).toBe(true));
+      }
+    )
   });
 
   // it("Creates Folders", function(done) {
   // 	ein.fileSys.getFolderEntry(
-  // 		fileSysTests.ids.folder,				// Id
+  // 		fileSysTests.ids.folder,				// Should be the jasmine folder id, the root folder for testing
   // 		ein.fileSys.createFolder,				// writeHandler
   // 		"Spec Test Folder", 						// fileText
   // 		function(){											// success callback
@@ -75,9 +79,21 @@ describe('Allows access to the File System', function() {
 
 });
 
-// describe('Allows users to select a file', function() {
+describe('Parses CSVs', function() {
 
-//   it("loads the 'editor text area'", function() {
-//     expect(a).toBe(true);
-//   });
-// });
+  it("Reads and Parses CSVs into Objects", function(done) {
+    ein.fileSys.entryFromId(
+      ein.jsmFileSysTsts.ids.file,          // Should a csv file chosen for testing
+      ein.fileSys.getFileObj,         // idHandler
+      ein.fileSys.readFile,           // objHandler
+      function(spH, csvStr){                     // sends CSV string to CSV parse method
+        var successful = ein.csvHlpr.csvToObject(spH, csvStr, true);        // spH is a spaceHolder, true indicates to the method this is a test
+        if(successful) {        console.log("successful");                    // and tells the method to return true, i.e. successful
+          ein.jsmFileSysTsts.testPassed = true;
+          done(expect(ein.jsmFileSysTsts.testPassed).toBe(true));
+        }
+      }
+    )
+  });
+});
+// CLEAN UP ein.jsmFileSysTsts. REFERENCES----------------------------------------------
