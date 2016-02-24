@@ -13,6 +13,7 @@
       createFolder: createFolderCmd,
       setUpTests: initTests,
       runTests: launchTests,
+      csvParse: csvToObjectCmd
       // getLocal: function () { localCmd('getStorage') },
       // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -62,6 +63,10 @@
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
 
+  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.csvHlpr.csvToObject);
+  }
+
   function initTests() {
     var width = 900;
     var height = 300;
@@ -82,16 +87,7 @@
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
 
-  function createTestFolderCmd() {
-    var newFilePkg =  {
-      cmd: 'createFolder',
-      params: {
-        fSysId: 'D847F49FAB46E7921D7406B085DDAFD3:ardZart',
-        fileText: '',
-        name: 'Test'
-      }
-    };
-  }
+
 
 
 /* =================== Build Params Packages ======================= */
