@@ -30,7 +30,7 @@
   */
   csvHlpr.csvToObject = function (spH, s) {
 
-    var csvArray = csvHlpr.csvToArray(s);
+    var csvArray = csvToArray(s);
     var columns = csvArray.shift();
 
     var parsedObj = csvArray.map(function (row) {  console.log("row = ", row);
@@ -48,14 +48,14 @@
   }
 
   /*
-    Converts a Comma Separated Values string into a multi-dimensional array.
-    Each row in the CSV becomes an array.
+    Converts a Comma Separated Values string into a two-dimensional array.
+    Each row in the CSV becomes an array of field data in an outer array container.
     Empty fields are converted to nulls and non-quoted numbers are converted to integers or floats.
     @method csvToArray
     @return {Array} The CSV parsed as an array
     @param {String} s The string to convert
   */
-  csvHlpr.csvToArray = function (s) {  console.log("String = ", s);
+  function csvToArray(s) {  console.log("String = ", s);
 
     var cur = ''; // The character we are currently processing.
     var inQuote = false;
