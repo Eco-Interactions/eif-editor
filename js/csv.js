@@ -1,5 +1,14 @@
 (function(){
+  /**
+   * Global App Namespace
+   * @type {object}
+   */
   var ein = ECO_INT_NAMESPACE;
+
+  /**
+   * RegEx strings to be used for comparassion methods.
+   * @type {RegExp}
+   */
   var rxIsInt = /^\d+$/;
   var rxIsFloat = /^\d*\.\d+$|^\d+\.\d*$/;
       // If a string has leading or trailing space,
@@ -7,25 +16,35 @@
       // it needs to be quoted in CSV output
   var rxNeedsQuoting = /^\s|\s$|,|"|\n/;
 
+  /**
+   * CSV API member on global namespace
+   * @type {Object}
+   */
   ein.csvHlpr = {
     csvToObject: objectifyCSV,
   };
 
-  /*
-    Converts a Comma Separated Values string into an array of objects.
-    Each row in the CSV becomes an object with properties named after each column.
-    Empty fields are converted to nulls and non-quoted numbers are converted to integers or floats.
-    @method objectifyCSV
-    @return {Array} The CSV parsed as an array of objects
-    @param {int} spH Spaceholder for superfluous data being passed in currently
-    @param {String} s The string containing CSV data to convert
-  */
+  /**
+   * Converts a Comma Separated Values string into an array of objects.
+   * Each row in the CSV becomes an object with properties named after each column.
+   * Empty fields are converted to nulls and non-quoted numbers are converted to integers or floats.
+   *
+   * @param {int} spH Spaceholder for superfluous data being passed in currently
+   * @param {String} s The string containing CSV data to convert
+   * @param  {[type]} test [description]
+   * @return {Array} The CSV parsed as an array of objects
+   */
   function objectifyCSV(spH, s, test) {
 
     var csvArray = csvToArray(s);                       // The CSV parsed as a two-dimensional array
     var keys = csvArray.shift();                        // Seperates first row of headers to be used as keys for field data
 
-    var parsedObj = csvArray.map(function (row) {       // Builds an array of objs with keyed field data representing a record
+    /*
+     * Converts a CSV two-dimensional array into objects with headers as keys
+     * @param  {Object} row    An array of field data representing a record
+     * @return {Array}    An array of objs with keyed field data representing each record
+     */
+    var parsedObj = csvArray.map(function (row) {
       var obj = {};
       var len = keys.length;
       for (var i = 0; i < len; i += 1) {
@@ -33,6 +52,12 @@
       }
       return obj;
     });
+
+    /*
+     * If in
+     * @param  {[type]} !test [description]
+     * @return {[type]}       [description]
+     */
     if(!test) {
       ein.ui.show(null, JSON.stringify(parsedObj, null, 2));      // Outputs results as text to editorTxtArea
     } else {

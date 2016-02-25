@@ -15,6 +15,18 @@ describe('Allows access to the File System', function() {
     fileSysTests.testPassed = false;
   });
 
+  // it("Creates Folders", function(done) {                       GET DIRECTORY METHOD NOT CURRENTLY WORKING. WILL UPDATE TEST-INIT WHEN A GENERATED TEST FOLDER IS AN OPTION
+  //  ein.fileSys.getFolderEntry(
+  //    fileSysTests.ids.folder,        // Should be the jasmine folder id, the root folder for testing
+  //    ein.fileSys.createFolder,       // writeHandler
+  //    "Spec Test Folder",             // fileText
+  //    function(){                     // success callback
+  //      fileSysTests.testPassed = true;
+  //      done(expect(fileSysTests.testPassed).toBe(true));
+  //    }
+  //  )
+  // });
+
   it("Opens and Reads Folders", function(done) {
   	ein.fileSys.entryFromId(
   		fileSysTests.ids.folder,					// Should be the jasmine folder id, the root folder for testing
@@ -64,18 +76,6 @@ describe('Allows access to the File System', function() {
       }
     )
   });
-
-  // it("Creates Folders", function(done) {
-  // 	ein.fileSys.getFolderEntry(
-  // 		fileSysTests.ids.folder,				// Should be the jasmine folder id, the root folder for testing
-  // 		ein.fileSys.createFolder,				// writeHandler
-  // 		"Spec Test Folder", 						// fileText
-  // 		function(){											// success callback
-  // 			fileSysTests.testPassed = true;
-  // 			done(expect(fileSysTests.testPassed).toBe(true));
-  // 		}
-  // 	)
-  // });
 
 });
 
