@@ -1,11 +1,11 @@
 (function(){
-  /**
+  /*
    * Global App Namespace
    * @type {object}
    */
   var ein = ECO_INT_NAMESPACE;
 
-  /**
+  /*
    * RegEx strings to be used for comparassion methods.
    * @type {RegExp}
    */
@@ -84,17 +84,10 @@
     for (var i = 0; i < s.length; i += 1) {
       cur = s.charAt(i);
 
-      if (!endOfFieldorRow()) {             // Process current character if not at End Of Field
+      if (isEndOfField()) {            
+        endField();
+      } else {                          
         processCurChar(cur);
-      } else {                              // If we are at an End Of Field or End Of Row
-        field = processField(field);
-        row.push(field);                       // Add the current field to the current row
-        if (cur === "\n") {                       // If this is End Of Row
-          out.push(row);                          // append row to output
-          row = [];                               // and flush row
-        }
-        field = '';                            // Flush the field buffer
-        fieldQuoted = false;
       }
     }
 
@@ -104,11 +97,24 @@
     return out;
 
   /*----------------------------------------------CSV to Array Helper Functions----------------------------------*/
-    function endOfFieldorRow() {
+    function isEndOfField() {
       if (!insideQuote && (cur === ',' || cur === "\n")) {
         return true;
       }
       return false;
+    }
+
+    function endField() {
+      field = processField(field);
+      row.push(field);                       // Add the current field to the current row
+      if (cur === "\n") { endRow(); }
+      field = '';                            // Flush the field buffer
+      fieldQuoted = false;
+    }
+
+    function endRow() {
+      out.push(row);                          // append row to output
+      row = [];   
     }
 
     function escapedQuote() {
@@ -147,7 +153,7 @@
         return field;
       }
     };
-  };
+  };    // End of csvToArray
 
 
 }());
