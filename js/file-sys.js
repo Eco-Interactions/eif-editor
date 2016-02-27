@@ -1,9 +1,12 @@
 (function(){
-  var appData;
-  var curFiles = { open: false, appData: false, meta: {} };
-  var msgRouter = { fileSysId: {}, responseObj: {} };
-  var tagMap = {};
+  /*
+  * Global App Namespace
+  * @type {object}
+  */
   var ein = ECO_INT_NAMESPACE;
+  /**
+   * Exposed file system API
+   */
   ein.fileSys = {
     selectFileSys: userSelectFileSys,
     entryFromId: fSysEntryFromId,
@@ -22,8 +25,15 @@
   /* === File System Access Point functions ======================= */
   /* ============================================================== */
 
-  /* requsts a user gesture to select a file or folder (depending on *
-   * params passed) and posts the ID to the sandbox                  */
+  /**
+   * Requests a user gesture to select a file or folder, according to params obj passed,
+   * and passes the file id and file entry
+   *
+   * @param  {obj}  params  Contents passed determine whether a file or folder is selected.
+   * @param  {func} objHandler  Callback to be used at a later point
+   * @param  {func} fileTxtHandler  Callback to be used at a later point
+   * @callback  {func} idHandler  Callback to consume the file entry
+   */
   function userSelectFileSys(params, idHandler, objHandler, fileTxtHandler) {
     chrome.fileSystem.chooseEntry(params, function (fSysEntry) {  //console.log("fSysEntry = ", fSysEntry);
       if(!asyncErr()) {
@@ -32,7 +42,14 @@
         }
     });
   }
-
+  /**
+   * Attempts to restore a file from the local harddrive with its file system id.
+   *
+   * @param  {int} fSysId  Id of file to be restored from the local file system
+   * @param  {func} objHandler  Callback to later consume the file/folder object
+   * @param  {func} fileTxtHandler  Callback to be used at a later point
+   * @callback  {func} entryHandler  Callback to consume the file entry
+   */
   function fSysEntryFromId(fSysId, entryHandler, objHandler, fileTxtHandler) {
     chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
       if (isRestorable) {
@@ -47,12 +64,26 @@
     });
   }
 
+  /**
+   * Takes in a file entry and passes on a file obj.
+   *
+   * @param  {int} fSysId  Id of file restored from the file system
+   * @param  {obj} fSysEntry  File system entry from file system
+   * @param  {func} fileTxtHandler  Callback to be used at a later point
+   * @callback  {func} objHandler  Callback to consume the file object
+   */
   function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {   console.log("fileObjFromEntry called= fSysEntry =", fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
       objHandler(fSysId, fileObj, fileTxtHandler); console.log("objHandler");
     });
   }
-
+  /**
+   * Outputs text from file Obj passed in.
+   *
+   * @param  {int} fSysId  Id of file restored from the file system
+   * @param  {obj} fileObj  File obj representing file being opened
+   * @param  {func} fileTxtHandler Callback to consume the file text being returned
+   */
   function fileTxtFromObj(fSysId, fileObj, fileTxtHandler) {
     var reader = new FileReader();
     reader.onerror = errorHandler;
@@ -65,7 +96,14 @@
   /* ============================================================== */
   /* === File System Entry Handler functions ====================== */
   /* ============================================================== */
-
+  /**
+   * If file system entry is a directory, call {@link readFolderData}
+   *
+   * @param  {int} fSysId  Id of file restored from file system
+   * @param  {obj} fSysEntry  File system entry from file system
+   * @param  {func} objHandler  Callback to later consume the file object
+   * @param  {func} fileTxtHandler  Callback to later consume the file text
+   */
   function postFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler) { //console.log("postFolderData fSysId = ", );
     if (fSysEntry.isDirectory) {
       readFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler);
@@ -73,7 +111,14 @@
       folderReadFail(fSysEntry);
     }
   }
-
+  /**
+   * Build folderObj framework, create Directory reader, then call {@link readEntriesThenPost}
+   *
+   * @param  {int} fSysId  Id of file restored from file system
+   * @param  {obj} fSysEntry  File system entry from file system
+   * @param  {func} objHandler  Callback to later consume the file object
+   * @param  {func} fileTxtHandler  Callback to later consume the file text
+   */
   function readFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler) { console.log("readFolderData");
     console.log("folderObj");
     var folderObj = {

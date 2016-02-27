@@ -63,8 +63,8 @@
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
 
-  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.csvHlpr.csvToObject);
+  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,         fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.parse.csvObjShow);
   }
 
   function initTests() {
