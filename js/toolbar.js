@@ -64,7 +64,7 @@
   }
 
   function csvToObjectCmd() {/* params,           idHandler,                 objHandler,         fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.parse.csvObjShow);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.parse.csvObjWrapper);
   }
 
   function initTests() {
