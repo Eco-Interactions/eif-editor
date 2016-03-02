@@ -5,7 +5,7 @@
    */
 	var ein = ECO_INT_NAMESPACE;
 	/* Columns relevant to the Location Entity */
-	var locCols = ['LocationDescription',	'Elev',	'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country',	'HabitatType'];
+	var locCols = ['LocationDescription', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabitatType'];
 	/**
    * Parse API member on global namespace
    * @type {Object}
@@ -53,7 +53,7 @@
 				return isConflicted(recrd, procesd);															// Returns true, and ends loop, if conflict is identified.
 			});
 			if (!conflicted) {processed.push(recrd);}
-			return ( conflicted ? true : false );														// Conflicted records are added to the new conflicted records object.
+			return conflicted;														// Conflicted records are added to the new conflicted records object.
 		});
 		processed.shift();								//Remove init obj
 		ein.parse.conflicts = conflictedRecrds.length;      		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
@@ -66,7 +66,7 @@
 		 *
 		 * @param  {object}  recrd   Record currently being checked for conflicts
 		 * @param  {object}  procesd Previously processed record being checked against
-		 * @return {Boolean}				 Returns true if conflicts have been found.
+		 * @return {Boolean}		 Returns true if conflicts have been found.
 		 */
 		function isConflicted(recrd, procesd) {
 			if (recrd[unqField] === procesd[unqField]) {			// If the unique key values are identical
@@ -97,10 +97,10 @@
 	 * @return {array}  Returns a copy of the original object with any exact duplicates removed.
 	 */
 	function deDupIdenticalRcrds(recrdObj) {		console.log("deDupIdenticalRcrds called. recrdObj = %O", recrdObj);
-	  var isDup = false;
+	  	var isDup = false;
 		var dupCount = 0;
 		var firstKey = Object.keys(recrdObj[0])[0];
-		var processed = [{}];
+		var processed = [{}];								//pop last record and replace this init stub 
 		processed[0][firstKey] = "";			// A stub init obj used for first round comparisons.
 
 		recrdObj.forEach(function(recrd){ 											// For each record
@@ -113,8 +113,9 @@
 		processed.shift();							//Remove init obj
 		var deDupdRecrds  = processed.filter(function(recrd){			// Remove any record that contains ONLY null values
 			return nonNullRecrd(recrd);
-		});  console.log("deDupdRecrds with Null records removed = %O", deDupdRecrds);
-		ein.parse.conflicts = (ein.parse.conflicts - dupCount);		// Update total conflicts that have yet to be addressed
+		});  
+		console.log("deDupdRecrds with Null records removed = %O", deDupdRecrds);
+		ein.parse.conflicts = (ein.parse.conflicts - (dupCount + 1));		// Update total conflicts that have yet to be addressed
 		return deDupdRecrds;
 	/*----------------Helper Functions for deDupIdenticalRcrds------------------------------------------------------------ */
 		/**
@@ -138,7 +139,7 @@
 		 *
 		 * @param  {object}  recrd   Record currently being checked for uniqueness
 		 * @param  {object}  procesd Previously processed record being checked against
-		 * @return {Boolean}         Returns true only if every field in both records are identical.
+		 * @return {boolean}         Returns true only if every field in both records are identical.
 		 */
 		function isDuplicate(recrd, procesd) {
 			if (recrd[firstKey] === procesd[firstKey]) {			// If the first key values are identical
@@ -229,13 +230,13 @@
 		return filledRecrds;
 	}
 
-	function copyAndFillVals(rcrdToFill, rcrdToCopy) { console.log("copyAndFillVals. rcrdToFill = %O. rcrdToCopy = %O", rcrdToFill, rcrdToCopy);
-		for (key in rcrdToFill) {
-			if (rcrdToFill[key] === null) {
-				rcrdToFill[key] = rcrdToCopy[key];
+	function copyAndFillVals(trgtRcrd, srcRcrd) { console.log("copyAndFillVals. trgtRcrd = %O. srcRcrd = %O", trgtRcrd, srcRcrd);
+		for (key in trgtRcrd) {
+			if (trgtRcrd[key] === null) {
+				trgtRcrd[key] = srcRcrd[key];
 			}
-		}  console.log("exiting copyAndFillVals. rcrdToFill = %O.", rcrdToFill);
-		return rcrdToFill;
+		}  console.log("exiting copyAndFillVals. trgtRcrd = %O.", trgtRcrd);
+		return trgtRcrd;
 	}
 
 	//No side effects (obj remains untransmuted)

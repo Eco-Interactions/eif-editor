@@ -1,0 +1,33 @@
+
+
+Functions
+		csv
+			objectify - standardizeHeaders(csvStr)
+
+
+		parse
+			validate(entityType, recrdsAry)
+				(dict with standized headers, and unqField, for each entity)
+				run extractCols(hdrs) 
+				run deDupIdentical
+				remove entirely null record
+				run checkForConflicts(unqField)
+
+
+								build a validation report obj with results from the various steps
+										colsExtractObj.length 
+												number of cols that were extracted
+										deDupIdentical
+												length of return ary
+												number of exact duplicates
+												bool- removed null record 
+										--autofillandcollapse
+										conflicts
+												+(count) of records with unqfields
+												count of how many unqKeys have conflicts (vv obj.keys.length vv)
+												conflctsObj w unqField vals as top-keys
+														an array of conflicted recrdobjs 
+																w the unqkey removed 
+
+
+
