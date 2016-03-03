@@ -18,7 +18,7 @@
 	var conflictObj = {
 		extrctedCols: {},
 		duplicates: [],
-		autoFillAndCollapse: {},
+		autoFill: {},
 		conflicts: {}
 	};
 	/**
@@ -188,9 +188,10 @@
 		var unqFilledRecs = deDupIdenticalRcrds(filledRecs);
 		var finalCnflctsAry = noFillRecs.concat(unqFilledRecs);
 
-		conflictObj.autoFillAndCollapse = {
+		conflictObj.autoFill = {
 			recieved: origRecrdsAry.length,
-			filled: unqFilledRecs.length,
+			filled: filledRecs.length,
+			collapsed: filledRecs.length - unqFilledRecs.length,
 			remaining: finalCnflctsAry.length
 		};
 
