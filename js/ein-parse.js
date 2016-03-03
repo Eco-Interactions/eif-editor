@@ -163,20 +163,46 @@
 		var candidates = {};
 
 		var noFillRecs = isolateCandidatesToFill(recrdsAry, unqField);      console.log("candidates = %O. noFillRecs = %O", candidates, noFillRecs); // console.log("noFillRecs = %O", noFillRecs);
-
 		var filledRecs = fillCandidatesIfAble();
+		var unqFilledRecs = deDupIdenticalRcrds(filledRecs);
 
-		return noFillRecs.concat(filledRecs);
+		return noFillRecs.concat(unqFilledRecs);
 /*-----------------------------Helper Functions----------------------------------------------------------- */
 		function isolateCandidatesToFill(recrdsAry, unqField) {
 			var processed = [];
 			processed.push(recrdsAry.pop());
 
-			var potenlUnqFields = recrdsAry.filter(function(recrd){				console.log("New record = %O", recrd);		// For each record
+			var potenlUnqFields = recrdsAry.filter(function(recrd){		//		console.log("New record = %O", recrd);		// For each record
 				return findCandidates(recrd);
 			});
 
 			return finalPassForNoFillRcrds();
+
+			function findCandidates(recrd) {
+				var candidate = false;
+
+				processed.some(function(procesd) {							//		console.log("autoFillRecords processing. recrd[unqField] = %O procesd[unqField] = %O", recrd[unqField], procesd[unqField]);											// Loop through each record already processed
+					return findUnqKeyDups(recrd, procesd);
+				});								console.log("[2]candidate", candidate);
+				processed.push(recrd);
+				if (!candidate) {return true;}
+
+				function findUnqKeyDups(recrd, procesd) {
+					if (recrd[unqField] === procesd[unqField]) {		//	console.log("the unique key values are identical", recrd[unqField], procesd[unqField]);	// If the unique key values are identical
+						if (recrd[unqField] in candidates) {
+							addCandidates(recrd, procesd);
+						} else {
+							candidates[recrd[unqField]] = [];
+							addCandidates(recrd, procesd);
+						}
+					}		//console.log("[1]candidate %s. recrd = %s, proc = %s", candidate, recrd[unqField], procesd[unqField]);
+					return candidate;
+				}
+				function addCandidates(recrd, procesd) {
+					candidates[recrd[unqField]].push(recrd, procesd);
+					candidate = true;
+				}
+			} /* End findCandidates */
 
 			function finalPassForNoFillRcrds(argument) {
 				var noFillRecs = potenlUnqFields.filter(function(recrd){
@@ -198,76 +224,61 @@
 							candidates[recrd[unqField]].push(recrd);
 					}
 				}
-			}
-
-			function findCandidates(recrd) {
-				var candidate = false;
-
-				processed.some(function(procesd) {							//		console.log("autoFillRecords processing. recrd[unqField] = %O procesd[unqField] = %O", recrd[unqField], procesd[unqField]);											// Loop through each record already processed
-					return findUnqKeyDups(recrd, procesd);
-				});								console.log("[2]candidate", candidate);
-				processed.push(recrd);
-				if (!candidate) {return true;}
-
-				function findUnqKeyDups(recrd, procesd) {
-					if (recrd[unqField] === procesd[unqField]) {			console.log("the unique key values are identical", recrd[unqField], procesd[unqField]);	// If the unique key values are identical
-						if (recrd[unqField] in candidates) {
-							addCandidates(recrd, procesd);
-						} else {
-							candidates[recrd[unqField]] = [];
-							addCandidates(recrd, procesd);
-						}
-					}		console.log("[1]candidate %s. recrd = %s, proc = %s", candidate, recrd[unqField], procesd[unqField]);
-					return candidate;
-				}
-				function addCandidates(recrd, procesd) {
-					candidates[recrd[unqField]].push(recrd, procesd);
-					candidate = true;
-				}
-			} /* End findCandidates */
+			} /* End rmvLftovrCandidates */
 		} /* End isolateCandidatesForFill */
 		function fillCandidatesIfAble(argument) {
 			var candidateKeys = Object.keys(candidates);
-			var filledRecs = [{}];
-			filledRecs[unqField] = "";
 
-			candidateKeys.forEach(function(key){					//	console.log("candidates[key] = %O", candidates[key]);
+			candidateKeys.forEach(function(key){
 				checkAllCandidatesWithKey(key);
 			});
+			var filledRecs = finalCollapse();
+
 			return filledRecs;
 
 			function checkAllCandidatesWithKey(key) {
+				var processed = [];
+				var noFill = true;
 				candidates[key].forEach(function(recrd){
-					checkFilled(recrd);
-
-					filledRecs.shift();
-					console.log("filledRecs.length", filledRecs.length);
+					noFill = true;
+					checkAlrdyProcessed(recrd);
+					processed.push(recrd);
 				});
 
-				function checkFilled(recrd) {
-					filledRecs.forEach(function(procesd){
-						fillIfNoConflictingData(recrd, procesd);
+
+				function checkAlrdyProcessed(recrd) {							//	console.log("BEFORE----JSON.stringify(recrd) = ", JSON.stringify(recrd));
+					processed.every(function(procesd, i){// console.log("----------------JSON.stringify(procesd) = ", JSON.stringify(procesd));
+						return fillIfNoConflictingData(recrd, procesd, i);
 					});
 				}
 
-				function fillIfNoConflictingData(recrd, procesd) {
+				function fillIfNoConflictingData(recrd, procesd, i) {
 					if (!isConflicted(recrd, procesd, unqField)) {
-						fillAndCollapse(recrd, procesd);
-					}
+						return fillAndCollapse(recrd, procesd, i);									//	console.log("AFTER FILL-------------------JSON.stringify(procesd) = ", JSON.stringify(procesd));console.log("-------------JSON.stringify(recrd) = ", JSON.stringify(recrd));
+					}  console.log("noFill recrd = %O, procesd = %O", recrd, procesd);
+					return noFill;
 				}
+				function fillAndCollapse(rcrdOne, rcrdTwo, i) { console.log("fillAndCollapse. recrdOne = %O. recrdTwo = %O", rcrdOne, rcrdTwo);
+					fillNulls(rcrdOne, rcrdTwo);
+					fillNulls(rcrdTwo, rcrdOne);
+					if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
+						noFill = false;
+					}
+					return noFill;
+				} /* End fillAndCollapse */
 			} /* End checkAllCandidatesWithKey */
+
+			function finalCollapse() {
+				var allRecords = [];
+				for (key in candidates) {
+					candidates[key].forEach(function(recrd) {
+						allRecords.push(recrd);
+					});
+				}		console.log("allRecords", allRecords);
+				return allRecords;
+			}
 		} /* End fillCandidatesIfAble  */
 	} /* End autoFillRecords */
-
-
-
-	function fillAndCollapse(rcrdOne, rcrdTwo) { console.log("fillAndCollapse. recrdOne = %O. recrdTwo = %O", rcrdOne, rcrdTwo);
-		fillNulls(rcrdOne, rcrdTwo);
-		fillNulls(rcrdTwo, rcrdOne);
-		if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) { console.log("Records Equal");
-			filledRecs.push(rcrdOne);
-		}
-	}
 
 	function fillNulls(trgtRcrd, srcRcrd) {
 		for (key in trgtRcrd) {
@@ -276,6 +287,8 @@
 			}
 		}
 	}
+
+
 
 
 	/**
@@ -326,9 +339,11 @@
 		 */
 		function checkForConflicts(recrd, procesd) {
 			for (key in recrd) {																						// Loop through each key/value in the matching records
-				if (recrd[key] !== null && recrd[key] !== procesd[key]) {				// If a value is unique,
-					conflicted = true;																							// This is a conflicted record.
-					break;
+				if (recrd[key] !== null && procesd[key] !== null) {				// If a value is unique,
+					if (recrd[key] !== procesd[key]) {
+						conflicted = true;																							// This is a conflicted record.
+						break;
+					}
 				}
 			}
 		}
