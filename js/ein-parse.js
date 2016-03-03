@@ -11,6 +11,10 @@
 			cols:	['LocationDescription', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabitatType']
 		}
 	}
+	/**
+	 * Object describing conflicts that arose during the parse process.
+	 * @type {Object}
+	 */
 	var conflictObj = {};
 	/**
    * Parse API member on global namespace
@@ -30,7 +34,7 @@
 
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
-		// var filledRecrds = autoFillRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
+		var filledRecrds = autoFillRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
 		// var findConflicts(deDupdRecrdsAry, unqField);
 	}
 
@@ -72,7 +76,7 @@
 	function deDupIdenticalRcrds(recrdsAry) {		console.log("deDupIdenticalRcrds called. recrdsAry = %O", recrdsAry);
 	  var isDup = false, dupCount = 0, processed = [];
 
-		removeDups(recrdsAry);		 console.log("dupCount", dupCount);  //console.log("cleanRecrds w no dups = %O", processed);
+		removeDups(recrdsAry);		 console.log("dupCount", dupCount);  console.log("cleanRecrds w no dups = %O", processed);
 		var cleanRecords = removeNullRcrds(processed);  //  console.log("cleanRecrds w no nulls = %O", cleanRecords);
 		conflictObj.duplicates = dupCount + (processed.length - cleanRecords.length);		console.log("%s duplicates", conflictObj.duplicates);
 		return cleanRecords;
@@ -111,7 +115,7 @@
 		 */
 		function removeNullRcrds(processed) {
 			var recrds = processed.filter(function(recrd){
-				if (!isNullRecrd(recrd)) { return true; } else { console.log("Null Record to be removed = %O", recrd) }
+				if (!isNullRecrd(recrd)) { return true; } //else { console.log("Null Record to be removed = %O", recrd) }
 			});
 			return recrds;
 		}
@@ -125,7 +129,7 @@
 			var isNull = true;
 			for (key in recrd) {
 				if (recrd[key] !== null && recrd[key] !== undefined) {
-					isNull = false;   console.log("not null or undefined field", recrd[key]);
+					isNull = false;  // console.log("not null or undefined field", recrd[key]);
 					break;
 				}
 			}
@@ -143,10 +147,10 @@
 		var firstKey = Object.keys(recrdOne)[0];
 		var isDup = false;
 		if (recrdOne[firstKey] === recrdTwo[firstKey]) {			// If the first key values are identical
-			isDup = true;				console.log("firstKeys Equal")
+			isDup = true;			//	console.log("firstKeys Equal")
 			for (key in recrdOne) {															// Loop through each key/value in the matching records
 				if (recrdOne[key] !== recrdTwo[key]) {								// If a value is unique this is not an exact duplicate
-					isDup = false;					console.log("Records not equal. recrdOne = %O, recrdTwo = %O", recrdOne, recrdTwo);
+					isDup = false;			//		console.log("Records not equal. recrdOne = %O, recrdTwo = %O", recrdOne, recrdTwo);
 					break;
 				}
 			}
@@ -154,41 +158,67 @@
 		return isDup;
 	}
 
-	function autoFillRecords(recrdsAry, unqField) {
+	function autoFillRecords(origRecrdsAry, unqField) {
+		var recrdsAry = clone(origRecrdsAry);
 		var candidates = {};
 
-		var noFillRecs = isolateCandidatesForFill(recrdsAry, unqField);      console.log("candidates = %O", candidates); // console.log("noFillRecs = %O", noFillRecs);
+		var noFillRecs = isolateCandidatesToFill(recrdsAry, unqField);      console.log("candidates = %O. noFillRecs = %O", candidates, noFillRecs); // console.log("noFillRecs = %O", noFillRecs);
 
 		var filledRecs = fillCandidatesIfAble();
 
 		return noFillRecs.concat(filledRecs);
 /*-----------------------------Helper Functions----------------------------------------------------------- */
-		function isolateCandidatesForFill(recrdsAry, unqField) {
-			var noFillRecs = recrdsAry.filter(function(recrd){			//	console.log("New record = ", recrd);		// For each record
-				findCandidates(recrd);
+		function isolateCandidatesToFill(recrdsAry, unqField) {
+			var processed = [];
+			processed.push(recrdsAry.pop());
+
+			var potenlUnqFields = recrdsAry.filter(function(recrd){				console.log("New record = %O", recrd);		// For each record
+				return findCandidates(recrd);
 			});
-			return noFillRecs;
+
+			return finalPassForNoFillRcrds();
+
+			function finalPassForNoFillRcrds(argument) {
+				var noFillRecs = potenlUnqFields.filter(function(recrd){
+					return rmvLftovrCandidates(recrd);
+				});
+				return noFillRecs;
+			}
+
+			function rmvLftovrCandidates(recrd) {
+				var isNotCandidate = true;
+				for (key in candidates){
+						ifNowCandidate(recrd);
+				}
+				return isNotCandidate;
+
+				function ifNowCandidate(recrd) {
+					if (recrd[unqField] === key) {
+							isNotCandidate = false;
+							candidates[recrd[unqField]].push(recrd);
+					}
+				}
+			}
 
 			function findCandidates(recrd) {
-				var processed = [], candidate = false;
-				processed.push(recrdsAry.pop());
+				var candidate = false;
 
-				processed.forEach(function(procesd) {							//		console.log("autoFillRecords processing. recrd[unqField] = %O procesd[unqField] = %O", recrd[unqField], procesd[unqField]);											// Loop through each record already processed
-					findUnqKeyDups(recrd, procesd);
-				});
-
+				processed.some(function(procesd) {							//		console.log("autoFillRecords processing. recrd[unqField] = %O procesd[unqField] = %O", recrd[unqField], procesd[unqField]);											// Loop through each record already processed
+					return findUnqKeyDups(recrd, procesd);
+				});								console.log("[2]candidate", candidate);
 				processed.push(recrd);
 				if (!candidate) {return true;}
 
 				function findUnqKeyDups(recrd, procesd) {
-					if (recrd[unqField] === procesd[unqField]) {		//	console.log("the unique key values are identical", recrd[unqField], procesd[unqField]);	// If the unique key values are identical
+					if (recrd[unqField] === procesd[unqField]) {			console.log("the unique key values are identical", recrd[unqField], procesd[unqField]);	// If the unique key values are identical
 						if (recrd[unqField] in candidates) {
 							addCandidates(recrd, procesd);
 						} else {
 							candidates[recrd[unqField]] = [];
 							addCandidates(recrd, procesd);
 						}
-					}
+					}		console.log("[1]candidate %s. recrd = %s, proc = %s", candidate, recrd[unqField], procesd[unqField]);
+					return candidate;
 				}
 				function addCandidates(recrd, procesd) {
 					candidates[recrd[unqField]].push(recrd, procesd);
@@ -324,6 +354,18 @@
 	 */
 	function extractLocCols(csvObj){  console.log("extractLocCols");
 		return extractCols(csvObj, locCols);
+	}
+
+	function clone(recrdsAry) {
+		if (recrdsAry instanceof Array) {
+      var copy = [];
+      for (var i = 0, len = recrdsAry.length; i < len; i++) {
+        copy[i] = recrdsAry[i];
+      }
+      var copyJSON = JSON.stringify(copy);
+      console.log("copy now = %O", JSON.parse(copyJSON));
+      return JSON.parse(copyJSON);
+    }
 	}
 
 /*----------------------------Not Yet In Use----------------------------------------------------------------------------------*/
