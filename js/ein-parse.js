@@ -15,7 +15,12 @@
 	 * Object describing conflicts that arose during the parse process.
 	 * @type {Object}
 	 */
-	var conflictObj = {};
+	var conflictObj = {
+		extrctedCols: {},
+		duplicates: [],
+		autoFillAndCollapse: {},
+		conflicts: {}
+	};
 	/**
    * Parse API member on global namespace
    * @type {Object}
@@ -27,15 +32,16 @@
 	}
 
 
-	function validate(fSysId, recrdsAry, entityType) {		console.log(arguments);
+	function validate(fSysId, recrdsAry, entityType) {	//	console.log(arguments);
 		var entityType = entityType || "location";
 		var hdrs = entityCols[entityType].cols;
 		var unqField = entityCols[entityType].unqKey;
 
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
-		var filledRecrds = autoFillRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
-		// var findConflicts(deDupdRecrdsAry, unqField);
+		var filledRecrds = autoFillAndCollapseRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
+		var conflictedRecords = findConflicts(filledRecrds, unqField);
+		ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
 	}
 
 	/**
@@ -46,11 +52,16 @@
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
 	 * @return {array}  An array of record objects with only the specified columns and their data.
 	 */
-	function extractCols(recrdsAry, columns) {						console.log("extractCols called.");
+	function extractCols(origRecrdsAry, columns) {						//console.log("extractCols called.");
+		var recrdsAry = clone(origRecrdsAry);
+
 	  var extrctdObjs = recrdsAry.map(function(recrd){
 	  	return extract(columns, recrd);
 		});  																						console.log("Extracted object = %O", extrctdObjs);
-		conflictObj.extractedCols = columns.length;
+		conflictObj.extrctedCols = {
+			num: columns.length,
+	//		columns: columns
+		}
 		return extrctdObjs;
 	}
 	/**
@@ -76,9 +87,10 @@
 	function deDupIdenticalRcrds(recrdsAry) {		console.log("deDupIdenticalRcrds called. recrdsAry = %O", recrdsAry);
 	  var isDup = false, dupCount = 0, processed = [];
 
-		removeDups(recrdsAry);		 console.log("dupCount", dupCount);  console.log("cleanRecrds w no dups = %O", processed);
-		var cleanRecords = removeNullRcrds(processed);  //  console.log("cleanRecrds w no nulls = %O", cleanRecords);
-		conflictObj.duplicates = dupCount + (processed.length - cleanRecords.length);		console.log("%s duplicates", conflictObj.duplicates);
+		removeDups(recrdsAry);  console.log("cleanRecrds w no dups = %O", processed);
+		var cleanRecords = removeNullRcrds(processed);
+		updateConflctObj();
+			console.log("%s duplicates", conflictObj.duplicates);
 		return cleanRecords;
 	/*----------------Helper Functions for deDupIdenticalRcrds------------------------------------------------------------ */
 		/**
@@ -135,6 +147,15 @@
 			}
 			return isNull;
 		}
+
+		function updateConflctObj() {
+		conflictObj.duplicates.push({
+			recieved: recrdsAry.length,
+			removed: dupCount + (processed.length - cleanRecords.length),
+			returned: cleanRecords.length
+		});
+	}
+
 	}  /* End of deDupIdenticalRcrds */
 	/**
 	 * Checks whether two records contain identical data in every field.
@@ -158,13 +179,20 @@
 		return isDup;
 	}
 
-	function autoFillRecords(origRecrdsAry, unqField) {
+	function autoFillAndCollapseRecords(origRecrdsAry, unqField) {
 		var recrdsAry = clone(origRecrdsAry);
 		var candidates = {};
 
 		var noFillRecs = isolateCandidatesToFill(recrdsAry, unqField);      console.log("candidates = %O. noFillRecs = %O", candidates, noFillRecs); // console.log("noFillRecs = %O", noFillRecs);
 		var filledRecs = fillCandidatesIfAble();
 		var unqFilledRecs = deDupIdenticalRcrds(filledRecs);
+		var finalCnflctsAry = noFillRecs.concat(unqFilledRecs);
+
+		conflictObj.autoFillAndCollapse = {
+			recieved: origRecrdsAry.length,
+			filled: unqFilledRecs.length,
+			remaining: finalCnflctsAry.length
+		};
 
 		return noFillRecs.concat(unqFilledRecs);
 /*-----------------------------Helper Functions----------------------------------------------------------- */
@@ -183,7 +211,7 @@
 
 				processed.some(function(procesd) {							//		console.log("autoFillRecords processing. recrd[unqField] = %O procesd[unqField] = %O", recrd[unqField], procesd[unqField]);											// Loop through each record already processed
 					return findUnqKeyDups(recrd, procesd);
-				});								console.log("[2]candidate", candidate);
+				});
 				processed.push(recrd);
 				if (!candidate) {return true;}
 
@@ -258,7 +286,7 @@
 					}  console.log("noFill recrd = %O, procesd = %O", recrd, procesd);
 					return noFill;
 				}
-				function fillAndCollapse(rcrdOne, rcrdTwo, i) { console.log("fillAndCollapse. recrdOne = %O. recrdTwo = %O", rcrdOne, rcrdTwo);
+				function fillAndCollapse(rcrdOne, rcrdTwo, i) { //console.log("fillAndCollapse. recrdOne = %O. recrdTwo = %O", rcrdOne, rcrdTwo);
 					fillNulls(rcrdOne, rcrdTwo);
 					fillNulls(rcrdTwo, rcrdOne);
 					if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
@@ -274,7 +302,7 @@
 					candidates[key].forEach(function(recrd) {
 						allRecords.push(recrd);
 					});
-				}		console.log("allRecords", allRecords);
+				}		//console.log("allRecords", allRecords);
 				return allRecords;
 			}
 		} /* End fillCandidatesIfAble  */
@@ -299,7 +327,8 @@
 	 * @param {string} unqField  A key that should be unique in each record
 	 * @return {array}  Returns an array of conflicted record objects.
 	 */
-	function findConflicts(recrdsAry, unqField) { 							 console.log("findConflicts called. recrdsAry = %O", recrdsAry);
+	function findConflicts(origRecrdsAry, unqField) { 							 console.log("findConflicts called. recrdsAry = %O", origRecrdsAry);
+		var recrdsAry = clone(origRecrdsAry);
 		var conflicted = false;
 		var processed = [{}];
 		processed[0][unqField] = "";			// A stub init obj used for first round comparisons.
@@ -314,7 +343,12 @@
 			return conflicted;														// Conflicted records are added to the new conflicted records object.
 		});
 		processed.shift();								//Remove init obj
-		ein.parse.conflicts = conflictedRecrds.length;      		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
+		conflictObj.conflicts = {
+			recieved: origRecrdsAry.length,
+			rcrdsWithUniqueFields: processed.length,
+			conflicted: conflictedRecrds.length,
+			conflictedRcrds: conflictedRecrds
+		};        		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
 		return conflictedRecrds;
 	}		/* End of findConflicts */
 	/**
@@ -354,22 +388,6 @@
 	function csvObjShowWrapper(fSysId, text) {
 		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.execute);
 	}
-	/**
-	 * Container for the conflict detection execution stack leading to ui.show command
-	 */
-	function conflictStack(fSysId, csvObj) {
-		var extractedLocRecrds = extractLocCols(csvObj);
-		var conflictedRecrds = findConflicts(extractedLocRecrds, locCols[0]);
-		var deDupdRecrds = deDupIdenticalRcrds(conflictedRecrds);			console.log("%s conflicts to address", ein.parse.conflicts);
-		// var conflictedData = deDupRecrdsByField(deDupdRecrds, locCols[0]);
-		ein.ui.show(fSysId, JSON.stringify(deDupdRecrds, null, 2));
-	}
-	/**
-	 * ExtractCols specifically for location columns
-	 */
-	function extractLocCols(csvObj){  console.log("extractLocCols");
-		return extractCols(csvObj, locCols);
-	}
 
 	function clone(recrdsAry) {
 		if (recrdsAry instanceof Array) {
@@ -378,7 +396,6 @@
         copy[i] = recrdsAry[i];
       }
       var copyJSON = JSON.stringify(copy);
-      console.log("copy now = %O", JSON.parse(copyJSON));
       return JSON.parse(copyJSON);
     }
 	}
