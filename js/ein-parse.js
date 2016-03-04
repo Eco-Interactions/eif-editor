@@ -19,10 +19,10 @@
 	var conflictObj = {
 		entity: {},
 		extrctedCols: {},
+		duplicateResults: [],
 		rcrdsWithNullUnqKeyField: {},
-		duplicates: [],
-		autoFill: {},
-		conflicts: {}
+		autoFillResults: {},
+		conflicts: {},
 	};
 	/**
    * Parse API member on global namespace
@@ -130,8 +130,8 @@
 		}
 
 		function updateConflctObjWithDupResults() {
-			conflictObj.duplicates.push({
-				recieved: recrdsAry.length,
+			conflictObj.duplicateResults.push({
+				received: recrdsAry.length,
 				removed: dupCount,
 				returned: processed.length
 			});
@@ -222,9 +222,9 @@
 		return processedRcrds;
 
 		function updateConflctObjWithFillResults() {
-			conflictObj.autoFill = {
-				recieved: countRecrdsInObj(recrdsObj),
-			  filled: conflictObj.autoFill.filledRecsCnt,
+			conflictObj.autoFillResults = {
+				received: countRecrdsInObj(recrdsObj),
+			  filled: conflictObj.autoFillResults.filledRecsCnt,
 			  collapsed: calculateDiff(),
 			  remaining: countRecrdsInObj(processedRcrds)
 		  };
@@ -255,7 +255,7 @@
 		function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
 			var filledRecrdsObj = {};
 			var candidateArys = Object.keys(candidates);
-			conflictObj.autoFill.filledRecsCnt = 0;
+			conflictObj.autoFillResults.filledRecsCnt = 0;
 
 			candidateArys.forEach(function(key){
 				checkAndFill(key);
@@ -286,7 +286,7 @@
 					fillNulls(rcrdTwo, rcrdOne);
 					if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
 						noFill = false;
-						conflictObj.autoFill.filledRecsCnt += 2;
+						conflictObj.autoFillResults.filledRecsCnt += 2;
 					}
 					return noFill;
 				}

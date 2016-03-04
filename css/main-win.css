@@ -23,6 +23,7 @@ a.button {
     color: initial;
 }
 /* Core UI Styles */
+
 button {
 	height: 20px;
 	margin: 5px 0 0 5px;
@@ -65,10 +66,12 @@ button {
 #right-pane {
   flex-grow: 1;
   background: black;
+	height: 90vh;
 }
 #editor {
 	height: 100%;
 	width: 100%;
+	padding-bottom: 3em;
 }
 #sel-req-pane {
 	background-color: #0F0B54;
