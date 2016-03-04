@@ -44,9 +44,9 @@
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
 		var recrdObjsByUnqKey = restructureIntoRecordObj(deDupdRecrdsAry, unqField);
-		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("filledRecrds = %O", filledRecrds);
+		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("Records after Fill = %O", filledRecrds);
+		var conflictedRecords = hasConflicts(filledRecrds);
 
-		// var conflictedRecords = hasConflicts(filledRecrds, unqField);
 		ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
 
 		function addEntityInfoToResultsObj() {
@@ -66,10 +66,7 @@
 	 * @return {array}  An array of record objects with only the specified columns and their data.
 	 */
 	function extractCols(recrdsAry, columns) {					//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
-
-	  var extrctdObjs = recrdsAry.map(function(recrd){
-	  	return extract(columns, recrd);
-		});  																						console.log("Extracted object = %O", extrctdObjs);
+	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
 		conflictObj.extrctedCols = columns.length;
 		return extrctdObjs;
 	}
@@ -210,13 +207,10 @@
 	} /* End restructureIntoRecordObj */
 
 	function autoFillAndCollapseRecords(recrdsObj) {
-		var recordsRecieved = countRecrdsInObj(recrdsObj);  console.log("autoFillAndCollapseRecords recrods recieved ", recordsRecieved);
-		// var notFillCandidates = {};
-		var candidates = isolateCandidatesToFill(recrdsObj);      console.log("candidates = %O. ", candidates); // console.log("noFillRecs = %O", noFillRecs);
+		var recordsRecieved = countRecrdsInObj(recrdsObj);  												console.log("autoFillAndCollapseRecords recrods recieved ", recordsRecieved);
+		var candidates = isolateCandidatesToFill(recrdsObj);
 		candidates.cands = fillCandidatesIfAble(candidates.cands);
-
-		console.log("candidates after Fill = %O", candidates);
-		var processedRcrds = rebuildRecrdsObj(candidates);  console.log("processedRcrds = %O", processedRcrds);
+		var processedRcrds = rebuildRecrdsObj(candidates);
 		updateConflctObjWithFillResults();
 
 		return processedRcrds;
@@ -229,138 +223,136 @@
 			  remaining: countRecrdsInObj(processedRcrds)
 		  };
 		}
-		function countRecrdsInObj(obj) {
-			var ttlRecs = 0;
-			for (var key in obj) { ttlRecs += obj[key].length; }
-			return ttlRecs;
+	} /* End autoFillAndCollapseRecords */
+
+	function isolateCandidatesToFill(recrdsObj) {
+		var candsObj = {
+			cands: {},
+			nonCands: {}
+		};
+		for (var key in recrdsObj) { sortOutCandidates(key); }
+		return candsObj;
+
+		function sortOutCandidates(key) {
+			recrdsObj[key].length > 1 ? candsObj.cands[key] = recrdsObj[key] : candsObj.nonCands[key] = recrdsObj[key];
 		}
-		function calculateDiff() {
-			return countRecrdsInObj(recrdsObj) - countRecrdsInObj(processedRcrds);
+	} /* End isolateCandidatesForFill */
+	function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
+		var filledRecrdsObj = {};
+		var candidateArys = Object.keys(candidates);
+		conflictObj.autoFillResults.filledRecsCnt = 0;
+		forEachRecAry(candidateArys);
+		return filledRecrdsObj;
+
+		function forEachRecAry(candidateArys) {
+			candidateArys.forEach(function(key){
+			  checkAndFill(key);
+			  filledRecrdsObj[key] = deDupIdenticalRcrds(candidates[key]);
+		  });
+		}
+		function checkAndFill(key) {
+			var processed = [];
+			var noFill = true;
+			candidates[key].forEach(function(recrd){
+				processRecrd(recrd);
+			});
+			function processRecrd(recrd) {
+				noFill = true;
+				checkAlrdyProcessed(recrd);
+				processed.push(recrd);
+			}
+			function checkAlrdyProcessed(recrd) {
+				processed.every(function(procesd){ return fillIfNoConflictingData(recrd, procesd); });
+			}
+			function fillIfNoConflictingData(recrd, procesd) {
+				if (!isConflicted(recrd, procesd, key)) { return fillNullFields(recrd, procesd); }
+				return noFill;
+			}
+			function fillNullFields(rcrdOne, rcrdTwo) {
+				fillNulls(rcrdOne, rcrdTwo);
+				fillNulls(rcrdTwo, rcrdOne);
+				if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
+					noFill = false;					console.log("Records filled and are now duplicates");
+					conflictObj.autoFillResults.filledRecsCnt += 2;
+				}
+				return noFill;
+			}
+		} /* End checkAndFill */
+		function collapseDups(key) {
+			var deDupdAry = deDupIdenticalRcrds(candidates[key]);
+			return deDupdAry;
+		}
+	} /* End fillCandidatesIfAble  */
+	function fillNulls(trgtRcrd, srcRcrd) {
+		for (var key in trgtRcrd) {
+			if (trgtRcrd[key] === null) { trgtRcrd[key] = srcRcrd[key]; }
 		}
 	}
+	function rebuildRecrdsObj(candidates) {
+		var newObj = {};
+		for (var topKey in candidates) { combineRecrds(candidates[topKey]); }
+		return newObj;
 
-		function isolateCandidatesToFill(recrdsObj) {
-			var candsObj = {
-				cands: {},
-				nonCands: {}
-			};
-			for (var key in recrdsObj) { sortOutCandidates(key); }
-
-			return candsObj;
-
-			function sortOutCandidates(key) {
-				recrdsObj[key].length > 1 ? candsObj.cands[key] = recrdsObj[key] : candsObj.nonCands[key] = recrdsObj[key];
-			}
-		} /* End isolateCandidatesForFill */
-		function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
-			var filledRecrdsObj = {};
-			var candidateArys = Object.keys(candidates);
-			conflictObj.autoFillResults.filledRecsCnt = 0;
-
-			candidateArys.forEach(function(key){
-				checkAndFill(key);
-				filledRecrdsObj[key] = deDupIdenticalRcrds(candidates[key]);
-			});
-			return filledRecrdsObj;
-
-			function checkAndFill(key) {
-				var processed = [];
-				var noFill = true;
-				candidates[key].forEach(function(recrd){
-					processRecrd(recrd);
-				});
-				function processRecrd(recrd) {
-					noFill = true;
-					checkAlrdyProcessed(recrd);
-					processed.push(recrd);
-				}
-				function checkAlrdyProcessed(recrd) {
-					processed.every(function(procesd){ return fillIfNoConflictingData(recrd, procesd); });
-				}
-				function fillIfNoConflictingData(recrd, procesd) {
-					if (!isConflicted(recrd, procesd, key)) { return fillNullFields(recrd, procesd); }
-					return noFill;
-				}
-				function fillNullFields(rcrdOne, rcrdTwo) {
-					fillNulls(rcrdOne, rcrdTwo);
-					fillNulls(rcrdTwo, rcrdOne);
-					if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
-						noFill = false;
-						conflictObj.autoFillResults.filledRecsCnt += 2;
-					}
-					return noFill;
-				}
-			} /* End checkAndFill */
-
-			function collapseDups(key) {
-				var deDupdAry = deDupIdenticalRcrds(candidates[key]);
-				return deDupdAry;
-			}
-		} /* End fillCandidatesIfAble  */
-
-		function fillNulls(trgtRcrd, srcRcrd) {
-			for (var key in trgtRcrd) {
-				if (trgtRcrd[key] === null) { trgtRcrd[key] = srcRcrd[key]; }
-			}
+		function combineRecrds(recrdsObj) {
+			for (var aryKey in recrdsObj){ newObj[aryKey] = recrdsObj[aryKey]; }
 		}
-		function rebuildRecrdsObj(candidates) {
-			var newObj = {};
-			for (var topKey in candidates) { combineRecrds(candidates[topKey]); }
-
-			return newObj;
-
-			function combineRecrds(recrdsObj) {
-				for (var aryKey in recrdsObj){ newObj[aryKey] = recrdsObj[aryKey]; }
-			}
-		}
-
-
+	}
 	/**
 	 * This checks for conflicted data in a records object; Either because the unique field given is null,
 	 * or records with identical unique fields have conflicting data in other fields
 	 *
-	 * @param  {array} recrdsAry An array of record objects
+	 * @param  {array} recrdsObj
 	 * @param {string} unqField  A key that should be unique in each record
 	 * @return {array}  Returns an array of conflicted record objects.
 	 */
-	function hasConflicts(recrdsAry, unqField) { 							 console.log("hasConflicts called. recrdsAry = %O",recrdsAry);
-		// var recrdsAry = clone(origRecrdsAry);
+	function hasConflicts(recrdsObj) { 							 console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var conflicted = false;
-		var processed = {};
+		var processed = [];
+		var skippedConflicts = [];
+		var conflictedRecrds = checkEachRcrdAry();
+		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictObj.conflicts.conflictedCnt, conflictedRecrds);
+		return conflictedRecrds;
 
-		var conflictedRecrds = recrdsAry.forEach(function(recrd){					// For each record
-			conflicted = false;
-			// if (recrd[unqField] === null) { return hasNullUnqField(recrd); }
-			findConflicts(recrd);
-			// if (!conflicted) {processed.push(recrd);}
-			return conflicted;														// Conflicted records are added to the new conflicted records object.
-		});
-		// addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
-		return ;
-
-
-		function findConflicts(recrd) {
-			if (recrd[unqField] in processed) {
-			  processed[recrd[unqField]].some(function(procesd) {																	// Loop through each record already processed
-					conflicted = isConflicted(recrd, procesd, unqField);															// Returns true, and ends loop, if conflict is identified.
-					// conflicted ?
-					return conflicted;
-				});
-			} else {
-				processed[recrd[unqField]] = [];
-				processed[recrd[unqField]].push(recrd);
+		function checkEachRcrdAry() {
+			var conflictedObj = {};
+			for (var unqFieldAryKey in recrdsObj) {
+				processed = [];
+				skippedConflicts = [];
+				var hasConflicts = hasConflictedRcrds(recrdsObj[unqFieldAryKey], unqFieldAryKey);
+				if (hasConflicts.length > 0){
+					conflictedObj[unqFieldAryKey] = hasConflicts.concat(skippedConflicts);
+				}
 			}
+			return conflictedObj;
 		}
-
-		// function addConflictsToFeedbackObj() {
-		// 	conflictObj.conflicts = {
-		// 		recieved: recrdsAry.length,
-		// 		rcrdsWithUniqueFields: processed.length,
-		// 		conflicted: conflictedRecrds.length,
-		// 		conflictedRcrds: conflictedRecrds
-		// 	};
-		// }
-
+		function hasConflictedRcrds(recrdsAry, unqField) {
+			var conflictedRcrds = recrdsAry.filter(function(recrd){					// For each record
+				conflicted = false;
+				conflicted = findConflicts(recrd, unqField);
+				return conflicted;														// Conflicted records are added to the new conflicted records object.
+			});
+			return conflictedRcrds;
+		}
+		function findConflicts(recrd, unqField) {
+			processed.some(function(procesd){															// Loop through each record already processed
+				conflicted = checkForConflicts(recrd, procesd, conflicted);  console.log("conflicted = ", conflicted);
+				if (conflicted) {
+				  if (skippedConflicts.indexOf(procesd) === -1) { skippedConflicts.push(procesd); }
+				}
+				return conflicted;
+			});
+			if (conflicted) {
+				return true;
+			} else { processed.push(recrd); }
+		}
+		function addConflictsToFeedbackObj() {
+			conflictObj.conflicts = {
+				received: countRecrdsInObj(recrdsObj),
+				rcrdsWithUniqueFields: calculateDiff(recrdsObj, conflictedRecrds),
+				conflictedCnt: countRecrdsInObj(conflictedRecrds),
+				conflictedRcrds: conflictedRecrds
+			};
+		}
 	}		/* End of hasConflicts */
 	/**
 	 * Checks if unique fields are identical and, if so, calls {@link checkForConflicts}
@@ -372,26 +364,27 @@
 	function isConflicted(recrd, procesd, unqField) {
 		var conflicted = false;
 		if (recrd[unqField] === procesd[unqField]) {			// If the unique key values are identical
-			checkForConflicts(recrd, procesd);
+			conflicted = checkForConflicts(recrd, procesd, conflicted);
 		}
 		return conflicted;
-		/**
-		 * Takes two records with identical unique fields and checks for conflicts in remaining data fields.
-		 * If there are no conflicts, the records are identical and will be collapsed at a later point
-		 *
-		 * @param  {object}  recrd   Record currently being checked for conflicts
-		 * @param  {object}  procesd Previously processed record being checked against
-		 */
-		function checkForConflicts(recrd, procesd) {
-			for (var key in recrd) {																						// Loop through each key/value in the matching records
-				if (recrd[key] !== null && procesd[key] !== null) {				// If a value is unique,
-					if (recrd[key] !== procesd[key]) {
-						conflicted = true;																							// This is a conflicted record.
-						break;
-					}
+	}
+	/**
+	 * Takes two records with identical unique fields and checks for conflicts in remaining data fields.
+	 * If there are no conflicts, the records are identical and will be collapsed at a later point
+	 *
+	 * @param  {object}  recrd   Record currently being checked for conflicts
+	 * @param  {object}  procesd Previously processed record being checked against
+	 */
+	function checkForConflicts(recrd, procesd, conflicted) {
+		for (var key in recrd) {																						// Loop through each key/value in the matching records
+			if (recrd[key] !== null && procesd[key] !== null) {			//	console.log("checkForConflicts:  recrd[key]=%O procesd[key]=%O ",recrd[key] ,procesd[key]);
+				if (recrd[key] !== procesd[key]) {
+					conflicted = true;																							// This is a conflicted record.
+					break;
 				}
 			}
 		}
+		return conflicted;
 	}
 	/**
 	 * Wrapper to recieve and pass on raw csv file text from file system.
@@ -400,16 +393,15 @@
 		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.execute);
 	}
 
-	function clone(recrdsAry) {
-		if (recrdsAry instanceof Array) {
-      var copy = [];
-      for (var i = 0, len = recrdsAry.length; i < len; i++) {
-        copy[i] = recrdsAry[i];
-      }
-      var copyJSON = JSON.stringify(copy);
-      return JSON.parse(copyJSON);
-    }
+	function countRecrdsInObj(obj) {
+		var ttlRecs = 0;
+		for (var key in obj) { ttlRecs += obj[key].length; }
+		return ttlRecs;
 	}
+	function calculateDiff(obj1, obj2) {
+		return countRecrdsInObj(obj1) - countRecrdsInObj(obj2);
+	}
+
 
 /*----------------------------Not Yet In Use----------------------------------------------------------------------------------*/
 	/**
