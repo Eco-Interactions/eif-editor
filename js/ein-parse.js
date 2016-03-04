@@ -40,7 +40,7 @@
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
 		var filledRecrds = autoFillAndCollapseRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
-		var conflictedRecords = findConflicts(filledRecrds, unqField);
+		var conflictedRecords = hasConflicts(filledRecrds, unqField);
 		ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
 	}
 
@@ -52,8 +52,7 @@
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
 	 * @return {array}  An array of record objects with only the specified columns and their data.
 	 */
-	function extractCols(origRecrdsAry, columns) {						//console.log("extractCols called.");
-		var recrdsAry = clone(origRecrdsAry);
+	function extractCols(recrdsAry, columns) {						//console.log("extractCols called.");
 
 	  var extrctdObjs = recrdsAry.map(function(recrd){
 	  	return extract(columns, recrd);
@@ -85,13 +84,14 @@
 	 * @return {array}  					Returns an array of unique and non-null records.
 	 */
 	function deDupIdenticalRcrds(recrdsAry) {		console.log("deDupIdenticalRcrds called. recrdsAry = %O", recrdsAry);
-	  var isDup = false, dupCount = 0, processed = [];
+	  var isDup = false;
+	  var dupCount = 0;
+	  var processed = [];
 
 		removeDups(recrdsAry);  console.log("cleanRecrds w no dups = %O", processed);
-		var cleanRecords = removeNullRcrds(processed);
 		updateConflctObj();
 			console.log("%s duplicates", conflictObj.duplicates);
-		return cleanRecords;
+		return processed;
 	/*----------------Helper Functions for deDupIdenticalRcrds------------------------------------------------------------ */
 		/**
 		 * Each record is checked against every previously processed ({@link checkAgainstProcessed})
@@ -119,40 +119,40 @@
 			});
 			return isDup;
 		}
-		/**
-		 * Removes any record with only null or undefined values.
-		 *
-		 * @param  {array} processed Array of unique record objects.
-		 * @return {array}           Array of record objects with data in one or more fields.
-		 */
-		function removeNullRcrds(processed) {
-			var recrds = processed.filter(function(recrd){
-				if (!isNullRecrd(recrd)) { return true; } //else { console.log("Null Record to be removed = %O", recrd) }
-			});
-			return recrds;
-		}
-		/**
-		 * Checks every field in a record for nonNull values.
-		 *
-		 * @param  {object}  recrd   Record currently being checked for null fields
-		 * @return {boolean}         Returns true only if every field is null
-		 */
-		function isNullRecrd(recrd) {
-			var isNull = true;
-			for (key in recrd) {
-				if (recrd[key] !== null && recrd[key] !== undefined) {
-					isNull = false;  // console.log("not null or undefined field", recrd[key]);
-					break;
-				}
-			}
-			return isNull;
-		}
+		// /**
+		//  * Removes any record with only null or undefined values.
+		//  *
+		//  * @param  {array} processed Array of unique record objects.
+		//  * @return {array}           Array of record objects with data in one or more fields.
+		//  */
+		// function removeNullRcrds(processed) {
+		// 	var recrds = processed.filter(function(recrd){
+		// 		if (!isNullRecrd(recrd)) { return true; } //else { console.log("Null Record to be removed = %O", recrd) }
+		// 	});
+		// 	return recrds;
+		// }
+		// *
+		//  * Checks every field in a record for nonNull values.
+		//  *
+		//  * @param  {object}  recrd   Record currently being checked for null fields
+		//  * @return {boolean}         Returns true only if every field is null
+
+		// function isNullRecrd(recrd) {
+		// 	var isNull = true;
+		// 	for (key in recrd) {
+		// 		if (recrd[key] !== null && recrd[key] !== undefined) {
+		// 			isNull = false;  // console.log("not null or undefined field", recrd[key]);
+		// 			break;
+		// 		}
+		// 	}
+		// 	return isNull;
+		// }
 
 		function updateConflctObj() {
 		conflictObj.duplicates.push({
 			recieved: recrdsAry.length,
-			removed: dupCount + (processed.length - cleanRecords.length),
-			returned: cleanRecords.length
+			removed: dupCount,
+			returned: processed.length
 		});
 	}
 
@@ -179,8 +179,8 @@
 		return isDup;
 	}
 
-	function autoFillAndCollapseRecords(origRecrdsAry, unqField) {
-		var recrdsAry = clone(origRecrdsAry);
+	function autoFillAndCollapseRecords(recrdsAry, unqField) {
+		// var recrdsAry = clone(origRecrdsAry);
 		var candidates = {};
 
 		var noFillRecs = isolateCandidatesToFill(recrdsAry, unqField);      console.log("candidates = %O. noFillRecs = %O", candidates, noFillRecs); // console.log("noFillRecs = %O", noFillRecs);
@@ -189,7 +189,7 @@
 		var finalCnflctsAry = noFillRecs.concat(unqFilledRecs);
 
 		conflictObj.autoFill = {
-			recieved: origRecrdsAry.length,
+			recieved: recrdsAry.length,
 			filled: filledRecs.length,
 			collapsed: filledRecs.length - unqFilledRecs.length,
 			remaining: finalCnflctsAry.length
@@ -204,6 +204,8 @@
 			var potenlUnqFields = recrdsAry.filter(function(recrd){		//		console.log("New record = %O", recrd);		// For each record
 				return findCandidates(recrd);
 			});
+
+
 
 			return finalPassForNoFillRcrds();
 
@@ -328,30 +330,51 @@
 	 * @param {string} unqField  A key that should be unique in each record
 	 * @return {array}  Returns an array of conflicted record objects.
 	 */
-	function findConflicts(origRecrdsAry, unqField) { 							 console.log("findConflicts called. recrdsAry = %O", origRecrdsAry);
-		var recrdsAry = clone(origRecrdsAry);
+	function hasConflicts(recrdsAry, unqField) { 							 console.log("hasConflicts called. recrdsAry = %O",recrdsAry);
+		// var recrdsAry = clone(origRecrdsAry);
 		var conflicted = false;
-		var processed = [{}];
-		processed[0][unqField] = "";			// A stub init obj used for first round comparisons.
+		var processed = {};
+		var rcrdsWithNullUnqField = [];
 
 		var conflictedRecrds = recrdsAry.filter(function(recrd){					// For each record
 			conflicted = false;
-			if (recrd[unqField] === null) { return true; }										// If the unique field is null, this record is conflicted.
-			processed.some(function(procesd) {																	// Loop through each record already processed
-				return isConflicted(recrd, procesd, unqField);															// Returns true, and ends loop, if conflict is identified.
-			});
-			if (!conflicted) {processed.push(recrd);}
+			if (recrd[unqField] === null) { return hasNullUnqField(recrd); }
+			findConflicts(recrd);
+			// if (!conflicted) {processed.push(recrd);}
 			return conflicted;														// Conflicted records are added to the new conflicted records object.
 		});
-		processed.shift();								//Remove init obj
-		conflictObj.conflicts = {
-			recieved: origRecrdsAry.length,
-			rcrdsWithUniqueFields: processed.length,
-			conflicted: conflictedRecrds.length,
-			conflictedRcrds: conflictedRecrds
-		};        		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
+		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
 		return conflictedRecrds;
-	}		/* End of findConflicts */
+		/**
+		 * Adds a record to collection of records with null in their unique fields.
+		 */
+		function hasNullUnqField(recrd) {
+			rcrdsWithNullUnqField.push(recrd);
+		}
+		function findConflicts(recrd) {
+			if (recrd[unqField] in processed) {
+			  processed[recrd[unqField]].some(function(procesd) {																	// Loop through each record already processed
+					return isConflicted(recrd, procesd, unqField);															// Returns true, and ends loop, if conflict is identified.
+				});
+			} else {
+				processed[recrd[unqField]] = [];
+				processed[recrd[unqField]].push(recrd);
+			}
+		}
+function createKey(argument) {
+	// body...
+}
+
+		function addConflictsToFeedbackObj() {
+			conflictObj.conflicts = {
+				recieved: recrdsAry.length,
+				rcrdsWithUniqueFields: processed.length,
+				conflicted: conflictedRecrds.length,
+				conflictedRcrds: conflictedRecrds
+			};
+		}
+
+	}		/* End of hasConflicts */
 	/**
 	 * Checks if unique fields are identical and, if so, calls {@link checkForConflicts}
 	 *
