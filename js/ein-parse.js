@@ -16,6 +16,7 @@
 	 * @type {Object}
 	 */
 	var conflictObj = {
+		rcrdsWithNullUnqKeyField: {},
 		extrctedCols: {},
 		duplicates: [],
 		autoFill: {},
@@ -39,9 +40,11 @@
 
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
-		var filledRecrds = autoFillAndCollapseRecords(deDupdRecrdsAry, unqField); console.log("filledRecrds = %O", filledRecrds);
-		var conflictedRecords = hasConflicts(filledRecrds, unqField);
-		ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
+
+		var recrdObjsByUnqKey = restructureIntoRecordObj(deDupdRecrdsAry, unqField);
+		var filledRecrds = autoFillAndCollapseRecords(deDupdRecrdsAry); console.log("filledRecrds = %O", filledRecrds);
+		// var conflictedRecords = hasConflicts(filledRecrds, unqField);
+		ein.ui.show(fSysId, JSON.stringify(recrdObjsByUnqKey, null, 2));
 	}
 
 	/**
@@ -64,7 +67,7 @@
 		return extrctdObjs;
 	}
 	/**
-	 * Builds a new record from copied values of specified columns from an original record.
+	 * Builds a new record from copied values of specified columns from an original record.344
 	 *
 	 * @param  {array} columns  Array of columns/keys to copy to new object.
 	 * @param  {object}  recrd  Record to copy values from.
@@ -119,34 +122,6 @@
 			});
 			return isDup;
 		}
-		// /**
-		//  * Removes any record with only null or undefined values.
-		//  *
-		//  * @param  {array} processed Array of unique record objects.
-		//  * @return {array}           Array of record objects with data in one or more fields.
-		//  */
-		// function removeNullRcrds(processed) {
-		// 	var recrds = processed.filter(function(recrd){
-		// 		if (!isNullRecrd(recrd)) { return true; } //else { console.log("Null Record to be removed = %O", recrd) }
-		// 	});
-		// 	return recrds;
-		// }
-		// *
-		//  * Checks every field in a record for nonNull values.
-		//  *
-		//  * @param  {object}  recrd   Record currently being checked for null fields
-		//  * @return {boolean}         Returns true only if every field is null
-
-		// function isNullRecrd(recrd) {
-		// 	var isNull = true;
-		// 	for (key in recrd) {
-		// 		if (recrd[key] !== null && recrd[key] !== undefined) {
-		// 			isNull = false;  // console.log("not null or undefined field", recrd[key]);
-		// 			break;
-		// 		}
-		// 	}
-		// 	return isNull;
-		// }
 
 		function updateConflctObj() {
 		conflictObj.duplicates.push({
@@ -155,8 +130,50 @@
 			returned: processed.length
 		});
 	}
-
 	}  /* End of deDupIdenticalRcrds */
+
+
+
+		function restructureIntoRecordObj(recrdsAry, unqField) {
+			var rcrdsWithNullUnqField = [];
+			var recrdObjsByUnqKey = {};
+			recrdsAry.map(function(recrd){
+				ifHasUnqFieldValue(recrd, unqField);
+			});  console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);
+			console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
+			conflictObj.rcrdsWithNullUnqKeyField = {
+				recordCnt: rcrdsWithNullUnqField.length,
+				records: rcrdsWithNullUnqField
+			}
+			return recrdObjsByUnqKey;
+
+			function ifHasUnqFieldValue(recrd, unqField) {
+				if (!recrdWithNullUnqFld(recrd, unqField)){
+					sortIntoKeyedArrays(recrd, unqField);
+				}
+			}
+			function recrdWithNullUnqFld(recrd, unqField) {
+				if (recrd[unqField] === null){
+					rcrdsWithNullUnqField.push(recrd);
+					return true;
+				} else { return false; }
+			}
+			function sortIntoKeyedArrays(recrd, unqField) {
+				if (recrd[unqField] in recrdObjsByUnqKey) {
+					addModRecord(recrd, unqField);
+				} else {
+					recrdObjsByUnqKey[recrd[unqField]] = []; console.log("adding key = %s", recrd[unqField]);
+					addModRecord(recrd, unqField);
+				}
+			}
+			function addModRecord(recrd, unqField) {
+				var key = recrd[unqField];
+				delete recrd[unqField];
+				recrdObjsByUnqKey[key].push(recrd);
+			}
+		} /* End restructureIntoRecordObj */
+
+
 	/**
 	 * Checks whether two records contain identical data in every field.
 	 *
@@ -182,7 +199,6 @@
 	function autoFillAndCollapseRecords(recrdsAry, unqField) {
 		// var recrdsAry = clone(origRecrdsAry);
 		var candidates = {};
-
 		var noFillRecs = isolateCandidatesToFill(recrdsAry, unqField);      console.log("candidates = %O. noFillRecs = %O", candidates, noFillRecs); // console.log("noFillRecs = %O", noFillRecs);
 		var filledRecs = fillCandidatesIfAble();
 		var unqFilledRecs = deDupIdenticalRcrds(filledRecs);
@@ -197,6 +213,7 @@
 
 		return noFillRecs.concat(unqFilledRecs);
 /*-----------------------------Helper Functions----------------------------------------------------------- */
+
 		function isolateCandidatesToFill(recrdsAry, unqField) {
 			var processed = [];
 			processed.push(recrdsAry.pop());
@@ -286,7 +303,7 @@
 				function fillIfNoConflictingData(recrd, procesd, i) {
 					if (!isConflicted(recrd, procesd, unqField)) {
 						return fillAndCollapse(recrd, procesd, i);									//	console.log("AFTER FILL-------------------JSON.stringify(procesd) = ", JSON.stringify(procesd));console.log("-------------JSON.stringify(recrd) = ", JSON.stringify(recrd));
-					}  console.log("noFill recrd = %O, procesd = %O", recrd, procesd);
+					}  //console.log("noFill recrd = %O, procesd = %O", recrd, procesd);
 					return noFill;
 				}
 				function fillAndCollapse(rcrdOne, rcrdTwo, i) { //console.log("fillAndCollapse. recrdOne = %O. recrdTwo = %O", rcrdOne, rcrdTwo);
@@ -334,45 +351,39 @@
 		// var recrdsAry = clone(origRecrdsAry);
 		var conflicted = false;
 		var processed = {};
-		var rcrdsWithNullUnqField = [];
 
-		var conflictedRecrds = recrdsAry.filter(function(recrd){					// For each record
+		var conflictedRecrds = recrdsAry.forEach(function(recrd){					// For each record
 			conflicted = false;
-			if (recrd[unqField] === null) { return hasNullUnqField(recrd); }
+			// if (recrd[unqField] === null) { return hasNullUnqField(recrd); }
 			findConflicts(recrd);
 			// if (!conflicted) {processed.push(recrd);}
 			return conflicted;														// Conflicted records are added to the new conflicted records object.
 		});
-		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
-		return conflictedRecrds;
-		/**
-		 * Adds a record to collection of records with null in their unique fields.
-		 */
-		function hasNullUnqField(recrd) {
-			rcrdsWithNullUnqField.push(recrd);
-		}
+		// addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictedRecrds.length, conflictedRecrds);
+		return ;
+
+
 		function findConflicts(recrd) {
 			if (recrd[unqField] in processed) {
 			  processed[recrd[unqField]].some(function(procesd) {																	// Loop through each record already processed
-					return isConflicted(recrd, procesd, unqField);															// Returns true, and ends loop, if conflict is identified.
+					conflicted = isConflicted(recrd, procesd, unqField);															// Returns true, and ends loop, if conflict is identified.
+					// conflicted ?
+					return conflicted;
 				});
 			} else {
 				processed[recrd[unqField]] = [];
 				processed[recrd[unqField]].push(recrd);
 			}
 		}
-function createKey(argument) {
-	// body...
-}
 
-		function addConflictsToFeedbackObj() {
-			conflictObj.conflicts = {
-				recieved: recrdsAry.length,
-				rcrdsWithUniqueFields: processed.length,
-				conflicted: conflictedRecrds.length,
-				conflictedRcrds: conflictedRecrds
-			};
-		}
+		// function addConflictsToFeedbackObj() {
+		// 	conflictObj.conflicts = {
+		// 		recieved: recrdsAry.length,
+		// 		rcrdsWithUniqueFields: processed.length,
+		// 		conflicted: conflictedRecrds.length,
+		// 		conflictedRcrds: conflictedRecrds
+		// 	};
+		// }
 
 	}		/* End of hasConflicts */
 	/**
@@ -467,5 +478,33 @@ function createKey(argument) {
 	//
 	//
 	//
+		// /**
+		//  * Removes any record with only null or undefined values.
+		//  *
+		//  * @param  {array} processed Array of unique record objects.
+		//  * @return {array}           Array of record objects with data in one or more fields.
+		//  */
+		// function removeNullRcrds(processed) {
+		// 	var recrds = processed.filter(function(recrd){
+		// 		if (!isNullRecrd(recrd)) { return true; } //else { console.log("Null Record to be removed = %O", recrd) }
+		// 	});
+		// 	return recrds;
+		// }
+		// *
+		//  * Checks every field in a record for nonNull values.
+		//  *
+		//  * @param  {object}  recrd   Record currently being checked for null fields
+		//  * @return {boolean}         Returns true only if every field is null
+
+		// function isNullRecrd(recrd) {
+		// 	var isNull = true;
+		// 	for (key in recrd) {
+		// 		if (recrd[key] !== null && recrd[key] !== undefined) {
+		// 			isNull = false;  // console.log("not null or undefined field", recrd[key]);
+		// 			break;
+		// 		}
+		// 	}
+		// 	return isNull;
+		// }
 
 }());
