@@ -47,7 +47,9 @@
 		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("Records after Fill = %O", filledRecrds);
 		var conflictedRecords = hasConflicts(filledRecrds);
 
-		ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
+		ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
+
+		// ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
 
 		function addEntityInfoToResultsObj() {
 			conflictObj.entity ={
