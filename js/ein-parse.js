@@ -12,10 +12,7 @@
 			cols:	['LocationDescription', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabitatType']
 		}
 	}
-	/**
-	 * Object describing conflicts that arose during the parse process.
-	 * @type {Object}
-	 */
+	/* Object detailing results along the parse process. */
 	var conflictObj = {
 		entity: {},
 		extrctedCols: {},
@@ -24,22 +21,24 @@
 		autoFillResults: {},
 		conflicts: {},
 	};
-	/**
-   * Parse API member on global namespace
-   * @type {Object}
-   */
+	/* Parse API member on global namespace */
 	ein.parse = {
-		conflicts: 0,
 		csvObjWrapper: csvObjShowWrapper,
-		execute: validate
+		validateData: validate
 	}
-
-
+	/**
+	 * Attempts to remove duplicates, fill and collapse partial, non-conflicting records,
+	 * and identify records with conflicts that need to be addressed before importing the data.
+	 *
+   * @param {int}  fSysId        File sytem id for the original CSV file opened
+	 * @param  {obj} recrdsAry 		 An array of record objects
+	 * @param  {string} entityType The data for this entity will be extracted and validated
+	 */
 	function validate(fSysId, recrdsAry, entityType) {
 		var entityType = entityType || "location";
+		var unqField = entityCols[entityType].unqKey;
 		addEntityInfoToResultsObj();
 		var hdrs = entityCols[entityType].cols;
-		var unqField = entityCols[entityType].unqKey;
 
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
@@ -54,7 +53,7 @@
 		function addEntityInfoToResultsObj() {
 			conflictObj.entity ={
 				type: entityType,
-				uniqueField: entityCols[entityType].unqKey
+				uniqueField: unqField
 			};
 		}
 	}
@@ -392,7 +391,7 @@
 	 * Wrapper to recieve and pass on raw csv file text from file system.
 	 */
 	function csvObjShowWrapper(fSysId, text) {
-		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.execute);
+		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.validateData);
 	}
 
 	function countRecrdsInObj(obj) {
