@@ -43,8 +43,8 @@
 		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("Records after Fill = %O", filledRecrds);
 		var conflictedRecords = hasConflicts(filledRecrds);
 
-		// ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
 		ein.ui.show(fSysId, JSON.stringify(validateResultObj, null, 2));
+		ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
 		/**
 		 * Adds entity related data to the validation results.
 		 */
@@ -387,8 +387,8 @@
 	/**
 	 * Copies valid data from srcRcrd to any field in trgtRcrd with null as its value.
 	 *
-   * @param  {object}  trgtRcrd  Record identified as identical, excepting nulls, from srcRcrd.
-   * @param  {object}  srcRcrd   Record identified as identical, excepting nulls, from trgtRcrd.
+   * @param  {object}  trgtRcrd  Record identified as identical, excepting nulls, to srcRcrd.
+   * @param  {object}  srcRcrd   Record identified as identical, excepting nulls, to trgtRcrd.
 	 */
 	function fillNulls(trgtRcrd, srcRcrd) {
 		for (var key in trgtRcrd) {
