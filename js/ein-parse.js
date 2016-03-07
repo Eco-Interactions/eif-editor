@@ -1,6 +1,6 @@
 (function() {
 	"use strict";
-  /* Global App Namespace */
+    /* Global App Namespace */
 	var ein = ECO_INT_NAMESPACE;
 	/* Columns relevant to the each Entity */
 	var entityCols = {
@@ -44,7 +44,7 @@
 		var conflictedRecords = hasConflicts(filledRecrds);
 
 		ein.ui.show(fSysId, JSON.stringify(validateResultObj, null, 2));
-		ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
+		ein.fileSys.fileSaveAs(ein.editorTxtArea.value);
 		/**
 		 * Adds entity related data to the validation results.
 		 */
@@ -263,9 +263,9 @@
 		 */
 		function updateConflctObjWithFillResults() {
 			validateResultObj.autoFillResults = {
-				received: countRecrdsInObj(recrdsObj),
+			  received: countRecrdsInObj(recrdsObj),
 			  filled: validateResultObj.autoFillResults.filledRecsCnt,
-			  collapsed: calculateDiff(),
+			  collapsed: calculateDiff(countRecrdsInObj(recrdsObj), countRecrdsInObj(processedRcrds)),
 			  remaining: countRecrdsInObj(processedRcrds)
 		  };
 		}
