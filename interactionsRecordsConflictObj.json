@@ -6,9 +6,9 @@
   "extrctedCols": 8,
   "duplicateResults": [
     {
-      "received": 4804,
-      "removed": 4605,
-      "returned": 199
+      "received": 4904,
+      "removed": 4700,
+      "returned": 204
     },
     {
       "received": 2,
@@ -59,11 +59,6 @@
       "received": 2,
       "removed": 0,
       "returned": 2
-    },
-    {
-      "received": 2,
-      "removed": 1,
-      "returned": 1
     },
     {
       "received": 2,
@@ -77,7 +72,7 @@
     }
   ],
   "rcrdsWithNullUnqKeyField": {
-    "recordCnt": 80,
+    "recordCnt": 81,
     "records": [
       {
         "LocationDescription": null,
@@ -107,6 +102,16 @@
         "Long": null,
         "Region": null,
         "Country": "Cuba",
+        "HabitatType": null
+      },
+      {
+        "LocationDescription": null,
+        "Elev": null,
+        "ElevRangeMax": null,
+        "Lat": null,
+        "Long": null,
+        "Region": null,
+        "Country": "Brazil",
         "HabitatType": null
       },
       {
@@ -267,16 +272,6 @@
         "Long": null,
         "Region": null,
         "Country": "Mexico",
-        "HabitatType": null
-      },
-      {
-        "LocationDescription": null,
-        "Elev": null,
-        "ElevRangeMax": null,
-        "Lat": null,
-        "Long": null,
-        "Region": null,
-        "Country": "Brazil",
         "HabitatType": null
       },
       {
@@ -552,6 +547,26 @@
       {
         "LocationDescription": null,
         "Elev": null,
+        "ElevRangeMax": null,
+        "Lat": null,
+        "Long": null,
+        "Region": null,
+        "Country": "USA",
+        "HabitatType": null
+      },
+      {
+        "LocationDescription": null,
+        "Elev": null,
+        "ElevRangeMax": null,
+        "Lat": null,
+        "Long": null,
+        "Region": null,
+        "Country": "Argentina",
+        "HabitatType": null
+      },
+      {
+        "LocationDescription": null,
+        "Elev": null,
         "ElevRangeMax": 92,
         "Lat": null,
         "Long": null,
@@ -578,16 +593,6 @@
         "Region": null,
         "Country": "Argentina",
         "HabitatType": "Desert"
-      },
-      {
-        "LocationDescription": null,
-        "Elev": null,
-        "ElevRangeMax": null,
-        "Lat": null,
-        "Long": null,
-        "Region": null,
-        "Country": "Argentina",
-        "HabitatType": null
       },
       {
         "LocationDescription": null,
@@ -727,7 +732,7 @@
         "Long": "-43.5",
         "Region": null,
         "Country": "Brazil",
-        "HabitatType": "Forest"
+        "HabitatType": "Savanna"
       },
       {
         "LocationDescription": null,
@@ -882,14 +887,14 @@
     ]
   },
   "autoFillResults": {
-    "received": 119,
-    "filled": 20,
+    "received": 123,
+    "filled": 18,
     "collapsed": 0,
-    "remaining": 109
+    "remaining": 114
   },
   "conflicts": {
-    "received": 109,
-    "rcrdsWithUniqueFields": 99,
+    "received": 114,
+    "rcrdsWithUniqueFields": 104,
     "conflictedCnt": 10,
     "conflictedRcrds": {
       "Parque Nacional Santa Rosa": [
@@ -972,10 +977,10 @@
           "HabitatType": "Artificial Landscape"
         }
       ],
-      "Ubatuba, Sao Paulo": [
+      "Campinas, Sao Paulo": [
         {
-          "Elev": 0,
-          "ElevRangeMax": 10,
+          "Elev": null,
+          "ElevRangeMax": null,
           "Lat": null,
           "Long": null,
           "Region": null,
@@ -983,13 +988,13 @@
           "HabitatType": "Forest"
         },
         {
-          "Elev": 1,
+          "Elev": null,
           "ElevRangeMax": null,
-          "Lat": "-23.5",
-          "Long": "-45.11666667",
+          "Lat": null,
+          "Long": null,
           "Region": null,
           "Country": "Brazil",
-          "HabitatType": "Forest"
+          "HabitatType": "Artificial Landscape"
         }
       ]
     }
