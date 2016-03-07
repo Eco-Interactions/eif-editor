@@ -1,9 +1,6 @@
 (function() {
 	"use strict";
-  /*
-   * Global App Namespace
-   * @type {object}
-   */
+  /* Global App Namespace */
 	var ein = ECO_INT_NAMESPACE;
 	/* Columns relevant to the each Entity */
 	var entityCols = {
@@ -11,9 +8,9 @@
 			unqKey: "LocationDescription",
 			cols:	['LocationDescription', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabitatType']
 		}
-	}
+	};
 	/* Object detailing results along the parse process. */
-	var conflictObj = {
+	var validateResultObj = {
 		entity: {},
 		extrctedCols: {},
 		duplicateResults: [],
@@ -25,9 +22,9 @@
 	ein.parse = {
 		csvObjWrapper: csvObjShowWrapper,
 		validateData: validate
-	}
+	};
 	/**
-	 * Attempts to remove duplicates, fill and collapse partial, non-conflicting records,
+	 * Houses the call stack that will attempt to remove duplicates, collapse non-conflicting partial records,
 	 * and identify records with conflicts that need to be addressed before importing the data.
 	 *
    * @param {int}  fSysId        File sytem id for the original CSV file opened
@@ -39,40 +36,39 @@
 		var unqField = entityCols[entityType].unqKey;
 		addEntityInfoToResultsObj();
 		var hdrs = entityCols[entityType].cols;
-
+		/* Top calls to method chain heads */
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
 		var recrdObjsByUnqKey = restructureIntoRecordObj(deDupdRecrdsAry, unqField);
 		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("Records after Fill = %O", filledRecrds);
 		var conflictedRecords = hasConflicts(filledRecrds);
 
-		ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
-
-		// ein.ui.show(fSysId, JSON.stringify(conflictObj, null, 2));
-
+		// ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
+		ein.ui.show(fSysId, JSON.stringify(validateResultObj, null, 2));
+		/**
+		 * Adds entity related data to the validation results.
+		 */
 		function addEntityInfoToResultsObj() {
-			conflictObj.entity ={
+			validateResultObj.entity ={
 				type: entityType,
 				uniqueField: unqField
 			};
 		}
-	}
-
+	} /* End Validate */
 	/**
-	 * Takes an array of record objects, extracts specified columns/keys and values,
-	 * returning an array of record objects with that data.
+	 * Takes an array of record objects and extracts specified columns/keys and values.
 	 *
-	 * @param  {obj} recrdsAry An array of record objects
+	 * @param  {obj} recrdsAry  An array of record objects
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
-	 * @return {array}  An array of record objects with only the specified columns and their data.
+	 * @return {array}          An array of record objects with only the specified columns and their data.
 	 */
-	function extractCols(recrdsAry, columns) {					//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
+	function extractCols(recrdsAry, columns) {																																//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
 	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
-		conflictObj.extrctedCols = columns.length;
+		validateResultObj.extrctedCols = columns.length;
 		return extrctdObjs;
 	}
 	/**
-	 * Builds a new record from copied values of specified columns from an original record.344
+	 * Builds a new record from copied values of specified columns from an original record.
 	 *
 	 * @param  {array} columns  Array of columns/keys to copy to new object.
 	 * @param  {object}  recrd  Record to copy values from.
@@ -83,38 +79,34 @@
 		columns.forEach(function (col){ newRcrd[col] = recrd[col]; });
 		return newRcrd;
 	}
-
 	/**
 	 * Takes an array of record objects and returns a copy of the object with any exact duplicates,
-	 * and any entirely null or undefined records, removed.
+	 * and any entirely null records, removed.
 	 *
 	 * @param  {array} recrdsAry 	An array of record objects
-	 * @return {array}  					Returns an array of unique and non-null records.
+	 * @return {array}  					Returns an array of unique, and non-null, record objects.
 	 */
-	function deDupIdenticalRcrds(recrdsAry) {		console.log("deDupIdenticalRcrds called. recrdsAry = %O", recrdsAry);
-	  var isDup = false;
-	  var dupCount = 0;
-	  var processed = [];
+	function deDupIdenticalRcrds(recrdsAry) {																																	//	console.log("deDupIdenticalRcrds called. Original Records = %O", recrdsAry);
+	  var isDup = false, dupCount = 0, processed = [];
 
-		removeDups(recrdsAry); // console.log("cleanRecrds w no dups = %O", processed);
+		removeDups(recrdsAry);
 		updateConflctObjWithDupResults();      console.log("%s duplicates", dupCount);
 		return processed;
 	/*----------------Helper Functions for deDupIdenticalRcrds------------------------------------------------------------ */
 		/**
 		 * Each record is checked against every previously processed ({@link checkAgainstProcessed})
-		 * If unique, the record is added to the processed array. Otherwise it increments the duplicate count.
+		 * If unique, the record is added to the processed array; otherwise, it increments the duplicate count.
 		 *
 	 	 * @param  {array} recrdsAry 	An array of record objects
 		 */
 		function removeDups(recrdsAry) {
-			recrdsAry.forEach(function(recrd){ 											// For each record
-				isDup = checkAgainstProcessed(recrd);				// console.log("[2]isDup %s, recrd = %O", isDup, recrd);
-				isDup ? dupCount++ : processed.push(recrd);						  // If record is unique in any way, add to processed records.
+			recrdsAry.forEach(function(recrd){
+				isDup = checkAgainstProcessed(recrd);
+				isDup ? dupCount++ : processed.push(recrd);
 			});
 		}
 		/**
-		 * Checks a record against every previously processed record until an
-		 * exact duplicate is found.
+		 * Checks a record against every previously processed record for an exact duplicate record.
 		 *
 		 * @param  {object}  recrd   Record currently being checked for duplication
 		 * @return {boolean}       	 True if duplicate is found
@@ -126,31 +118,38 @@
 			});
 			return isDup;
 		}
-
+		/**
+		 * Adds data related to the duplication removal to the validation results.
+		 */
 		function updateConflctObjWithDupResults() {
-			conflictObj.duplicateResults.push({
+			validateResultObj.duplicateResults.push({
 				received: recrdsAry.length,
 				removed: dupCount,
 				returned: processed.length
 			});
 		}
-	}  /* End of deDupIdenticalRcrds */
+	} /* End of deDupIdenticalRcrds */
 	/**
-	 * Checks whether two records contain identical data in every field.
+	 * If first keys are identical, calls {@link checkEachKey }
 	 *
 	 * @param  {object}  recrd   Record currently being checked for uniqueness
 	 * @param  {object}  procesd Previously processed record being checked against
 	 * @return {boolean}         Returns true only if every field in both records are identical.
 	 */
-	function isDuplicate(recrdOne, recrdTwo) {//  console.log("recrds... 1 =%O, 2 = %O", recrdOne, recrdTwo);
-		var firstKey = Object.keys(recrdOne)[2];
-		var isDup = false;
-		if (recrdOne[firstKey] === recrdTwo[firstKey]) {			// If the first key values are identical
+	function isDuplicate(recrdOne, recrdTwo) {																														//  console.log("recrds... 1 =%O, 2 = %O", recrdOne, recrdTwo);
+		var firstKey = Object.keys(recrdOne)[2], isDup = false;
+
+		if (recrdOne[firstKey] === recrdTwo[firstKey]) {
 			isDup = true;
 			checkEachKey(recrdOne, recrdTwo);
 		}
 		return isDup;
-
+		/**
+	   * Checks whether two records contain identical data in every field.
+	   *
+	   * @param  {object} recrdOne   Record currently being checked for uniqueness
+		 * @param  {object} recrdTwo   Processed record being checked against
+		 */
 		function checkEachKey(recrdOne, recrdTwo) {
 			for (var key in recrdOne) {															// Loop through each key/value in the matching records
 				if (recrdOne[key] !== recrdTwo[key]) {								// If a value is unique this is not an exact duplicate
@@ -160,32 +159,60 @@
 			}
 		}
 	} /* End isDuplicate */
-
+	/**
+	 * Head of method chain that seperates records into an object of arrays grouped under their unique key field.
+	 *
+	 * @param  {array} recrdsAry 	An array of record objects
+	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
+	 * @return {object}           An object of arrays grouped under their unique key field.
+	 */
 	function restructureIntoRecordObj(recrdsAry, unqField) {
-		var rcrdsWithNullUnqField = [];
-		var recrdObjsByUnqKey = {};
+		var rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
 
 		sortRecords(recrdsAry);
 		updateConflctObjWithRestructureResults();
 		return recrdObjsByUnqKey;
-
+		/**
+		 * For each of the records, checks {@link ifHasUnqFieldValue }
+		 *
+	   * @param  {array} recrdsAry 	An array of record objects
+		 */
 		function sortRecords(recrdsAry) {
-			recrdsAry.map(function(recrd){
+			recrdsAry.forEach(function(recrd){
 				ifHasUnqFieldValue(recrd, unqField);
-			});  console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);
-			console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
+			});  							console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);        console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
 		}
+		/**
+		 * Check if {@link recrdWithNullUnqFld } and, if unqField has a value,
+		 * adds this record to that key's array.
+		 *
+		 * @param  {object}  recrd   Record currently being sorted
+	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
+		 */
 		function ifHasUnqFieldValue(recrd, unqField) {
 			if (!recrdWithNullUnqFld(recrd, unqField)){
 				sortIntoKeyedArrays(recrd, unqField);
 			}
 		}
+		/**
+		 * Checks if the unique field is null and, if so, adds record to the null records array.
+		 *
+		 * @param  {object}  recrd    Record currently being sorted
+	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
+		 * @return {boolean}          Returns true if unique field is null
+		 */
 		function recrdWithNullUnqFld(recrd, unqField) {
 			if (recrd[unqField] === null){
 				rcrdsWithNullUnqField.push(recrd);
 				return true;
 			} else { return false; }
 		}
+		/**
+		 * Checks if unique field value exists as key in new record object, adds it if not, and adds the record to that array.
+		 *
+		 * @param  {object}  recrd    Record currently being sorted
+	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
+		 */
 		function sortIntoKeyedArrays(recrd, unqField) {
 			if (recrd[unqField] in recrdObjsByUnqKey) {
 				addModRecord(recrd, unqField);
@@ -194,19 +221,34 @@
 				addModRecord(recrd, unqField);
 			}
 		}
+		/**
+		 * Deletes the unqKey field from record and adds it to array for that unique key
+		 *
+		 * @param  {object}  recrd    Record currently being sorted
+	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
+		 */
 		function addModRecord(recrd, unqField) {
 			var unqKey = recrd[unqField];
 			delete recrd[unqField];
 			recrdObjsByUnqKey[unqKey].push(recrd);
 		}
+		/**
+		 * Adds data related to restructuring the object to the validation results.
+		 */
 		function updateConflctObjWithRestructureResults() {
-			conflictObj.rcrdsWithNullUnqKeyField = {
+			validateResultObj.rcrdsWithNullUnqKeyField = {
 				recordCnt: rcrdsWithNullUnqField.length,
 				records: rcrdsWithNullUnqField
 			};
 		}
 	} /* End restructureIntoRecordObj */
-
+	/**
+	 * Head of method chain resulting in records that share unqKey values, and also have no conflicting data,
+	 * being bi-directionally filled and any thus duplicate records removed.
+	 *
+	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
+	 * @return {object}           An object with any records applicable filled and collapsed
+	 */
 	function autoFillAndCollapseRecords(recrdsObj) {
 		var recordsRecieved = countRecrdsInObj(recrdsObj);  												console.log("autoFillAndCollapseRecords recrods recieved ", recordsRecieved);
 		var candidates = isolateCandidatesToFill(recrdsObj);
@@ -216,16 +258,24 @@
 
 		return processedRcrds;
 
+		/**
+		 * Adds data related to autoFill and collapse to the validation results.
+		 */
 		function updateConflctObjWithFillResults() {
-			conflictObj.autoFillResults = {
+			validateResultObj.autoFillResults = {
 				received: countRecrdsInObj(recrdsObj),
-			  filled: conflictObj.autoFillResults.filledRecsCnt,
+			  filled: validateResultObj.autoFillResults.filledRecsCnt,
 			  collapsed: calculateDiff(),
 			  remaining: countRecrdsInObj(processedRcrds)
 		  };
 		}
 	} /* End autoFillAndCollapseRecords */
-
+	/**
+	 * For each of the record arrays grouped by shared unique key value,
+	 *
+	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
+	 * @return {object}           Object with two keyed arrays: fill candidates and non-candidates
+	 */
 	function isolateCandidatesToFill(recrdsObj) {
 		var candsObj = {
 			cands: {},
@@ -233,62 +283,124 @@
 		};
 		for (var key in recrdsObj) { sortOutCandidates(key); }
 		return candsObj;
-
+		/**
+		 * If array has more than one record it is added to the candidates for fill array, added to the non-candidates otherwise.
+		 *
+		 * @param  {string} key Key for an array of record objects
+		 */
 		function sortOutCandidates(key) {
 			recrdsObj[key].length > 1 ? candsObj.cands[key] = recrdsObj[key] : candsObj.nonCands[key] = recrdsObj[key];
 		}
 	} /* End isolateCandidatesForFill */
+	/**
+	 * Head of method chain that will check each collection of records {@link forEachRecAry} grouped by unique key for conflicting data
+	 * If no conflicts, the records are mutually filled and resulting duplicates removed.
+	 *
+	 * @param  {object} candidates  Object with arrays of records with fill potential.
+	 * @return {object}							Record object with any records, that could be, filled and collapsed.
+	 */
 	function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
 		var filledRecrdsObj = {};
-		var candidateArys = Object.keys(candidates);
-		conflictObj.autoFillResults.filledRecsCnt = 0;
-		forEachRecAry(candidateArys);
-		return filledRecrdsObj;
+		validateResultObj.autoFillResults.filledRecsCnt = 0;
+		var candidateAryKeys = Object.keys(candidates);
 
-		function forEachRecAry(candidateArys) {
-			candidateArys.forEach(function(key){
+		forEachRecAry(candidateAryKeys);
+		return filledRecrdsObj;
+		/**
+		 * For each array of records, calls {@link checkAndFill }. After any records that can be are filled,
+		 * removes resulting duplicate records {@link deDupIdenticalRecords }
+		 *
+		 * @param  {array} candidateAryKeys  Array of top keys for sorted record arrays
+		 */
+		function forEachRecAry(candidateAryKeys) {
+			candidateAryKeys.forEach(function(key){
 			  checkAndFill(key);
 			  filledRecrdsObj[key] = deDupIdenticalRcrds(candidates[key]);
 		  });
 		}
+		/**
+		 * For each record in the array, {@link processRecrd } for fill potential
+		 *
+		 * @param  {string} key  unqField value share by all record in the array.
+		 */
 		function checkAndFill(key) {
-			var processed = [];
-			var noFill = true;
+			var processed = [], noFill = true;
+
 			candidates[key].forEach(function(recrd){
 				processRecrd(recrd);
 			});
+			/**
+			 * Calls {@link checkAlrdyProcessed }, which fills if able, and adds record to those already processed.
+			 *
+		   * @param  {object}  recrd  Record currently being checked for fill potential.
+			 */
 			function processRecrd(recrd) {
 				noFill = true;
 				checkAlrdyProcessed(recrd);
 				processed.push(recrd);
 			}
+			/**
+			 * Fo every record already processed, calls {@link fillIfNoConflictingData }.
+			 *
+		   * @param  {object}  recrd  Record currently being checked for fill potential.
+			 */
 			function checkAlrdyProcessed(recrd) {
 				processed.every(function(procesd){ return fillIfNoConflictingData(recrd, procesd); });
 			}
+			/**
+			 * If records have no conflicting data, calls {@link fillNullFields } for both records.
+			 *
+		   * @param  {object}  recrd    Record currently being checked for fill potential.
+		   * @param  {object}  procesd  Record currently being checked against for fill potential.
+			 * @return {boolean}          Returns true if record has unique data, and thus was not able to be filled.
+			 */
 			function fillIfNoConflictingData(recrd, procesd) {
 				if (!isConflicted(recrd, procesd, key)) { return fillNullFields(recrd, procesd); }
 				return noFill;
 			}
+			/**
+			 * Calls {@link fillNulls } on both records and checks to ensure records are identical after fill.
+			 *
+		   * @param  {object}  rcrdOne  Record identified as identical, excepting nulls, from recordTwo.
+		   * @param  {object}  rcrdTwo  Record identified as identical, excepting nulls, from recordOne.
+			 */
 			function fillNullFields(rcrdOne, rcrdTwo) {
 				fillNulls(rcrdOne, rcrdTwo);
 				fillNulls(rcrdTwo, rcrdOne);
 				if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
-					noFill = false;					console.log("Records filled and are now duplicates");
-					conflictObj.autoFillResults.filledRecsCnt += 2;
+					noFill = false;																																					console.log("Records filled and are now duplicates");
+					validateResultObj.autoFillResults.filledRecsCnt += 2;
 				}
-				return noFill;
 			}
 		} /* End checkAndFill */
+		/**
+		 * Calls {@link deDupIdenticalRcrds } for array after records that could be filled were.
+		 *
+		 * @param  {string} key  unqField value share by all record in the array.
+		 * @return {array}       Array of unique records
+		 */
 		function collapseDups(key) {
 			var deDupdAry = deDupIdenticalRcrds(candidates[key]);
 			return deDupdAry;
 		}
 	} /* End fillCandidatesIfAble  */
+	/**
+	 * Copies valid data from srcRcrd to any field in trgtRcrd with null as its value.
+	 *
+   * @param  {object}  trgtRcrd  Record identified as identical, excepting nulls, from srcRcrd.
+   * @param  {object}  srcRcrd   Record identified as identical, excepting nulls, from trgtRcrd.
+	 */
 	function fillNulls(trgtRcrd, srcRcrd) {
 		for (var key in trgtRcrd) {
 			if (trgtRcrd[key] === null) { trgtRcrd[key] = srcRcrd[key]; }
 		}
 	}
+	/**
+	 * Recombine all records into one object sorted by unqKey.
+	 *
+	 * @param  {object} candidates Object sorrted by candidates and non-cnadidates for fill
+	 * @return {object}            One object with remaining records in arrays sorted by unqKey.
+	 */
 	function rebuildRecrdsObj(candidates) {
 		var newObj = {};
 		for (var topKey in candidates) { combineRecrds(candidates[topKey]); }
@@ -299,26 +411,28 @@
 		}
 	}
 	/**
-	 * This checks for conflicted data in a records object; Either because the unique field given is null,
-	 * or records with identical unique fields have conflicting data in other fields
+	 * Checks for records with identical unique fields and conflicting data in other fields.
+	 * Returns an object representing these conflicting records.
 	 *
-	 * @param  {array} recrdsObj
-	 * @param {string} unqField  A key that should be unique in each record
-	 * @return {array}  Returns an array of conflicted record objects.
+	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
+	 * @param {string} unqField   A key that should be unique in each record
+	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
 	function hasConflicts(recrdsObj) { 							 console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var conflicted = false;
 		var processed = [];
 		var skippedConflicts = [];
 		var conflictedRecrds = checkEachRcrdAry();
-		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", conflictObj.conflicts.conflictedCnt, conflictedRecrds);
+		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", validateResultObj.conflicts.conflictedCnt, conflictedRecrds);
 		return conflictedRecrds;
-
+		/**
+		 * [checkEachRcrdAry description]
+		 * @return {[type]} [description]
+		 */
 		function checkEachRcrdAry() {
 			var conflictedObj = {};
 			for (var unqFieldAryKey in recrdsObj) {
-				processed = [];
-				skippedConflicts = [];
+				processed = [], skippedConflicts = [];
 				var hasConflicts = hasConflictedRcrds(recrdsObj[unqFieldAryKey], unqFieldAryKey);
 				if (hasConflicts.length > 0){
 					conflictedObj[unqFieldAryKey] = hasConflicts.concat(skippedConflicts);
@@ -347,7 +461,7 @@
 			} else { processed.push(recrd); }
 		}
 		function addConflictsToFeedbackObj() {
-			conflictObj.conflicts = {
+			validateResultObj.conflicts = {
 				received: countRecrdsInObj(recrdsObj),
 				rcrdsWithUniqueFields: calculateDiff(recrdsObj, conflictedRecrds),
 				conflictedCnt: countRecrdsInObj(conflictedRecrds),
