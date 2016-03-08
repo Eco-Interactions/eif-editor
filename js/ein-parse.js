@@ -5,8 +5,8 @@
 	/* Columns relevant to the each Entity */
 	var entityCols = {
 		location: {
-			unqKey: "LocationDescription",
-			cols:	['LocationDescription', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabitatType']
+			unqKey: 'LocDesc',
+			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType']
 		}
 	};
 	/* Object detailing results along the parse process. */
@@ -367,7 +367,7 @@
 				fillNulls(rcrdOne, rcrdTwo);
 				fillNulls(rcrdTwo, rcrdOne);
 				if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
-					noFill = false;																																					console.log("Records filled and are now duplicates");
+					noFill = false;
 					validateResultObj.autoFillResults.filledRecsCnt += 2;
 				}
 			}
@@ -470,7 +470,7 @@
 		function findConflicts(recrd, unqField) {
 			processed.some(function(procesd){															// Loop through each record already processed
 				conflicted = checkForConflicts(recrd, procesd, conflicted);  console.log("conflicted = ", conflicted);
-				ifConflictedGrabThisProcesdRcrd();
+				ifConflictedGrabThisProcesdRcrd(procesd);
 				return conflicted;
 			});
 			if (conflicted) {
@@ -479,7 +479,7 @@
 			/**
 			 * If a conflict was found with this pair of records, add the previously processed record to its conflict collection.
 			 */
-			function ifConflictedGrabThisProcesdRcrd() {
+			function ifConflictedGrabThisProcesdRcrd(procesd) {
 				if (conflicted) {
 				  if (postProcessConflicted.indexOf(procesd) === -1) { postProcessConflicted.push(procesd); }
 				}

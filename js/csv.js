@@ -4,22 +4,39 @@
    * @type {object}
    */
   var ein = ECO_INT_NAMESPACE;
-
-  /*
-   * RegEx strings to be used for comparassion methods.
-   * @type {RegExp}
-   */
+  /* RegEx strings to be used for comparassion methods. */
   var rxIsInt = /^\d+$/;
   var rxIsFloat = /^\d*\.\d+$|^\d+\.\d*$/;
-      // If a string has leading or trailing space,
-      // contains a comma double quote or a newline
-      // it needs to be quoted in CSV output
-  var rxNeedsQuoting = /^\s|\s$|,|"|\n/;
-
-  /**
-   * CSV API member on global namespace
-   * @type {Object}
-   */
+  var rxNeedsQuoting = /^\s|\s$|,|"|\n/;    // If a string has leading or trailing space, contains a comma double quote or a newline, it needs to be quoted in CSV output
+  /* Dictionary for standardized headers that should eventually become its own file when any more top keys are added */
+  var hdrDict = {
+    interactions: {
+      "Primary or Secondary interaction": "Directness",
+      "Citation Number": "CitID",
+      "Citation Short Description": "CitShortDesc",
+      "Region": "Region",
+      "Location Description": "LocDesc",
+      "Country": "Country",
+      "Habitat Type": "HabType",
+      "Lat.": "Lat",
+      "Long.": "Long",
+      "Elev. (or Range Min)": "Elev",
+      "Elev. Range Max": "ElevRangeMax",
+      "Interaction Type": "IntType",
+      "Interaction Tags": "IntTag",
+      "Subject Order": "SubOrder",
+      "Bat Family": "SubFam",
+      "Bat Genus": "SubGenus",
+      "Bat Species": "SubSpecies",
+      "Plant/Arthropod": "ObjKingdom",
+      "Object Class": "ObjClass",
+      "Object Order": "ObjOrder",
+      "Object Family": "ObjFamily",
+      "Object Genus": "ObjGenus",
+      "Object Species": "ObjSpecies"
+    }
+  };
+  /*  CSV API member on global namespace */
   ein.csvHlpr = {
     csvToObject: objectifyCSV,
   };
@@ -29,15 +46,15 @@
    * Each row in the CSV becomes an object with properties properties after each column.
    * Empty fields are converted to nulls and non-quoted numbers are converted to integers or floats.
    *
-   * @param {int}  fSysId  file sytem id for the original file opened
-   * @param {String}  s  The string containing CSV data to convert
-   * @callback {function}  callback  Recieves the file dystem id and the objectified CSV
-   * @return {Array}  The CSV parsed as an array of objects with column headers as keys for field data
+   * @param {int}  fSysId    file sytem id for the original file opened
+   * @param {String}  s      The string containing CSV data to convert
+   * @callback {func}  callback  Recieves the file dystem id and the objectified CSV
+   * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
   function objectifyCSV(fSysId, s, callback) {
 
     var csvArray = csvToArray(s);         // The CSV parsed as a two-dimensional array
-    var keys = csvArray.shift();          // Seperates first row of headers to be used as keys for field data
+    var keys = standardizeHeaders(csvArray.shift());     // Seperates first row of headers to be used as keys for field data
 
     /*
      * Converts a two-dimensional CSV array into an Array of Objects with headers as keys
@@ -171,6 +188,11 @@
       }
     };
   };    // End of csvToArray
-
+  function standardizeHeaders(hdrArray) {
+    var newHdrs = hdrArray.map(function(hdr){
+      return hdrDict.interactions[hdr];
+    });  console.log("newHdrs = %O", newHdrs);
+    return newHdrs;
+  }
 
 }());
