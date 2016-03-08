@@ -44,7 +44,6 @@
 		var conflictedRecords = hasConflicts(filledRecrds);
 
 		ein.ui.show(fSysId, JSON.stringify(validateResultObj, null, 2));
-		ein.fileSys.fileSaveAs(ein.editorTxtArea.value);
 		/**
 		 * Adds entity related data to the validation results.
 		 */
@@ -374,7 +373,7 @@
 			}
 		} /* End checkAndFill */
 		/**
-		 * Calls {@link deDupIdenticalRcrds } for array after records that could be filled were.
+		 * Calls {@link deDupIdenticalRcrds } on the candidate array after records that could be filled were.
 		 *
 		 * @param  {string} key  unqField value share by all record in the array.
 		 * @return {array}       Array of unique records
@@ -398,8 +397,8 @@
 	/**
 	 * Recombine all records into one object sorted by unqKey.
 	 *
-	 * @param  {object} candidates Object sorrted by candidates and non-cnadidates for fill
-	 * @return {object}            One object with remaining records in arrays sorted by unqKey.
+	 * @param  {object} candidates Object sorted by candidates and non-cnadidates for fill
+	 * @return {object}            Object with all remaining records in arrays sorted by unqKey.
 	 */
 	function rebuildRecrdsObj(candidates) {
 		var newObj = {};
@@ -415,51 +414,80 @@
 	 * Returns an object representing these conflicting records.
 	 *
 	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
-	 * @param {string} unqField   A key that should be unique in each record
+	 * @param  {string} unqField  A key that should be unique in each record
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
-	function hasConflicts(recrdsObj) { 							 console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
-		var conflicted = false;
-		var processed = [];
-		var skippedConflicts = [];
+	function hasConflicts(recrdsObj) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
+		var conflicted = false, processed = [], postProcessConflicted = [];
 		var conflictedRecrds = checkEachRcrdAry();
-		addConflictsToFeedbackObj(); 		console.log("%s conflicts = %O", validateResultObj.conflicts.conflictedCnt, conflictedRecrds);
+		addConflictsToFeedbackObj(); 																				console.log("%s conflicts = %O", validateResultObj.conflicts.conflictedCnt, conflictedRecrds);
 		return conflictedRecrds;
 		/**
-		 * [checkEachRcrdAry description]
-		 * @return {[type]} [description]
+		 * For each record array, calls {@link hasConflictedRcrds } then {@link joinConflicted }
+		 *
+		 * @return {object}       Returns an object with shared unqFields as top keys for conflicting record object arrays.
 		 */
 		function checkEachRcrdAry() {
 			var conflictedObj = {};
 			for (var unqFieldAryKey in recrdsObj) {
-				processed = [], skippedConflicts = [];
+				processed = [], postProcessConflicted = [];
 				var hasConflicts = hasConflictedRcrds(recrdsObj[unqFieldAryKey], unqFieldAryKey);
-				if (hasConflicts.length > 0){
-					conflictedObj[unqFieldAryKey] = hasConflicts.concat(skippedConflicts);
-				}
+				joinConflicted();
 			}
 			return conflictedObj;
+			/**
+			 * If there are conflicted records, join the collected conflict records
+			 * with the records passed during first round processing.
+			 */
+			function joinConflicted() {
+				if (hasConflicts.length > 0){
+					conflictedObj[unqFieldAryKey] = hasConflicts.concat(postProcessConflicted);
+				}
+			}
 		}
+		/**
+		 * Filter out and return the records with conflicts in their data. {@link findConflicts }
+		 *
+		 * @param  {array} recrdsAry  An array of records sharing the same unqKey value.
+		 * @param  {string} unqField  A key that should be unique in each record
+		 * @return {array}            Returns an array of records with confirmed conflicts with records previously processed.
+		 */
 		function hasConflictedRcrds(recrdsAry, unqField) {
-			var conflictedRcrds = recrdsAry.filter(function(recrd){					// For each record
+			var conflictedRcrds = recrdsAry.filter(function(recrd){
 				conflicted = false;
 				conflicted = findConflicts(recrd, unqField);
-				return conflicted;														// Conflicted records are added to the new conflicted records object.
+				return conflicted;
 			});
 			return conflictedRcrds;
 		}
+		/**
+		 * Check each record already processed for conflicts with the record being processed, {@link @checkForConflicts }.
+		 *
+		 * @param  {object}  recrd    Record currently being checked for conflicts
+		 * @param  {string} unqField  A key that should be unique in each record
+		 * @return {boolean}          Returns True if a conflict is found
+		 */
 		function findConflicts(recrd, unqField) {
 			processed.some(function(procesd){															// Loop through each record already processed
 				conflicted = checkForConflicts(recrd, procesd, conflicted);  console.log("conflicted = ", conflicted);
-				if (conflicted) {
-				  if (skippedConflicts.indexOf(procesd) === -1) { skippedConflicts.push(procesd); }
-				}
+				ifConflictedGrabThisProcesdRcrd();
 				return conflicted;
 			});
 			if (conflicted) {
 				return true;
 			} else { processed.push(recrd); }
+			/**
+			 * If a conflict was found with this pair of records, add the previously processed record to its conflict collection.
+			 */
+			function ifConflictedGrabThisProcesdRcrd() {
+				if (conflicted) {
+				  if (postProcessConflicted.indexOf(procesd) === -1) { postProcessConflicted.push(procesd); }
+				}
+			}
 		}
+		/**
+		 * Adds data related to any conflicts found to the validation results.
+		 */
 		function addConflictsToFeedbackObj() {
 			validateResultObj.conflicts = {
 				received: countRecrdsInObj(recrdsObj),
@@ -507,18 +535,31 @@
 	function csvObjShowWrapper(fSysId, text) {
 		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.validateData);
 	}
-
+	/**
+	 * Counts the number of records in an object of keyed arrays.
+	 *
+	 * @param  {object}  obj Object of keyed arrays.
+	 * @return {int}     Number of records in the object.
+	 */
 	function countRecrdsInObj(obj) {
 		var ttlRecs = 0;
 		for (var key in obj) { ttlRecs += obj[key].length; }
 		return ttlRecs;
 	}
+	/**
+	 * Calculates the difference of record objects of keyed arrays.
+	 *
+	 * @param  {object}  obj1  Object of keyed arrays.
+	 * @param  {object}  obj2  Object of keyed arrays.
+	 * @return {int}           The difference of records between the objects.
+	 */
 	function calculateDiff(obj1, obj2) {
+		console.log("calculateDiff")
 		return countRecrdsInObj(obj1) - countRecrdsInObj(obj2);
 	}
 
 
-/*----------------------------Not Yet In Use----------------------------------------------------------------------------------*/
+/*----------------------------Not In Use----------------------------------------------------------------------------------*/
 	/**
 	 * Checks that each record has a unique value in the specified unique field. If not, the record is flagged for
 	 * duplicated, and potentially conflicting, data.
