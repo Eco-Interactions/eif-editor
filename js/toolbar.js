@@ -83,10 +83,25 @@
     function collapseIdentLocs(resultObj) {
       result.unqField = resultObj.extractCols.unqField;
       result.extractdCols = resultObj.extractCols.extrctedCols;
-      ein.parse.deDupIdenticalRcrds(resultObj.extractCols.content, restructureRecrdObjs);
+      ein.parse.deDupIdenticalRcrds(resultObj.content, restructureLocRecords);
     }
-    function restructureRecrdObjs(resultObj) {
-      result.identRecrds = resultObj.duplicateResults;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+    function restructureLocRecords(resultObj) {
+      result.identRecrds = resultObj.duplicateResults;
+      var recrdsAry = resultObj.content;
+      ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillLocs);
+    }
+    function autoFillLocs(resultObj) {
+      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+      ein.parse.autoFill(resultObj.content, validateLocRecs);
+    }
+    function validateLocRecs(resultObj) {     console.log("resultObj = %O.", resultObj);
+      result.autoFillResults = resultObj.autoFillResults;
+      ein.parse.findConflicts(resultObj.content, showResultObj)
+    }
+    function showResultObj(resultObj) {
+      result.conflicts = resultObj.conflicts;
+      result.conflictedRecrds = resultObj.content;  console.log("result = %O", result);
+      ein.ui.show(fSysId, JSON.stringify(result,null,2));
     }
   }
 
