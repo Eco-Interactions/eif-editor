@@ -62,7 +62,7 @@
      * @param  {Object} row   An array of field data representing a record
      * @return {Array}        An array of objs with keyed field data representing each record
      */
-    var parsedObj = csvArray.map(function (row) {
+    var recrdsAry = csvArray.map(function (row) {
       var obj = {};
       var len = keys.length;
       for (var i = 0; i < len; i += 1) {
@@ -71,7 +71,7 @@
       return obj;
     });
 
-    callback(fSysId, parsedObj);
+    callback(fSysId, recrdsAry);
   }
 
  /**

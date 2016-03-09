@@ -67,6 +67,27 @@
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.parse.csvObjWrapper);
   }
 
+  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateLocation);
+  }
+
+  function validateLocation(fSysId, text) {
+    var result = {
+      entityName: 'location'
+    }
+    ein.csvHlpr.csvToObject(fSysId, text, getLocCols);
+
+    function getLocCols(fSYsId, recrdsAry) {
+      ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentLocs)
+    }
+    function collapseIdentLocs(resultObj) {
+      result.unqField = resultObj.extractCols.unqField;
+      result.extractdCols = resultObj.extractCols.extrctedCols;
+      console.log("resultObj from collapse = %O. Result being built = %O", resultObj, result);
+      // ein.deDupIdenticalRcrds(resultObj.extractCols.content);
+    }
+  }
+
   function initTests() {
     var width = 900;
     var height = 300;

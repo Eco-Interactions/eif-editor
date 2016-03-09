@@ -20,8 +20,8 @@
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
-		csvObjWrapper: csvObjShowWrapper,
-		validateData: validate
+		extractCols: extractCols,
+		deDupIdenticalRcrds: validate
 	};
 	/**
 	 * Houses the call stack that will attempt to remove duplicates, collapse non-conflicting partial records,
@@ -35,7 +35,6 @@
 		var entityType = entityType || "location";
 		var unqField = entityCols[entityType].unqKey;
 		addEntityInfoToResultsObj();
-		var hdrs = entityCols[entityType].cols;
 		/* Top calls to method chain heads */
 		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
 		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
@@ -55,16 +54,28 @@
 		}
 	} /* End Validate */
 	/**
-	 * Takes an array of record objects and extracts specified columns/keys and values.
+	 * Takes an array of record objects and extracts specified columns/keys and values. ===============================================
 	 *
 	 * @param  {obj} recrdsAry  An array of record objects
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
 	 * @return {array}          An array of record objects with only the specified columns and their data.
 	 */
-	function extractCols(recrdsAry, columns) {																																//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
+	function extractCols(entityType, recrdsAry, callback) {
+		var columns = entityCols[entityType].cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
 	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
-		validateResultObj.extrctedCols = columns.length;
-		return extrctdObjs;
+
+		callback(buildExtrctResultObj());
+
+		function buildExtrctResultObj() {
+			var resultObj = {};
+			var unqField = entityCols[entityType].unqKey;
+			resultObj.extractCols = {
+				unqField: unqField,
+				extrctedCols: columns.length,
+				content: extrctdObjs
+			};
+			return resultObj;
+		}
 	}
 	/**
 	 * Builds a new record from copied values of specified columns from an original record.
