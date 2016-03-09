@@ -11,9 +11,7 @@
 	};
 	/* Object detailing results along the parse process. */
 	var validateResultObj = {
-		entity: {},
-		extrctedCols: {},
-		duplicateResults: [],
+		duplicateResults: {},
 		rcrdsWithNullUnqKeyField: {},
 		autoFillResults: {},
 		conflicts: {},
@@ -21,7 +19,7 @@
 	/* Parse API member on global namespace */
 	ein.parse = {
 		extractCols: extractCols,
-		deDupIdenticalRcrds: validate
+		deDupIdenticalRcrds: deDupIdenticalRcrds
 	};
 	/**
 	 * Houses the call stack that will attempt to remove duplicates, collapse non-conflicting partial records,
@@ -89,6 +87,25 @@
 		columns.forEach(function (col){ newRcrd[col] = recrd[col]; });
 		return newRcrd;
 	}
+
+	function deDupIdenticalRcrds(recrdsAry, callback) {
+		var resultObj = {};
+		var unqRecords = findUnqRecords(recrdsAry);
+		buildIdentResultObj();
+		callback(resultObj);
+		/**
+		 * Adds data related to the duplication removal to the validation results.
+		 */
+		function buildIdentResultObj() {
+			resultObj = {
+				duplicateResults: {
+					received: recrdsAry.length,
+					returned: unqRecords.length
+				},
+				content: unqRecords
+			};
+		}
+	}
 	/**
 	 * Takes an array of record objects and returns a copy of the object with any exact duplicates,
 	 * and any entirely null records, removed.
@@ -96,7 +113,7 @@
 	 * @param  {array} recrdsAry 	An array of record objects
 	 * @return {array}  					Returns an array of unique, and non-null, record objects.
 	 */
-	function deDupIdenticalRcrds(recrdsAry) {																																	//	console.log("deDupIdenticalRcrds called. Original Records = %O", recrdsAry);
+	function findUnqRecords(recrdsAry) {																																	//	console.log("deDupIdenticalRcrds called. Original Records = %O", recrdsAry);
 	  var isDup = false, dupCount = 0, processed = [];
 
 		removeDups(recrdsAry);
@@ -132,11 +149,11 @@
 		 * Adds data related to the duplication removal to the validation results.
 		 */
 		function updateConflctObjWithDupResults() {
-			validateResultObj.duplicateResults.push({
+			validateResultObj.duplicateResults = {
 				received: recrdsAry.length,
 				removed: dupCount,
 				returned: processed.length
-			});
+			};
 		}
 	} /* End of deDupIdenticalRcrds */
 	/**

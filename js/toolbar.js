@@ -83,8 +83,10 @@
     function collapseIdentLocs(resultObj) {
       result.unqField = resultObj.extractCols.unqField;
       result.extractdCols = resultObj.extractCols.extrctedCols;
-      console.log("resultObj from collapse = %O. Result being built = %O", resultObj, result);
-      // ein.deDupIdenticalRcrds(resultObj.extractCols.content);
+      ein.parse.deDupIdenticalRcrds(resultObj.extractCols.content, restructureRecrdObjs);
+    }
+    function restructureRecrdObjs(resultObj) {
+      result.identRecrds = resultObj.duplicateResults;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
     }
   }
 
