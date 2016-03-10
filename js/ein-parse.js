@@ -9,12 +9,6 @@
 			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType']
 		}
 	};
-	/* Object detailing results along the parse process. */
-	var exposedResultData = {
-		duplicateResults: {},
-		autoFillResults: {},
-		conflicts: {},
-	};
 	/* Parse API member on global namespace */
 	ein.parse = {
 		extractCols: extractCols,
@@ -27,9 +21,9 @@
 	 * Houses the call stack that will attempt to remove duplicates, collapse non-conflicting partial records,
 	 * and identify records with conflicts that need to be addressed before importing the data.
 	 *
-   * @param {int}  fSysId        File sytem id for the original CSV file opened
-	 * @param  {obj} recrdsAry 		 An array of record objects
-	 * @param  {string} entityType The data for this entity will be extracted and validated
+     * @param  {int}  fSysId        File sytem id for the original CSV file opened
+	 * @param  {obj}  recrdsAry 		 An array of record objects
+	 * @param  {string}  entityType The data for this entity will be extracted and validated
 	 */
 	function validate(fSysId, recrdsAry, entityType) {
 		var entityType = entityType || "location";
@@ -416,7 +410,8 @@
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
 	function hasConflicts(recrdsObj, callback) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
-		var conflicted = false, processed = [], postProcessConflicted = [];
+		var processed, postProcessConflicted;
+		var conflicted = false; 
 		var conflictedRecrds = checkEachRcrdAry();						console.log("%s conflicts = %O", exposedResultData.conflicts.conflictedCnt, conflictedRecrds);
 		callback(buildConflictResultObj());
 		/**

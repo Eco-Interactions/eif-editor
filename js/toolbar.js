@@ -74,10 +74,10 @@
   function validateLocation(fSysId, text) {
     var result = {
       entityName: 'location'
-    }
+    };
     ein.csvHlpr.csvToObject(fSysId, text, getLocCols);
 
-    function getLocCols(fSYsId, recrdsAry) {
+    function getLocCols(fSysId, recrdsAry) {
       ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentLocs)
     }
     function collapseIdentLocs(resultObj) {
