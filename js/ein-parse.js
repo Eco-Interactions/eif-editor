@@ -259,6 +259,7 @@
 	 * @return {object}           An object with any records applicable filled and collapsed
 	 */
 	function autoFillAndCollapseRecords(recrdsObj, callback) {
+		var collapsedCnt, filledRecsCnt;
 		var processedRcrds = {};
 		var recordsRecieved = countRecrdsInObj(recrdsObj);  												console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
 		fillCandidatesIfAble(isolateCandidatesToFill(recrdsObj));
@@ -272,8 +273,8 @@
 			var resultObj = {
 				autoFillResults: {
 			  	received: countRecrdsInObj(recrdsObj),
-			  	filled: exposedResultData.autoFillResults.filledRecsCnt,
-			  	collapsed: exposedResultData.autoFillResults.collapsedCnt,
+			  	filled: filledRecsCnt,
+			  	collapsed: collapsedCnt,
 			  	remaining: countRecrdsInObj(processedRcrds)
 		  	},
 		  	content: processedRcrds
@@ -306,8 +307,8 @@
 		 * @return {object}							Record object with any records, that could be, filled and collapsed.
 		 */
 		function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
-			exposedResultData.autoFillResults.filledRecsCnt = 0;
-			exposedResultData.autoFillResults.collapsedCnt = 0;
+			filledRecsCnt = 0;
+			collapsedCnt = 0;
 			forEachRecAry(Object.keys(candidates));
 			/**
 			 * For each array of records, calls {@link checkAndFill }. After any records that can be are filled,
@@ -319,7 +320,7 @@
 				candidateAryKeys.forEach(function(key){
 				  checkAndFill(key);
 				  processedRcrds[key] = findUnqRecords(candidates[key]);
-				  exposedResultData.autoFillResults.collapsedCnt += candidates[key].length - processedRcrds[key].length;
+				  collapsedCnt += candidates[key].length - processedRcrds[key].length;
 			  });
 			}
 			/**
@@ -373,7 +374,7 @@
 					fillNulls(rcrdTwo, rcrdOne);
 					if ( JSON.stringify(rcrdOne) === JSON.stringify(rcrdTwo) ) {
 						noFill = false;
-						exposedResultData.autoFillResults.filledRecsCnt += 2;
+						filledRecsCnt += 2;
 					}
 				}
 			} /* End checkAndFill */
@@ -411,8 +412,8 @@
 	 */
 	function hasConflicts(recrdsObj, callback) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var processed, postProcessConflicted;
-		var conflicted = false; 
-		var conflictedRecrds = checkEachRcrdAry();						console.log("%s conflicts = %O", exposedResultData.conflicts.conflictedCnt, conflictedRecrds);
+		var conflicted = false;
+		var conflictedRecrds = checkEachRcrdAry();						console.log("conflicts = %O", conflictedRecrds);
 		callback(buildConflictResultObj());
 		/**
 		 * For each record array, calls {@link hasConflictedRcrds } then {@link joinConflicted }

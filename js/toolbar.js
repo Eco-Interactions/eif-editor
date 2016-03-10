@@ -91,16 +91,16 @@
       ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillLocs);
     }
     function autoFillLocs(resultObj) {
-      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField; // console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
       ein.parse.autoFill(resultObj.content, validateLocRecs);
     }
-    function validateLocRecs(resultObj) {     console.log("resultObj = %O.", resultObj);
+    function validateLocRecs(resultObj) {    // console.log("resultObj = %O.", resultObj);
       result.autoFillResults = resultObj.autoFillResults;
       ein.parse.findConflicts(resultObj.content, showResultObj)
     }
     function showResultObj(resultObj) {
       result.conflicts = resultObj.conflicts;
-      result.conflictedRecrds = resultObj.content;  console.log("result = %O", result);
+      result.conflictedRecrds = resultObj.content;  console.log("Final result = %O", result);
       ein.ui.show(fSysId, JSON.stringify(result,null,2));
     }
   }
