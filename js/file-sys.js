@@ -72,7 +72,7 @@
    * @param  {func} fileTxtHandler  Callback to be used at a later point
    * @callback  {func} objHandler  Callback to consume the file object
    */
-  function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {   console.log("fileObjFromEntry called= fSysEntry =", fSysEntry); console.log("fileObjFromEntry called= fileTxtHandler =", fileTxtHandler);
+  function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {   console.log("fileObjFromEntry called= fSysEntry =", fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
       objHandler(fSysId, fileObj, fileTxtHandler); console.log("objHandler");
     });
@@ -84,7 +84,7 @@
    * @param  {obj} fileObj  File obj representing file being opened
    * @param  {func} fileTxtHandler Callback to consume the file text being returned
    */
-  function fileTxtFromObj(fSysId, fileObj, fileTxtHandler) {   console.log("fileObjFromEntry called= fileTxtHandler =", fileTxtHandler);
+  function fileTxtFromObj(fSysId, fileObj, fileTxtHandler) {  // console.log("fileObjFromEntry called= fileTxtHandler =", fileTxtHandler);
     var reader = new FileReader();
     reader.onerror = errorHandler;
     reader.onload = function(event) {

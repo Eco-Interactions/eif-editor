@@ -8,6 +8,10 @@
 			unqKey: 'LocDesc',
 			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType']
 		},
+		publication: {
+			unqKey: 'PubTitle',
+			cols:	['PubTitle', 'PubType','Publisher','Vol','Issue','Pgs']
+		},
 
 	};
 	/* Parse API member on global namespace */

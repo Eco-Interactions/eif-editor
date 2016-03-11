@@ -41,6 +41,20 @@
       "First": "First",
       "Middle": "Middle",
       "Suffix": "Suffix"
+    },
+    citations: {
+      "Citation ID": "CitId",
+      "Citation Short Description": "CitShortDesc",
+      "Full Text": "FullText",
+      "Authors": "Authors",
+      "Year": "Year",
+      "Title": "Title",
+      "Publication Title": "PubTitle",
+      "Publication Type": "PubType",
+      "Publisher": "Publisher",
+      "Volume": "Vol",
+      "Issue": "Issue",
+      "Pages": "Pgs"
     }
   };
   /*  CSV API member on global namespace */
@@ -58,9 +72,9 @@
    * @callback {func}  callback  Recieves the file dystem id and the objectified CSV
    * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
-  function objectifyCSV(fSysId, s, callback) {
+  function objectifyCSV(fSysId, s, callback, dataSet) { console.log("dataSet", dataSet);
     var csvArray = csvToArray(s);         // The CSV parsed as a two-dimensional array
-    var keys = standardizeHeaders(csvArray.shift());     // Seperates first row of headers to be used as keys for field data
+    var keys = standardizeHeaders(csvArray.shift(), dataSet);     // Seperates first row of headers to be used as keys for field data
 
     /*
      * Converts a two-dimensional CSV array into an Array of Objects with headers as keys
@@ -194,9 +208,10 @@
       }
     };
   };    // End of csvToArray
-  function standardizeHeaders(hdrArray) {
+  function standardizeHeaders(hdrArray, dataSet) {
+    var dataSetHdrDict = hdrDict[dataSet];
     var newHdrs = hdrArray.map(function(hdr){
-      return hdrDict.authors[hdr];
+      return dataSetHdrDict[hdr];
     });  console.log("newHdrs = %O", newHdrs);
     return newHdrs;
   }

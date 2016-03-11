@@ -16,7 +16,7 @@
       csvParse: csvToObjectCmd,
       locParse: csvToLocObjsCmd,
       authParse: csvToAuthObjsCmd,
-      // pubParse: csvToPubObjsCmd
+      pubParse: csvToPubObjsCmd
       // getLocal: function () { localCmd('getStorage') },
       // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -83,7 +83,7 @@
     var result = {
       entityName: 'location'
     };
-    ein.csvHlpr.csvToObject(fSysId, text, getLocCols);
+    ein.csvHlpr.csvToObject(fSysId, text, getLocCols, "interactions");
 
     function getLocCols(fSysId, recrdsAry) {
       ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentLocs)
@@ -106,8 +106,12 @@
       ein.parse.findConflicts(resultObj.content, showResultObj)
     }
     function showResultObj(resultObj) {
-      result.conflicts = resultObj.conflicts;
-      result.finalRecords = resultObj.content;  console.log("Final result = %O", result);
+      if (resultObj.conflicts !== undefined) {
+        result.conflicts = resultObj.conflicts;
+      } else {
+        result.conflicts = "No Conflicts Found.";
+        result.finalRecords = resultObj.content;
+      }                                                                  console.log("Final result = %O", result);
       ein.ui.show(fSysId, JSON.stringify(result,null,2));
     }
   }
@@ -119,7 +123,7 @@
     var result = {
       entityName: 'author'
     };
-    ein.csvHlpr.csvToObject(fSysId, text, collapseIdentAuths);
+    ein.csvHlpr.csvToObject(fSysId, text, collapseIdentAuths, "authors");
 
     function collapseIdentAuths(fSysId, recrdsAry) {
       result.unqField = "ShortName";
@@ -140,11 +144,43 @@
       ein.parse.findConflicts(resultObj.content, showResultObj)
     }
     function showResultObj(resultObj) {
-      result.conflicts = resultObj.conflicts;
-      result.conflictedRecrds = resultObj.content;  console.log("Final result = %O", result);
+      if (resultObj.conflicts !== undefined) {
+        result.conflicts = resultObj.conflicts;
+      } else {
+        result.conflicts = "No Conflicts Found.";
+        result.finalRecords = resultObj.content;
+      }                                                                  console.log("Final result = %O", result);
       ein.ui.show(fSysId, JSON.stringify(result,null,2));
     }
+  } /* End validateAuths */
+/*---- Parse and validate publication csv -------*/
+  function csvToPubObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validatePublication);
   }
+  function validatePublication(fSysId, text) {
+    var result = {
+      entityName: 'publication'
+    };
+    ein.csvHlpr.csvToObject(fSysId, text, getPubCols, "citations");
+
+    function getPubCols(fSysId, recrdsAry) {
+      ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentPubs)
+    }
+    function collapseIdentPubs(resultObj) {
+      result.unqField = resultObj.extractCols.unqField;
+      result.extractdCols = resultObj.extractCols.extrctedCols;
+      ein.parse.deDupIdenticalRcrds(resultObj.content, showResultObj);
+    }
+    function showResultObj(resultObj) {
+      if (resultObj.conflicts !== undefined) {
+        result.conflicts = resultObj.conflicts;
+      } else {
+        result.conflicts = "No Conflicts Found.";
+        result.finalRecords = resultObj.content;
+      }                                                                  console.log("Final result = %O", result);
+      ein.ui.show(fSysId, JSON.stringify(result,null,2));
+    }
+  }/* End validatePubs */
 
   function initTests() {
     var width = 900;
