@@ -7,7 +7,8 @@
 		location: {
 			unqKey: 'LocDesc',
 			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType']
-		}
+		},
+
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
@@ -18,49 +19,22 @@
 		findConflicts: hasConflicts
 	};
 	/**
-	 * Houses the call stack that will attempt to remove duplicates, collapse non-conflicting partial records,
-	 * and identify records with conflicts that need to be addressed before importing the data.
-	 *
-     * @param  {int}  fSysId        File sytem id for the original CSV file opened
-	 * @param  {obj}  recrdsAry 		 An array of record objects
-	 * @param  {string}  entityType The data for this entity will be extracted and validated
-	 */
-	function validate(fSysId, recrdsAry, entityType) {
-		var entityType = entityType || "location";
-		var unqField = entityCols[entityType].unqKey;
-		addEntityInfoToResultsObj();
-		/* Top calls to method chain heads */
-		var extrctdRcrdsAry = extractCols(recrdsAry, hdrs);
-		var deDupdRecrdsAry = deDupIdenticalRcrds(extrctdRcrdsAry);   console.log("deDupdRecrdsAry = %O", deDupdRecrdsAry);
-		var recrdObjsByUnqKey = restructureIntoRecordObj(deDupdRecrdsAry, unqField);
-		var filledRecrds = autoFillAndCollapseRecords(recrdObjsByUnqKey); console.log("Records after Fill = %O", filledRecrds);
-		var conflictedRecords = hasConflicts(filledRecrds);
-
-		ein.ui.show(fSysId, JSON.stringify(exposedResultData, null, 2));
-		/**
-		 * Adds entity related data to the validation results.
-		 */
-		function addEntityInfoToResultsObj() {
-			exposedResultData.entity ={
-				type: entityType,
-				uniqueField: unqField
-			};
-		}
-	} /* End Validate */
-	/**
-	 * Takes an array of record objects and extracts specified columns/keys and values. ===============================================
+	 * Takes an array of record objects and extracts specified columns/keys and values.
 	 *
 	 * @param  {obj} recrdsAry  An array of record objects
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
-	 * @return {array}          An array of record objects with only the specified columns and their data.
+	 * @callback 				        Passes on an array of record objects with only the specified data and an object with result data.
 	 */
 	function extractCols(entityType, recrdsAry, callback) {
 		var columns = entityCols[entityType].cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
 	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
 
 		callback(buildExtrctResultObj());
-
-		function buildExtrctResultObj() { //====================================================
+		/**
+		 * [buildExtrctResultObj description]
+		 * @return {[type]} [description]
+		 */
+		function buildExtrctResultObj() {
 			var resultObj = {
 				extractCols: {
 					unqField: entityCols[entityType].unqKey,
@@ -94,7 +68,8 @@
 			var resultObj = {
 				duplicateResults: {
 					received: recrdsAry.length,
-					returned: unqRecords.length
+					returned: unqRecords.length,
+					hasDups: recrdsAry.length === unqRecords.length ? false : true
 				},
 				content: unqRecords
 			};
@@ -486,7 +461,8 @@
 				conflicts: {
 					received: countRecrdsInObj(recrdsObj),
 					rcrdsWithUniqueFields: calculateDiff(recrdsObj, conflictedRecrds),
-					conflictedCnt: countRecrdsInObj(conflictedRecrds)
+					conflictedCnt: countRecrdsInObj(conflictedRecrds),
+					conflictedRecrds: conflictedRecrds
 				},
 				content: conflictedRecrds
 			};
@@ -524,12 +500,6 @@
 			}
 		}
 		return conflicted;
-	}
-	/**
-	 * Wrapper to recieve and pass on raw csv file text from file system.
-	 */
-	function csvObjShowWrapper(fSysId, text) {
-		ein.csvHlpr.csvToObject(fSysId, text, ein.parse.validateData);
 	}
 	/**
 	 * Counts the number of records in an object of keyed arrays.

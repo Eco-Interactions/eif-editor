@@ -34,6 +34,13 @@
       "Object Family": "ObjFamily",
       "Object Genus": "ObjGenus",
       "Object Species": "ObjSpecies"
+    },
+    authors: {
+      "Short Name": "ShortName",
+      "Last": "Last",
+      "First": "First",
+      "Middle": "Middle",
+      "Suffix": "Suffix"
     }
   };
   /*  CSV API member on global namespace */
@@ -52,7 +59,6 @@
    * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
   function objectifyCSV(fSysId, s, callback) {
-
     var csvArray = csvToArray(s);         // The CSV parsed as a two-dimensional array
     var keys = standardizeHeaders(csvArray.shift());     // Seperates first row of headers to be used as keys for field data
 
@@ -190,7 +196,7 @@
   };    // End of csvToArray
   function standardizeHeaders(hdrArray) {
     var newHdrs = hdrArray.map(function(hdr){
-      return hdrDict.interactions[hdr];
+      return hdrDict.authors[hdr];
     });  console.log("newHdrs = %O", newHdrs);
     return newHdrs;
   }

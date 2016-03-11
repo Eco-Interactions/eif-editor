@@ -13,7 +13,10 @@
       createFolder: createFolderCmd,
       setUpTests: initTests,
       runTests: launchTests,
-      csvParse: csvToObjectCmd
+      csvParse: csvToObjectCmd,
+      locParse: csvToLocObjsCmd,
+      authParse: csvToAuthObjsCmd,
+      // pubParse: csvToPubObjsCmd
       // getLocal: function () { localCmd('getStorage') },
       // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -62,15 +65,20 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
-
-  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,         fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.parse.csvObjWrapper);
-  }
-
+/*---- Parse and show csv -------*/
   function csvToObjectCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCSVObjsToShow);
+  }
+  function getCSVObjsToShow(fSysId, csvStr) {
+    ein.csvHlpr.csvToObject(fSysId, csvStr, showCsvObjsInEditor);
+  }
+  function showCsvObjsInEditor(fSysId, csvObjAry) {
+    ein.ui.show(fSysId, JSON.stringify(csvObjAry, null, 2));
+  }
+/*---- Parse and validate location csv -------*/
+  function csvToLocObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateLocation);
   }
-
   function validateLocation(fSysId, text) {
     var result = {
       entityName: 'location'
@@ -87,7 +95,6 @@
     }
     function restructureLocRecords(resultObj) {
       result.identRecrds = resultObj.duplicateResults;
-      var recrdsAry = resultObj.content;
       ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillLocs);
     }
     function autoFillLocs(resultObj) {
@@ -95,6 +102,40 @@
       ein.parse.autoFill(resultObj.content, validateLocRecs);
     }
     function validateLocRecs(resultObj) {    // console.log("resultObj = %O.", resultObj);
+      result.autoFillResults = resultObj.autoFillResults;
+      ein.parse.findConflicts(resultObj.content, showResultObj)
+    }
+    function showResultObj(resultObj) {
+      result.conflicts = resultObj.conflicts;
+      result.finalRecords = resultObj.content;  console.log("Final result = %O", result);
+      ein.ui.show(fSysId, JSON.stringify(result,null,2));
+    }
+  }
+/*---- Parse and validate authors csv -------*/
+  function csvToAuthObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateAuths);
+  }
+  function validateAuths(fSysId, text) {
+    var result = {
+      entityName: 'author'
+    };
+    ein.csvHlpr.csvToObject(fSysId, text, collapseIdentAuths);
+
+    function collapseIdentAuths(fSysId, recrdsAry) {
+      result.unqField = "ShortName";
+      ein.parse.deDupIdenticalRcrds(recrdsAry, restructureAuthRecords);
+    }
+    function restructureAuthRecords(resultObj) {
+      result.deDupRecrds = resultObj.duplicateResults;   console.log("restructureAuthRecords result = %O", result);
+      result.deDupRecrds.hasDups ?
+        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillAuths) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
+        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
+    }
+    function autoFillAuths(resultObj) {
+      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+      ein.parse.autoFill(resultObj.content, validateAuthRecs);
+    }
+    function validateAuthRecs(resultObj) {     console.log("validateAuthRecs. resultObj = %O.", resultObj);
       result.autoFillResults = resultObj.autoFillResults;
       ein.parse.findConflicts(resultObj.content, showResultObj)
     }
