@@ -1,5 +1,6 @@
 (function() {
 	"use strict";
+	var parseChain, entityObj;
     /* Global App Namespace */
 	var ein = ECO_INT_NAMESPACE;
 	/* Columns relevant to the each Entity */
@@ -10,9 +11,22 @@
 		},
 		publication: {
 			unqKey: 'PubTitle',
-			cols:	['PubTitle', 'PubType','Publisher','Vol','Issue','Pgs']
+			cols:	['PubTitle', 'PubType','Publisher']
 		},
-
+	};
+	var entityParams = {		//++++====++++++=+++++++++++++++++++============
+		location: {
+			unqKey: 'LocDesc',
+			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType'],
+			parseChain: [],
+			valMetaData: {}
+		},
+		publication: [],
+		authors: {
+			unqKey: 'ShortName',
+			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, 'autoFillAndCollapseRecords', 'hasConflicts'],
+			valMetaData: {}
+		},
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
@@ -20,8 +34,19 @@
 		deDupIdenticalRcrds: deDupIdenticalRcrds,
 		restructureRecrdObjs: restructureIntoRecordObj,
 		autoFill: autoFillAndCollapseRecords,
-		findConflicts: hasConflicts
+		findConflicts: hasConflicts,
+		parseChain: recieveCSVAryReturn
 	};
+	function recieveCSVAryReturn(fSysId, recrdsAry, entity) {
+		entityObj = entityParams[entity];
+		parseChain = entityObj.parseMethods;  console.log("parseChain = %O", parseChain);
+		recurParseMethods(recrdsAry, entity);
+	}
+	function recurParseMethods(recrds, entity) {  console.log("recurParseMethods called. recrds = %O", recrds);
+		var curMethod = parseChain.shift();
+		curMethod(recrds, entityObj, recurParseMethods);  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
+		console.log("parseChain after shift = %O", parseChain);
+	}
 	/**
 	 * Takes an array of record objects and extracts specified columns/keys and values.
 	 *
@@ -62,22 +87,19 @@
 		return newRcrd;
 	}
 
-	function deDupIdenticalRcrds(recrdsAry, callback) {  //============================================================================
-		var unqRecords = findUnqRecords(recrdsAry);
-		callback(buildIdentResultObj());
+	function deDupIdenticalRcrds(recrdsAry, entityObj, callback) {  //============================================================================
+		var unqRecords = findUnqRecords(recrdsAry);  console.log("deDupIdenticalRcrds adding meta data now.");
+		addDeDupMetaData();
+		callback(unqRecords, entityObj);
 		/**
 		 * Adds data related to the duplication removal to the validation results.
 		 */
-		function buildIdentResultObj() {
-			var resultObj = {
-				duplicateResults: {
-					received: recrdsAry.length,
-					returned: unqRecords.length,
-					hasDups: recrdsAry.length === unqRecords.length ? false : true
-				},
-				content: unqRecords
+		function addDeDupMetaData() {
+			entityObj.valMetaData.duplicateResults = {
+				received: recrdsAry.length,
+				returned: unqRecords.length,
+				hasDups: recrdsAry.length === unqRecords.length ? false : true
 			};
-			return resultObj;
 		}
 	}
 	/**
@@ -109,7 +131,7 @@
 		 * Checks a record against every previously processed record for an exact duplicate record.
 		 *
 		 * @param  {object}  recrd   Record currently being checked for duplication
-		 * @return {boolean}       	 True if duplicate is found
+		 * @return {bool}       	 True if duplicate is found
 		 */
 		function checkAgainstProcessed(recrd) {
 			processed.some(function(procesd) {
@@ -155,9 +177,9 @@
 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 	 * @return {object}           An object of arrays grouped under their unique key field.
 	 */
-	function restructureIntoRecordObj(recrdsAry, unqField, callback) {
+	function restructureIntoRecordObj(recrdsAry, entityObj, callback) {
 		var rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
-
+		var unqField = entityObj.unqField;
 		sortRecords(recrdsAry);
 		callback(buildNullRecsResultObj());
 		/**

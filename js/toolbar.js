@@ -94,7 +94,7 @@
       ein.parse.deDupIdenticalRcrds(resultObj.content, restructureLocRecords);
     }
     function restructureLocRecords(resultObj) {
-      result.identRecrds = resultObj.duplicateResults;
+      result.deDupRecrds = resultObj.duplicateResults;
       ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillLocs);
     }
     function autoFillLocs(resultObj) {
@@ -123,7 +123,7 @@
     var result = {
       entityName: 'author'
     };
-    ein.csvHlpr.csvToObject(fSysId, text, collapseIdentAuths, "authors");
+    ein.csvHlpr.csvToObject(fSysId, text, ein.parse.parseChain, "authors");
 
     function collapseIdentAuths(fSysId, recrdsAry) {
       result.unqField = "ShortName";
@@ -136,11 +136,11 @@
         ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
     }
     function autoFillAuths(resultObj) {
-      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField || "No records with null unique fields";  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
       ein.parse.autoFill(resultObj.content, validateAuthRecs);
     }
     function validateAuthRecs(resultObj) {     console.log("validateAuthRecs. resultObj = %O.", resultObj);
-      result.autoFillResults = resultObj.autoFillResults;
+      result.autoFillResults = resultObj.autoFillResults || "No records filled.";
       ein.parse.findConflicts(resultObj.content, showResultObj)
     }
     function showResultObj(resultObj) {
@@ -169,7 +169,21 @@
     function collapseIdentPubs(resultObj) {
       result.unqField = resultObj.extractCols.unqField;
       result.extractdCols = resultObj.extractCols.extrctedCols;
-      ein.parse.deDupIdenticalRcrds(resultObj.content, showResultObj);
+      ein.parse.deDupIdenticalRcrds(resultObj.content, restructurePubRecords);
+    }
+    function restructurePubRecords(resultObj) {
+      result.deDupRecrds = resultObj.duplicateResults;   console.log("restructurePubRecords result = %O", result);
+      result.deDupRecrds.hasDups ?
+        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillPubs) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
+        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
+    }
+    function autoFillPubs(resultObj) {
+      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+      ein.parse.autoFill(resultObj.content, validatePubRecs);
+    }
+    function validatePubRecs(resultObj) {     console.log("validatePubRecs. resultObj = %O.", resultObj);
+      result.autoFillResults = resultObj.autoFillResults;
+      ein.parse.findConflicts(resultObj.content, showResultObj)
     }
     function showResultObj(resultObj) {
       if (resultObj.conflicts !== undefined) {
@@ -212,8 +226,9 @@
       type: 'openFile',
       accepts: [{
         mimeTypes: ['text/*'],
-        extensions: ['js', 'css', 'txt', 'html', 'json', 'svg', 'md']
-      }]
+        extensions: ['txt','js','css','csv','txt','html','json','svg','md']
+      }],
+      // acceptsAllTypes: true
     };
   }
 
