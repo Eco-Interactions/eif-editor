@@ -198,13 +198,17 @@
       if (fieldQuoted) {                                        // If field is quoted, return field
         return field;
       } else {
-        if (field === '') {                                     // If field is empty set to null
+        if (field === '' || isPlaceholder()) {                                     // If field is empty set to null
           field = null;
         }
         if (rxIsInt.test(field) || rxIsFloat.test(field)) {
           field = +field;
         }
         return field;
+      }
+
+      function isPlaceholder() {
+        return (field.charAt(0) === '-' && field.charAt(1) === '-');
       }
     };
   };    // End of csvToArray
