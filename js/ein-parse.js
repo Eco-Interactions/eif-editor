@@ -24,7 +24,7 @@
 		publication: [],
 		authors: {
 			unqKey: 'ShortName',
-			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, 'autoFillAndCollapseRecords', 'hasConflicts'],
+			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 	};
@@ -40,12 +40,15 @@
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity) {
 		entityObj = entityParams[entity];
 		parseChain = entityObj.parseMethods;  console.log("parseChain = %O", parseChain);
+		entityObj.fSyId = fSysId;
+
 		recurParseMethods(recrdsAry, entity);
 	}
 	function recurParseMethods(recrds, entity) {  console.log("recurParseMethods called. recrds = %O", recrds);
 		var curMethod = parseChain.shift();
-		curMethod(recrds, entityObj, recurParseMethods);  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
-		console.log("parseChain after shift = %O", parseChain);
+		curMethod !== undefined ?
+				curMethod(recrds, entity, recurParseMethods) :
+				ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
 	}
 	/**
 	 * Takes an array of record objects and extracts specified columns/keys and values.
@@ -87,10 +90,10 @@
 		return newRcrd;
 	}
 
-	function deDupIdenticalRcrds(recrdsAry, entityObj, callback) {  //============================================================================
+	function deDupIdenticalRcrds(recrdsAry, entity, callback) {  //============================================================================
 		var unqRecords = findUnqRecords(recrdsAry);  console.log("deDupIdenticalRcrds adding meta data now.");
 		addDeDupMetaData();
-		callback(unqRecords, entityObj);
+		callback(unqRecords, entity);
 		/**
 		 * Adds data related to the duplication removal to the validation results.
 		 */
@@ -177,11 +180,12 @@
 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 	 * @return {object}           An object of arrays grouped under their unique key field.
 	 */
-	function restructureIntoRecordObj(recrdsAry, entityObj, callback) {
+	function restructureIntoRecordObj(recrdsAry, entity, callback) {
 		var rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
-		var unqField = entityObj.unqField;
+		var unqField = entityObj.unqKey;
 		sortRecords(recrdsAry);
-		callback(buildNullRecsResultObj());
+		addNullRecsMetaData();					console.log("restructureIntoRecordObj entityObj= %O", entityObj);
+		callback(recrdObjsByUnqKey, entity);
 		/**
 		 * For each of the records, checks {@link ifHasUnqFieldValue }
 	   * @param  {array} recrdsAry 	An array of record objects
@@ -219,7 +223,7 @@
 		 * @param  {object}  recrd    Record currently being sorted
 	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 		 */
-		function sortIntoKeyedArrays(recrd, unqField) {
+		function sortIntoKeyedArrays(recrd, unqField) { // console.log("sorting into keyed arrays")
 			if (recrd[unqField] in recrdObjsByUnqKey) {
 				addModRecord(recrd, unqField);
 			} else {
@@ -234,22 +238,17 @@
 	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 		 */
 		function addModRecord(recrd, unqField) {
-			var unqKey = recrd[unqField];
+			var unqKey = recrd[unqField]; //console.log("unqKey = ", unqKey);
 			delete recrd[unqField];
-			recrdObjsByUnqKey[unqKey].push(recrd);
+			recrdObjsByUnqKey[unqKey].push(recrd);   //console.log(" pushing to recrdObjsByUnqKey = %O", recrdObjsByUnqKey);
 		}
 		/**
 		 * Adds data related to restructuring the object to the validation results. ============================================
 		 */
-		function buildNullRecsResultObj() {
-			var resultObj = {
-				rcrdsWithNullUnqKeyField: {
-					recordCnt: rcrdsWithNullUnqField.length,
-					records: rcrdsWithNullUnqField
-				},
-				content: recrdObjsByUnqKey
+		function addNullRecsMetaData() {
+			entityObj.valMetaData.rcrdsWithNullUnqKeyField = {
+				recordCnt: rcrdsWithNullUnqField.length
 			};
-			return resultObj;
 		}
 	} /* End restructureIntoRecordObj */
 	/**
@@ -259,28 +258,24 @@
 	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
 	 * @return {object}           An object with any records applicable filled and collapsed
 	 */
-	function autoFillAndCollapseRecords(recrdsObj, callback) {
+	function autoFillAndCollapseRecords(recrdsObj, entity, callback) {
 		var collapsedCnt, filledRecsCnt;
 		var processedRcrds = {};
 		var recordsRecieved = countRecrdsInObj(recrdsObj);  												console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
 		fillCandidatesIfAble(isolateCandidatesToFill(recrdsObj));
-
-		callback(buildFillResultObj());
+    addAutoFillAndCollapseMetaData();
+		callback(processedRcrds, entity);
 
 		/**
 		 * Adds data related to autoFill and collapse to the validation results.
 		 */
-		function buildFillResultObj() {
-			var resultObj = {
-				autoFillResults: {
-			  	received: countRecrdsInObj(recrdsObj),
-			  	filled: filledRecsCnt,
-			  	collapsed: collapsedCnt,
-			  	remaining: countRecrdsInObj(processedRcrds)
-		  	},
-		  	content: processedRcrds
+		function addAutoFillAndCollapseMetaData() {
+			entityObj.valMetaData.autoFill = {
+		  	received: countRecrdsInObj(recrdsObj),
+		  	filled: filledRecsCnt,
+		  	collapsed: collapsedCnt,
+		  	remaining: countRecrdsInObj(processedRcrds)
 		  };
-		  return resultObj;
 		}
 		/**
 		 * For each of the record arrays grouped by shared unique key value,
@@ -411,11 +406,12 @@
 	 * @param  {string} unqField  A key that should be unique in each record
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
-	function hasConflicts(recrdsObj, callback) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
+	function hasConflicts(recrdsObj, entity, callback) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var processed, postProcessConflicted;
 		var conflicted = false;
 		var conflictedRecrds = checkEachRcrdAry();						console.log("conflicts = %O", conflictedRecrds);
-		callback(buildConflictResultObj());
+		addConflictMetaData();
+		callback(conflictedRecrds, entity);
 		/**
 		 * For each record array, calls {@link hasConflictedRcrds } then {@link joinConflicted }
 		 *
@@ -482,17 +478,13 @@
 		/**
 		 * Adds data related to any conflicts found to the validation results.
 		 */
-		function buildConflictResultObj() {
-			var resultObj = {
-				conflicts: {
-					received: countRecrdsInObj(recrdsObj),
-					rcrdsWithUniqueFields: calculateDiff(recrdsObj, conflictedRecrds),
-					conflictedCnt: countRecrdsInObj(conflictedRecrds),
-					conflictedRecrds: conflictedRecrds
-				},
-				content: conflictedRecrds
+		function addConflictMetaData() {
+			entityObj.valMetaData.conflicts = {
+				received: countRecrdsInObj(recrdsObj),
+				rcrdsWithUniqueFields: calculateDiff(recrdsObj, conflictedRecrds),
+				conflictedCnt: countRecrdsInObj(conflictedRecrds),
+				conflictedRecrds: conflictedRecrds
 			};
-			return resultObj;
 		}
 	}		/* End of hasConflicts */
 	/**

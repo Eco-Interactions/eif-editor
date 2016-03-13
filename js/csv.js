@@ -91,7 +91,7 @@
       return obj;
     });
 
-    callback(fSysId, recrdsAry);
+    callback(fSysId, recrdsAry, dataSet);
   }
 
  /**
