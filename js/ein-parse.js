@@ -18,7 +18,7 @@
 		location: {
 			unqKey: 'LocDesc',
 			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType'],
-			parseChain: [],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		publication: {

@@ -77,70 +77,30 @@
   }
 /*---- Parse and validate location csv -------*/
   function csvToLocObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateLocation);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObj);
   }
-  function validateLocation(fSysId, text) {
-    var result = {
-      entityName: 'location'
-    };
-    ein.csvHlpr.csvToObject(fSysId, text, getLocCols, "interactions");
-
-    function getLocCols(fSysId, recrdsAry) {
-      ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentLocs)
-    }
-    function collapseIdentLocs(resultObj) {
-      result.unqField = resultObj.extractCols.unqField;
-      result.extractdCols = resultObj.extractCols.extrctedCols;
-      ein.parse.deDupIdenticalRcrds(resultObj.content, restructureLocRecords);
-    }
-    function restructureLocRecords(resultObj) {
-      result.deDupRecrds = resultObj.duplicateResults;
-      ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillLocs);
-    }
-    function autoFillLocs(resultObj) {
-      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField; // console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
-      ein.parse.autoFill(resultObj.content, validateLocRecs);
-    }
-    function validateLocRecs(resultObj) {    // console.log("resultObj = %O.", resultObj);
-      result.autoFillResults = resultObj.autoFillResults;
-      ein.parse.findConflicts(resultObj.content, showResultObj)
-    }
-    function showResultObj(resultObj) {
-      if (resultObj.conflicts !== undefined) {
-        result.conflicts = resultObj.conflicts;
-      } else {
-        result.conflicts = "No Conflicts Found.";
-        result.finalRecords = resultObj.content;
-      }                                                                  console.log("Final result = %O", result);
-      ein.ui.show(fSysId, JSON.stringify(result,null,2));
-    }
+  function getInteractionsCSVObj(fSysId, text) {
+    ein.csvHlpr.csvToObject(fSysId, text, validateLocs, 'interactions');
+  }
+  function validateLocs(fSysId, recrdsAry) {
+    ein.parse.parseChain(fSysId, recrdsAry, 'location');
   }
 /*---- Parse and validate authors csv -------*/
   function csvToAuthObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateAuths);
   }
   function validateAuths(fSysId, text) {
-    var result = {
-      entityName: 'author'
-    };
     ein.csvHlpr.csvToObject(fSysId, text, ein.parse.parseChain, "authors");
-
-    function showResultObj(resultObj) {                               console.log("Final result = %O", result);
-      ein.ui.show(fSysId, JSON.stringify(result,null,2));
-    }
-  } /* End validateAuths */
+  }
 /*---- Parse and validate publication csv -------*/
   function csvToPubObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObj);
   }
   function getCitCSVObj(fSysId, text) {
     ein.csvHlpr.csvToObject(fSysId, text, validatePublication, "citations");
-  }/* End validatePubs */
+  }
   function validatePublication(fSysId, recrdsAry) {
-    var result = {
-      entityName: 'publication'
-    };
-    ein.parse.parseChain(fSysId, recrdsAry, result.entityName);
+    ein.parse.parseChain(fSysId, recrdsAry, 'publication');
   }
 
   function initTests() {
