@@ -216,7 +216,7 @@
     var dataSetHdrDict = hdrDict[dataSet];
     var newHdrs = hdrArray.map(function(hdr){
       return dataSetHdrDict[hdr];
-    });  console.log("newHdrs = %O", newHdrs);
+    });  console.log("newHdrs = %O", newHdrs);  console.log("headers = %s", JSON.stringify(newHdrs));
     return newHdrs;
   }
 

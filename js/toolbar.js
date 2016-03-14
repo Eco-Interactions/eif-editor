@@ -16,7 +16,9 @@
       csvParse: csvToObjectCmd,
       locParse: csvToLocObjsCmd,
       authParse: csvToAuthObjsCmd,
-      pubParse: csvToPubObjsCmd
+      pubParse: csvToPubObjsCmd,
+      citParse: csvToCitObjsCmd,
+      intParse: csvToIntObjsCmd
       // getLocal: function () { localCmd('getStorage') },
       // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
       // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
@@ -77,9 +79,9 @@
   }
 /*---- Parse and validate location csv -------*/
   function csvToLocObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObj);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObjLoc);
   }
-  function getInteractionsCSVObj(fSysId, text) {
+  function getInteractionsCSVObjLoc(fSysId, text) {
     ein.csvHlpr.csvToObject(fSysId, text, validateLocs, 'interactions');
   }
   function validateLocs(fSysId, recrdsAry) {
@@ -94,14 +96,37 @@
   }
 /*---- Parse and validate publication csv -------*/
   function csvToPubObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObj);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObjPub);
   }
-  function getCitCSVObj(fSysId, text) {
+  function getCitCSVObjPub(fSysId, text) {
     ein.csvHlpr.csvToObject(fSysId, text, validatePublication, "citations");
   }
   function validatePublication(fSysId, recrdsAry) {
-    ein.parse.parseChain(fSysId, recrdsAry, 'publication');
+    ein.parse.parseChain(fSysId, recrdsAry, 'publications');
   }
+/*---- Parse and validate citation csv -------*/
+  function csvToCitObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObj);
+  }
+  function getCitCSVObj(fSysId, text) {
+    ein.csvHlpr.csvToObject(fSysId, text, validateCitation, "citations");
+  }
+  function validateCitation(fSysId, recrdsAry) {
+    ein.parse.parseChain(fSysId, recrdsAry, 'citations');
+  }
+/*---- Parse and validate interactions csv -------*/
+  function csvToIntObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObj);
+  }
+  function getInteractionsCSVObj(fSysId, text) {
+    ein.csvHlpr.csvToObject(fSysId, text, validateInts, 'interactions');
+  }
+  function validateInts(fSysId, recrdsAry) {
+    ein.parse.parseChain(fSysId, recrdsAry, 'interactions');
+  }
+
+
+
 
   function initTests() {
     var width = 900;
