@@ -21,7 +21,12 @@
 			parseChain: [],
 			valMetaData: {}
 		},
-		publication: [],
+		publication: {
+			unqKey: 'PubTitle',
+			cols:	['PubTitle', 'PubType','Publisher'],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			valMetaData: {}
+		},
 		authors: {
 			unqKey: 'ShortName',
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
@@ -57,26 +62,22 @@
 	 * @param  {array} columns  One or more columns to be extracted from the recrdsAry
 	 * @callback 				        Passes on an array of record objects with only the specified data and an object with result data.
 	 */
-	function extractCols(entityType, recrdsAry, callback) {
-		var columns = entityCols[entityType].cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
+	function extractCols(recrdsAry, entityType, callback) {
+		var columns = entityObj.cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
 	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
 
-		callback(buildExtrctResultObj());
+		callback(extrctdObjs, entityType);
 		/**
 		 * [buildExtrctResultObj description]
 		 * @return {[type]} [description]
 		 */
 		function buildExtrctResultObj() {
-			var resultObj = {
-				extractCols: {
-					unqField: entityCols[entityType].unqKey,
-					extrctedCols: columns.length
-				},
-				content: extrctdObjs
+			entityObj.valMetaData.extractCols = {
+				unqField: entityCols[entityType].unqKey,
+				extrctedCols: columns.length
 			};
-			return resultObj;
 		}
-	}
+	} /* End Extract Cols */
 	/**
 	 * Builds a new record from copied values of specified columns from an original record.
 	 *

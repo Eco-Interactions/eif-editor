@@ -125,76 +125,23 @@
     };
     ein.csvHlpr.csvToObject(fSysId, text, ein.parse.parseChain, "authors");
 
-    function collapseIdentAuths(fSysId, recrdsAry) {
-      result.unqField = "ShortName";
-      ein.parse.deDupIdenticalRcrds(recrdsAry, restructureAuthRecords);
-    }
-    function restructureAuthRecords(resultObj) {
-      result.deDupRecrds = resultObj.duplicateResults;   console.log("restructureAuthRecords result = %O", result);
-      result.deDupRecrds.hasDups ?
-        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillAuths) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
-        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
-    }
-    function autoFillAuths(resultObj) {
-      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField || "No records with null unique fields";  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
-      ein.parse.autoFill(resultObj.content, validateAuthRecs);
-    }
-    function validateAuthRecs(resultObj) {     console.log("validateAuthRecs. resultObj = %O.", resultObj);
-      result.autoFillResults = resultObj.autoFillResults || "No records filled.";
-      ein.parse.findConflicts(resultObj.content, showResultObj)
-    }
-    function showResultObj(resultObj) {
-      if (resultObj.conflicts !== undefined) {
-        result.conflicts = resultObj.conflicts;
-      } else {
-        result.conflicts = "No Conflicts Found.";
-        result.finalRecords = resultObj.content;
-      }                                                                  console.log("Final result = %O", result);
+    function showResultObj(resultObj) {                               console.log("Final result = %O", result);
       ein.ui.show(fSysId, JSON.stringify(result,null,2));
     }
   } /* End validateAuths */
 /*---- Parse and validate publication csv -------*/
   function csvToPubObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validatePublication);
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObj);
   }
-  function validatePublication(fSysId, text) {
+  function getCitCSVObj(fSysId, text) {
+    ein.csvHlpr.csvToObject(fSysId, text, validatePublication, "citations");
+  }/* End validatePubs */
+  function validatePublication(fSysId, recrdsAry) {
     var result = {
       entityName: 'publication'
     };
-    ein.csvHlpr.csvToObject(fSysId, text, getPubCols, "citations");
-
-    function getPubCols(fSysId, recrdsAry) {
-      ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentPubs)
-    }
-    function collapseIdentPubs(resultObj) {
-      result.unqField = resultObj.extractCols.unqField;
-      result.extractdCols = resultObj.extractCols.extrctedCols;
-      ein.parse.deDupIdenticalRcrds(resultObj.content, restructurePubRecords);
-    }
-    function restructurePubRecords(resultObj) {
-      result.deDupRecrds = resultObj.duplicateResults;   console.log("restructurePubRecords result = %O", result);
-      result.deDupRecrds.hasDups ?
-        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillPubs) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
-        ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
-    }
-    function autoFillPubs(resultObj) {
-      result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
-      ein.parse.autoFill(resultObj.content, validatePubRecs);
-    }
-    function validatePubRecs(resultObj) {     console.log("validatePubRecs. resultObj = %O.", resultObj);
-      result.autoFillResults = resultObj.autoFillResults;
-      ein.parse.findConflicts(resultObj.content, showResultObj)
-    }
-    function showResultObj(resultObj) {
-      if (resultObj.conflicts !== undefined) {
-        result.conflicts = resultObj.conflicts;
-      } else {
-        result.conflicts = "No Conflicts Found.";
-        result.finalRecords = resultObj.content;
-      }                                                                  console.log("Final result = %O", result);
-      ein.ui.show(fSysId, JSON.stringify(result,null,2));
-    }
-  }/* End validatePubs */
+    ein.parse.parseChain(fSysId, recrdsAry, result.entityName);
+  }
 
   function initTests() {
     var width = 900;
@@ -237,3 +184,56 @@
   }
 
 }());  /* end of namespacing anonymous function */
+
+
+    // function collapseIdentAuths(fSysId, recrdsAry) {
+    //   result.unqField = "ShortName";
+    //   ein.parse.deDupIdenticalRcrds(recrdsAry, restructureAuthRecords);
+    // }
+    // function restructureAuthRecords(resultObj) {
+    //   result.deDupRecrds = resultObj.duplicateResults;   console.log("restructureAuthRecords result = %O", result);
+    //   result.deDupRecrds.hasDups ?
+    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillAuths) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
+    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
+    // }
+    // function autoFillAuths(resultObj) {
+    //   result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField || "No records with null unique fields";  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+    //   ein.parse.autoFill(resultObj.content, validateAuthRecs);
+    // }
+    // function validateAuthRecs(resultObj) {     console.log("validateAuthRecs. resultObj = %O.", resultObj);
+    //   result.autoFillResults = resultObj.autoFillResults || "No records filled.";
+    //   ein.parse.findConflicts(resultObj.content, showResultObj)
+    // }
+    //
+    //
+    // function getPubCols(fSysId, recrdsAry) {
+    //   ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentPubs)
+    // }
+    // function collapseIdentPubs(resultObj) {
+    //   result.unqField = resultObj.extractCols.unqField;
+    //   result.extractdCols = resultObj.extractCols.extrctedCols;
+    //   ein.parse.deDupIdenticalRcrds(resultObj.content, restructurePubRecords);
+    // }
+    // function restructurePubRecords(resultObj) {
+    //   result.deDupRecrds = resultObj.duplicateResults;   console.log("restructurePubRecords result = %O", result);
+    //   result.deDupRecrds.hasDups ?
+    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillPubs) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
+    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
+    // }
+    // function autoFillPubs(resultObj) {
+    //   result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
+    //   ein.parse.autoFill(resultObj.content, validatePubRecs);
+    // }
+    // function validatePubRecs(resultObj) {     console.log("validatePubRecs. resultObj = %O.", resultObj);
+    //   result.autoFillResults = resultObj.autoFillResults;
+    //   ein.parse.findConflicts(resultObj.content, showResultObj)
+    // }
+    // function showResultObj(resultObj) {
+    //   if (resultObj.conflicts !== undefined) {
+    //     result.conflicts = resultObj.conflicts;
+    //   } else {
+    //     result.conflicts = "No Conflicts Found.";
+    //     result.finalRecords = resultObj.content;
+    //   }                                                                  console.log("Final result = %O", result);
+    //   ein.ui.show(fSysId, JSON.stringify(result,null,2));
+    // }
