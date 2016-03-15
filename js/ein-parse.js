@@ -60,10 +60,10 @@
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity) {
 		entityObj = entityParams[entity];  console.log("entity = %s", entity);
 		parseChain = entityObj.parseMethods;  console.log("parseChain = %O", parseChain);
+		entityObj.fSyId = fSysId;
 
 		recurParseMethods(recrdsAry, entity);
 
-		entityObj.fSyId = fSysId;
 	}
 	/**
 	 * Executes the specified entity's parse method chain and sends the results and final records to the screen.
@@ -76,6 +76,7 @@
 		if (curMethod !== undefined) {
 			curMethod(recrds, entity, recurParseMethods)
 		} else {
+			delete entityObj.parseMethods;
 			entityObj.finalRecords = recrds;
 			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
 		}
@@ -565,16 +566,23 @@ function splitIntTags(recrdsAry, entity, callback) {
 	var newIntRecrds = forEachIntRec();
 
 	callback(newIntRecrds, entity);
-
+	/**
+	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
+	 * @return {ary}  		An array of objects with the tag field as an array
+	 */
 	function forEachIntRec() {
 		var newRecrds = recrdsAry.map(function(recrd) {  console.log("recrd = %O, recrd.IntTag = %O", recrd, recrd.IntTag);
 			recrd.IntTag = recrd.IntTag === null? [] : recrd.IntTag.split(",") || [];
-			mergeTagsIfSecondary(recrd);
+			ifSecondary(recrd);
 			return recrd;
 		});
 		return newRecrds;
 	}
-	function mergeTagsIfSecondary(recrd) {
+	/**
+	 * If this is a secondary interaction, add that to the tag collection.
+	 * @param  {obj}  recrd  Record to check and modify.
+	 */
+	function ifSecondary(recrd) {
 		if (recrd.Directness === "Secondary") { recrd.IntTag.push("Secondary"); }
 		delete recrd.Directness;
 	}

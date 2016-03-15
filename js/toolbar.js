@@ -13,19 +13,15 @@
       createFolder: createFolderCmd,
       setUpTests: initTests,
       runTests: launchTests,
-      csvParse: csvToObjectCmd,
-      locParse: csvToLocObjsCmd,
-      authParse: csvToAuthObjsCmd,
-      pubParse: csvToPubObjsCmd,
-      citParse: csvToCitObjsCmd,
-      intParse: csvToIntObjsCmd
-      // getLocal: function () { localCmd('getStorage') },
-      // setLocal: function () { localCmd('setStorage', { ensoAppDataJsonFileId: "3BADF6A36530AE0EF1EA6B0F748F769E:enso/app-data.json" }) },
-      // unsetLocal: function () { localCmd('unsetStorage', 'key'); console.log('unsetStorage localCmd sent'); },
-      // clearDevLog: function () { devLogTxtArea.value = ''; },
-      // logAppData: function () { ein.ui.devLog('appData', appData) },
-      // getZartensRoot: function () { console.log('stub for getZartensRoot') },
+      csvParse: selectCSVEntityParse
     };
+  var entityCsvParseVals = {
+    authors: "authors",
+    citations: "citations",
+    interactions: "interactions",
+    locations: "interactions",
+    publications: "citations"
+  };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
   /* onDomLoaded and it's helpers run after DOM-loaded code for local (outer window) */
@@ -67,67 +63,23 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
-/*---- Parse and show csv -------*/
-  function csvToObjectCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCSVObjsToShow);
-  }
-  function getCSVObjsToShow(fSysId, csvStr) {
-    ein.csvHlpr.csvToObject(fSysId, csvStr, showCsvObjsInEditor);
-  }
-  function showCsvObjsInEditor(fSysId, csvObjAry) {
-    ein.ui.show(fSysId, JSON.stringify(csvObjAry, null, 2));
-  }
-/*---- Parse and validate location csv -------*/
-  function csvToLocObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObjLoc);
-  }
-  function getInteractionsCSVObjLoc(fSysId, text) {
-    ein.csvHlpr.csvToObject(fSysId, text, validateLocs, 'interactions');
-  }
-  function validateLocs(fSysId, recrdsAry) {
-    ein.parse.parseChain(fSysId, recrdsAry, 'location');
-  }
-/*---- Parse and validate authors csv -------*/
-  function csvToAuthObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, validateAuths);
-  }
-  function validateAuths(fSysId, text) {
-    ein.csvHlpr.csvToObject(fSysId, text, ein.parse.parseChain, "authors");
-  }
-/*---- Parse and validate publication csv -------*/
-  function csvToPubObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObjPub);
-  }
-  function getCitCSVObjPub(fSysId, text) {
-    ein.csvHlpr.csvToObject(fSysId, text, validatePublication, "citations");
-  }
-  function validatePublication(fSysId, recrdsAry) {
-    ein.parse.parseChain(fSysId, recrdsAry, 'publications');
-  }
-/*---- Parse and validate citation csv -------*/
-  function csvToCitObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getCitCSVObj);
-  }
-  function getCitCSVObj(fSysId, text) {
-    ein.csvHlpr.csvToObject(fSysId, text, validateCitation, "citations");
-  }
-  function validateCitation(fSysId, recrdsAry) {
-    ein.parse.parseChain(fSysId, recrdsAry, 'citations');
-  }
-/*---- Parse and validate interactions csv -------*/
-  function csvToIntObjsCmd() {/* params,           idHandler,                 objHandler,      fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, getInteractionsCSVObj);
-  }
-  function getInteractionsCSVObj(fSysId, text) {
-    ein.csvHlpr.csvToObject(fSysId, text, validateInts, 'interactions');
-  }
-  function validateInts(fSysId, recrdsAry) {
-    ein.parse.parseChain(fSysId, recrdsAry, 'interactions');
+/*----------Select entity to parse-------------- */
+  function selectCSVEntityParse() {/* params,      idHandler,            objHandler,          fileTxtHandler */
+    var entity = document.getElementById('entitySelect').value;
+    var dataSet = entityCsvParseVals[entity];
+
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+
+    function csvToObjForEntity(fSysId, text) {
+      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, dataSet);
+    }
+    function validateEntity(fSysId, recrdsAry) {
+      ein.parse.parseChain(fSysId, recrdsAry, entity);
+    }
   }
 
 
-
-
+/*--------------- Methods For Testing -------------------------- */
   function initTests() {
     var width = 900;
     var height = 300;
@@ -170,55 +122,3 @@
 
 }());  /* end of namespacing anonymous function */
 
-
-    // function collapseIdentAuths(fSysId, recrdsAry) {
-    //   result.unqField = "ShortName";
-    //   ein.parse.deDupIdenticalRcrds(recrdsAry, restructureAuthRecords);
-    // }
-    // function restructureAuthRecords(resultObj) {
-    //   result.deDupRecrds = resultObj.duplicateResults;   console.log("restructureAuthRecords result = %O", result);
-    //   result.deDupRecrds.hasDups ?
-    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillAuths) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
-    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
-    // }
-    // function autoFillAuths(resultObj) {
-    //   result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField || "No records with null unique fields";  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
-    //   ein.parse.autoFill(resultObj.content, validateAuthRecs);
-    // }
-    // function validateAuthRecs(resultObj) {     console.log("validateAuthRecs. resultObj = %O.", resultObj);
-    //   result.autoFillResults = resultObj.autoFillResults || "No records filled.";
-    //   ein.parse.findConflicts(resultObj.content, showResultObj)
-    // }
-    //
-    //
-    // function getPubCols(fSysId, recrdsAry) {
-    //   ein.parse.extractCols(result.entityName, recrdsAry, collapseIdentPubs)
-    // }
-    // function collapseIdentPubs(resultObj) {
-    //   result.unqField = resultObj.extractCols.unqField;
-    //   result.extractdCols = resultObj.extractCols.extrctedCols;
-    //   ein.parse.deDupIdenticalRcrds(resultObj.content, restructurePubRecords);
-    // }
-    // function restructurePubRecords(resultObj) {
-    //   result.deDupRecrds = resultObj.duplicateResults;   console.log("restructurePubRecords result = %O", result);
-    //   result.deDupRecrds.hasDups ?
-    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, autoFillPubs) :       //If there are no dupUnqKeys there is nothing to fill or validate currently
-    //     ein.parse.restructureRecrdObjs(resultObj.content, result.unqField, showResultObj) ;
-    // }
-    // function autoFillPubs(resultObj) {
-    //   result.rcrdsWithNullUnqKeyField = resultObj.rcrdsWithNullUnqKeyField;  console.log("resultObj from dedup = %O. Result being built = %O", resultObj, result);
-    //   ein.parse.autoFill(resultObj.content, validatePubRecs);
-    // }
-    // function validatePubRecs(resultObj) {     console.log("validatePubRecs. resultObj = %O.", resultObj);
-    //   result.autoFillResults = resultObj.autoFillResults;
-    //   ein.parse.findConflicts(resultObj.content, showResultObj)
-    // }
-    // function showResultObj(resultObj) {
-    //   if (resultObj.conflicts !== undefined) {
-    //     result.conflicts = resultObj.conflicts;
-    //   } else {
-    //     result.conflicts = "No Conflicts Found.";
-    //     result.finalRecords = resultObj.content;
-    //   }                                                                  console.log("Final result = %O", result);
-    //   ein.ui.show(fSysId, JSON.stringify(result,null,2));
-    // }
