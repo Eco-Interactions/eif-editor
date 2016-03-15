@@ -47,11 +47,6 @@
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
-		// extractCols: extractCols,
-		// deDupIdenticalRcrds: deDupIdenticalRcrds,
-		// restructureRecrdObjs: restructureIntoRecordObj,
-		// autoFill: autoFillAndCollapseRecords,
-		// findConflicts: hasConflicts,
 		parseChain: recieveCSVAryReturn
 	};
 	/**
@@ -63,7 +58,7 @@
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity) {
-		entityObj = entityParams[entity];
+		entityObj = entityParams[entity];  console.log("entity = %s", entity);
 		parseChain = entityObj.parseMethods;  console.log("parseChain = %O", parseChain);
 
 		recurParseMethods(recrdsAry, entity);
@@ -562,28 +557,26 @@
 /**
  * Merges tag relevant columns/keys and returns the records with these values as an array of tags
  *
- * @param  {obj} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
- * @param  {str}  entity    The entity currently being parsed
+ * @param  {obj} recrdsAry  An array of record objects
+ * @param  {str}  entity    The entity currently being parsed, Interactions
  * @callback     Recieves an array of record objects with any exact duplicates removed.
  */
-function splitIntTags(recrdsObj, entity, callback) {
-	forEachRecAry();
+function splitIntTags(recrdsAry, entity, callback) {
+	var newIntRecrds = forEachIntRec();
 
-	callback('stub', entity);
-	/**
-	 * Loops through each top key in the record object and calls {@link splitFields }
-	 */
-	function forEachRecAry() {
-		for (var key in recrdsObj) {
-			newRecrdObj[key] = mergeFieldsInAry(key);
-		}
-	}
-	function mergeFieldsInAry(key) {
-		var newRecrds = recrdsObj[key].map(function(recrd) {
-				recrd[splitField] = recrd[splitField].split(",");
-				return recrd;
-			});
+	callback(newIntRecrds, entity);
+
+	function forEachIntRec() {
+		var newRecrds = recrdsAry.map(function(recrd) {  console.log("recrd = %O, recrd.IntTag = %O", recrd, recrd.IntTag);
+			recrd.IntTag = recrd.IntTag === null? [] : recrd.IntTag.split(",") || [];
+			mergeTagsIfSecondary(recrd);
+			return recrd;
+		});
 		return newRecrds;
+	}
+	function mergeTagsIfSecondary(recrd) {
+		if (recrd.Directness === "Secondary") { recrd.IntTag.push("Secondary"); }
+		delete recrd.Directness;
 	}
 }
 
