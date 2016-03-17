@@ -664,7 +664,7 @@
 	function splitFieldIntoAry(recrdsObj, entity, callback) {
 		var splitField = entityObj.splitField;
 		var newRecrdObj = {};
-		forEachRecAry();
+		forEachRecAry();  console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
 		callback(newRecrdObj, entity);
 		/**
 		 * Loops through each top key in the record object and calls {@link splitFields }
@@ -682,12 +682,19 @@
 		 */
 		function splitFields(key) {
 			var newRecrds = recrdsObj[key].map(function(recrd) {
-				recrd[splitField] = recrd[splitField] === null ? [] : recrd[splitField].split(",");
+				recrd[splitField] = recrd[splitField] === null ? [] : trimAuthors(recrd);
 				return recrd;
 			});
 			return newRecrds;
 		}
-	}
+		function trimAuthors(recrd) {
+			var authorsAry = recrd[splitField].split(",");
+			var trimmedAry = authorsAry.map(function(authorStr){
+				return authorStr.trim();
+			});
+			return trimmedAry;
+		}
+	} /* End splitFieldIntoAry */
 	/**
 	 * Counts the number of records in an object of keyed arrays.
 	 *
