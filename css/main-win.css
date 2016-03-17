@@ -33,6 +33,9 @@ button {
   background: WhiteSmoke;
   border-bottom: 1px solid gray;
 }
+#entitySelect {
+	margin-left: 12em;
+}
 #status-bar {
 	height: 20px;
 	width: 100%;

@@ -3,51 +3,52 @@
 	var parseChain, entityObj;
     /* Global App Namespace */
 	var ein = ECO_INT_NAMESPACE;
-	/* Columns relevant to the each Entity */
-	var entityCols = {
-		location: {
-			unqKey: 'LocDesc',
-			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType']
-		},
-		publication: {
-			unqKey: 'PubTitle',
-			cols:	['PubTitle', 'PubType','Publisher']
-		},
-	};
+	/* Parse parameters relevant to each Entity */
 	var entityParams = {
 		authors: {
-			unqKey: 'ShortName',
+			name: 'authors',
+			unqKey: ['ShortName'],
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		citations: {
-			unqKey: 'CitId',
+			name: 'citations',
+			subEntities: ['publications'],
+			unqKey: ['CitId'],
 			splitField: 'Authors',
 			cols:	['CitId', 'CitShortDesc', 'FullText', 'Year', 'Authors', 'Title', 'PubTitle', 'Vol', 'Issue', 'Pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			valMetaData: {}
 		},
 		interactions: {
+			name: 'interactions',
+			subEntities: ['locations'],
+			unqKey: ['Id'],
+			splitField: 'IntTag',
 			cols: ["Directness","CitID","LocDesc","IntType","IntTag","SubOrder","SubFam","SubGenus","SubSpecies","ObjKingdom","ObjClass","ObjOrder","ObjFamily","ObjGenus","ObjSpecies"],
-			parseMethods: [extractCols, deDupIdenticalRcrds, splitIntTags],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {}
 		},
 		locations: {
-			unqKey: 'LocDesc',
+			name: 'locations',
+			unqKey: ['LocDesc'],
 			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		publications: {
-			unqKey: 'PubTitle',
-			cols:	['PubTitle', 'PubType','Publisher'],
+			name: 'publications',
+			unqKey: ['PubTitle'],
+			parentkey: ['PubTitle'],
+			cols:	['PubTitle','PubType','Publisher'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
-		parseChain: recieveCSVAryReturn
+		parseChain: recieveCSVAryReturn,
+		mergeDataSet: mergeEntities
 	};
 	/**
 	 * Recieves output from the CSVtoObject conversion and calls {@link recurParseMethods} to execute <<<<<<<<<<<<<<<<<<<<<<<
@@ -57,13 +58,16 @@
 	 * @param  {obj} recrdsAry  An array of record objects
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
-	function recieveCSVAryReturn(fSysId, recrdsAry, entity) {
-		entityObj = entityParams[entity];  console.log("entity = %s", entity);
-		parseChain = entityObj.parseMethods;  console.log("parseChain = %O", parseChain);
+	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback) {
+		entityObj = entityParams[entity]; // console.log("entity = %s", entity);
+		parseChain = entityObj.parseMethods; // console.log("parseChain = %O", parseChain);
 		entityObj.fSyId = fSysId;
 
 		recurParseMethods(recrdsAry, entity);
 
+		callback ?
+			callback(fSysId, entityObj) :
+			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
 	}
 	/**
 	 * Executes the specified entity's parse method chain and sends the results and final records to the screen.
@@ -71,14 +75,13 @@
 	 * @param  {obj||ary} recrds  Record objects in either array or object form
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
-	function recurParseMethods(recrds, entity) {  console.log("recurParseMethods called. recrds = %O", recrds);
+	function recurParseMethods(recrds, entity) { //  console.log("recurParseMethods called. recrds = %O", recrds);
 		var curMethod = parseChain.shift();
 		if (curMethod !== undefined) {
 			curMethod(recrds, entity, recurParseMethods)
 		} else {
 			delete entityObj.parseMethods;
 			entityObj.finalRecords = recrds;
-			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  	console.log("recurParseMethods complete. metaData = %O", entityObj.valMetaData);
 		}
 	}
 	/**
@@ -90,7 +93,7 @@
 	 */
 	function extractCols(recrdsAry, entityType, callback) {
 		var columns = entityObj.cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
-	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });		console.log("Extracted object = %O", extrctdObjs);
+	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });	//	console.log("Extracted object = %O", extrctdObjs);
 
 		callback(extrctdObjs, entityType);
 		/**
@@ -123,7 +126,7 @@
 	 * @callback     Recieves an array of record objects with any exact duplicates removed.
 	 */
 	function deDupIdenticalRcrds(recrdsAry, entity, callback) {  //============================================================================
-		var unqRecords = findUnqRecords(recrdsAry);  console.log("deDupIdenticalRcrds adding meta data now.");
+		var unqRecords = findUnqRecords(recrdsAry);
 		addDeDupMetaData();
 		callback(unqRecords, entity);
 		/**
@@ -146,7 +149,7 @@
 	function findUnqRecords(recrdsAry) {																																	//	console.log("deDupIdenticalRcrds called. Original Records = %O", recrdsAry);
 	  var isDup = false, dupCount = 0, processed = [];
 
-		removeDups(recrdsAry);		   console.log("%s duplicates", dupCount);
+		removeDups(recrdsAry);		  // console.log("%s duplicates", dupCount);
 		return processed;
 	/*----------------Helper Functions for deDupIdenticalRcrds------------------------------------------------------------ */
 		/**
@@ -212,11 +215,31 @@
 	 * @return {object}           An object of arrays grouped under their unique key field.
 	 */
 	function restructureIntoRecordObj(recrdsAry, entity, callback) {
-		var rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
-		var unqField = entityObj.unqKey;
+		var unqField, rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
+		var unqFieldAry = entityObj.unqKey;
+		findUnqField();
 		sortRecords(recrdsAry);
-		addNullRecsMetaData();					console.log("restructureIntoRecordObj entityObj= %O", entityObj);
+		addNullRecsMetaData();			//		console.log("restructureIntoRecordObj entityObj= %O", entityObj);
 		callback(recrdObjsByUnqKey, entity);
+
+		function findUnqField() {
+			unqFieldAry.some(function(unqKey){ return ifKeyInRcrds(unqKey); });
+			ifKeyNotFound();
+		}
+		function ifKeyInRcrds(unqKey) {
+			for (var key in recrdsAry[0]) {
+				if (unqKey === key) {
+					unqField = unqKey;
+					return true;
+				}
+			}
+		}
+		function ifKeyNotFound() {
+			if (unqField === undefined) {
+				recrdsAry = attachTempIds(recrdsAry);																				//--------------Another way to easly get this new array to the rest without overwritting this?
+				unqField = "tempId";
+			}
+		}
 		/**
 		 * For each of the records, checks {@link ifHasUnqFieldValue }
 	   * @param  {array} recrdsAry 	An array of record objects
@@ -224,7 +247,7 @@
 		function sortRecords(recrdsAry) {
 			recrdsAry.forEach(function(recrd){
 				ifHasUnqFieldValue(recrd, unqField);
-			});  							console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);        console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
+			});  						//	console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);        console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
 		}
 		/**
 		 * Check if {@link recrdWithNullUnqFld } and, if unqField has a value, adds this record to that key's array.
@@ -270,7 +293,7 @@
 		 */
 		function addModRecord(recrd, unqField) {
 			var unqKey = recrd[unqField]; //console.log("unqKey = ", unqKey);
-			delete recrd[unqField];
+			// delete recrd[unqField];
 			recrdObjsByUnqKey[unqKey].push(recrd);   //console.log(" pushing to recrdObjsByUnqKey = %O", recrdObjsByUnqKey);
 		}
 		/**
@@ -293,7 +316,7 @@
 	function autoFillAndCollapseRecords(recrdsObj, entity, callback) {
 		var collapsedCnt, filledRecsCnt;
 		var processedRcrds = {};
-		var recordsRecieved = countRecrdsInObj(recrdsObj);  												console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
+		var recordsRecieved = countRecrdsInObj(recrdsObj);  											//	console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
 		fillCandidatesIfAble(isolateCandidatesToFill(recrdsObj));
     addAutoFillAndCollapseMetaData();
 		callback(processedRcrds, entity);
@@ -334,7 +357,7 @@
 		 * @param  {object} candidates  Object with arrays of records with fill potential.
 		 * @return {object}							Record object with any records, that could be, filled and collapsed.
 		 */
-		function fillCandidatesIfAble(candidates) {						console.log("fillCandidatesIfAble candidates = %O", candidates);
+		function fillCandidatesIfAble(candidates) {					//	console.log("fillCandidatesIfAble candidates = %O", candidates);
 			filledRecsCnt = 0;
 			collapsedCnt = 0;
 			forEachRecAry(Object.keys(candidates));
@@ -438,7 +461,7 @@
 	 * @param  {string}  entity   The entity currently being parsed
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
-	function hasConflicts(recrdsObj, entity, callback) { 																    console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
+	function hasConflicts(recrdsObj, entity, callback) { 																   // console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var processed, postProcessConflicted;
 		var conflicted = false;
 		var conflictedRecrds = checkEachRcrdAry();						console.log("conflicts = %O", conflictedRecrds);
@@ -493,7 +516,7 @@
 		 */
 		function findConflicts(recrd, unqField) {
 			processed.some(function(procesd){															// Loop through each record already processed
-				conflicted = checkForConflicts(recrd, procesd, conflicted);  console.log("conflicted = ", conflicted);
+				conflicted = checkForConflicts(recrd, procesd, conflicted); // console.log("conflicted = ", conflicted);
 				ifConflictedGrabThisProcesdRcrd(procesd);
 				return conflicted;
 			});
@@ -553,26 +576,56 @@
 		}
 		return conflicted;
 	}
+/*--------------------------- Merge Entities Methods ------------------------------------- */
+	function mergeEntities(fSysId, outerDataObj, subEntityObjsAry, callback) { console.log("mergeEntities called. Arguments = ", arguments);
+		var dataSetObj = {};
+		var dataSet = outerDataObj.name;
+		var outerEntityRecrds = outerDataObj.finalRecords;     	 console.log("outerEntityRecrds = %O", outerEntityRecrds);
+		//Take outer data obj and grab sub entities
+		//for each, replace their unqKey string with a pointer to the parsed object for the matching entity data from the subEntityObj
+		forEachSubEntityObj(subEntityObjsAry);
+
+		callback ? callback(fSysId, dataSetObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
+
+		function forEachSubEntityObj(subEntityObjs) {
+			subEntityObjsAry.forEach(function(subEntityObjMetaData) {					 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
+				replaceUnqKeysWithEntityObjs(subEntityObjMetaData);
+			});
+		}
+		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) {  console.log("replaceUnqKeysWithEntityObjs")
+			var subEntity = subEntityObjMetaData.name;
+			var subEntityUnqKey = entityParams[subEntity].unqKey[0];  // console.log("subEntityUnqKey = ", subEntityUnqKey);
+			var subEntityRecrds = subEntityObjMetaData.finalRecords;
+			for (var key in  outerEntityRecrds) {
+				findMatchingSubEntityObj(outerEntityRecrds[key][0]);  console.log("outerEntityObj = %O", outerEntityRecrds[key]);
+			}
+			function findMatchingSubEntityObj(outerEntityObj) {
+				var unqKeyStrToReplace = outerEntityObj[subEntityUnqKey];  console.log("unqKeyStrToReplace = ", unqKeyStrToReplace);
+				for (var key in subEntityRecrds) {
+					if (key === unqKeyStrToReplace) { replaceWithPointer(subEntityRecrds[key]); console.log("foundMatchingSubEntityObj");}
+				}
+				function replaceWithPointer(subEntityObj) {  console.log("replacedWithPointer called. subEntityObj = %O", subEntityObj);
+					outerEntityObj[subEntity] = subEntityRecrds[key];  console.log("replacedWithPointer")
+					delete outerEntityObj[subEntityUnqKey];
+				}
+			} /* End findMatchingSubEntityObj */
+		} /* End replaceUnqKeysWithEntityObjs */
+	} /* End mergeEntites */
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
-/**
- * Merges tag relevant columns/keys and returns the records with these values as an array of tags
- *
- * @param  {obj} recrdsAry  An array of record objects
- * @param  {str}  entity    The entity currently being parsed, Interactions
- * @callback     Recieves an array of record objects with any exact duplicates removed.
- */
-function splitIntTags(recrdsAry, entity, callback) {
-	var newIntRecrds = forEachIntRec();
-
-	callback(newIntRecrds, entity);
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
 	 * @return {ary}  		An array of objects with the tag field as an array
 	 */
-	function forEachIntRec() {
-		var newRecrds = recrdsAry.map(function(recrd) {  console.log("recrd = %O, recrd.IntTag = %O", recrd, recrd.IntTag);
-			recrd.IntTag = recrd.IntTag === null? [] : recrd.IntTag.split(",") || [];
+	function mergeSecondaryTags(recrdsObj, entity, callback) {
+		var newRecrdObj = {};
+		for (var key in recrdsObj) {
+			newRecrdObj[key] = checkDirectness(recrdsObj[key]);
+	  }
+		callback(newRecrdObj, entity);
+	}
+	function checkDirectness(recrdsAry) {
+		var newRecrds = recrdsAry.map(function(recrd) {
 			ifSecondary(recrd);
 			return recrd;
 		});
@@ -586,9 +639,21 @@ function splitIntTags(recrdsAry, entity, callback) {
 		if (recrd.Directness === "Secondary") { recrd.IntTag.push("Secondary"); }
 		delete recrd.Directness;
 	}
-}
 
 /*--------------General Helper Methods---------------------------------------------------- */
+	/**
+	 * Attach temporary Ids incrementally to record objects so extracted data can be linked to the original record.
+	 * @param  {array} recrdsAry Colletion of record objects.
+	 * @return {array} A new collection of record objects with a tempId property
+	 */
+	function attachTempIds(recrdsAry) {  	console.log("attachTempIds");
+		var id = 1;
+		var newRecrds = recrdsAry.map(function(recrd){
+			recrd.tempId = id++;
+			return recrd;
+		});
+		return newRecrds;
+	}
 	/**
 	 * Builds a new recordObj with a specified field in each record split into an array
 	 *
@@ -617,9 +682,9 @@ function splitIntTags(recrdsAry, entity, callback) {
 		 */
 		function splitFields(key) {
 			var newRecrds = recrdsObj[key].map(function(recrd) {
-					recrd[splitField] = recrd[splitField].split(",");
-					return recrd;
-				});
+				recrd[splitField] = recrd[splitField] === null ? [] : recrd[splitField].split(",");
+				return recrd;
+			});
 			return newRecrds;
 		}
 	}
@@ -678,18 +743,5 @@ function splitIntTags(recrdsAry, entity, callback) {
 			return isDup;																						// If this record has been identified as a dupicate, add record to the duplicates collection.
 		});
 		return dupRecrds;																				// Returns the collection of duplicated pairs
-	}
-	/**
-	 * Attach temporary Ids incrementally to record objects so extracted data can be linked to the original record.
-	 * @param  {array} recrdsAry Colletion of record objects.
-	 * @return {array} A new collection of record objects with a tempId property
-	 */
-	function attachTempIds(recrdsAry) {  	console.log("attachTempIds");
-		var id = 1;
-		var newRecrds = recrdsAry.map(function(recrd){
-			recrd.tempId = id++;
-			return recrd;
-		});
-		return newRecrds;
 	}
 }());
