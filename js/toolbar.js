@@ -16,7 +16,7 @@
       csvEntity: selectCSVEntityParse,
       csvSet: selectCSVDataSetParse
     };
-  var entityCsvParseVals = {
+  var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     authors: ["authors"],
     citations: ["citations", "publications"],
     interactions: ["interactions", "locations"],
@@ -80,7 +80,8 @@
   }
 /*----------Select Data Set to parse-------------- */
   function selectCSVDataSetParse() {
-    var outerEntityObj, subEntityObj;
+    var subEntityObjAry = [];
+    var outerEntityObj = {};
     var dataSet = document.getElementById('dataSetSelect').value;
     var paramEntitiesAry = entityCsvParseVals[dataSet];
                                    /* params,      idHandler,            objHandler,          fileTxtHandler */
@@ -90,17 +91,29 @@
       ein.csvHlpr.csvToObject(fSysId, text, validateEntity, paramEntitiesAry[0]);
     }
     function validateEntity(fSysId, orgRcrdAryObjs) {
-      // var orgRcrdAryObjs = recrdsAry;
       ein.parse.parseChain(fSysId, orgRcrdAryObjs, paramEntitiesAry[0], validateSubEntity);
 
       function validateSubEntity(fSysId, recrdsObj) {
-        outerDataObj = recrdsObj;  console.log("------------validateSubEntity called. NExt entity = %s", paramEntitiesAry[1])
-        ein.parse.parseChain(fSysId, orgRcrdAryObjs, paramEntitiesAry[1], mergeEntitiesIntoDataObj);
+        outerDataObj = recrdsObj;  console.log("------------validateSubEntity called. Next entity = %s", paramEntitiesAry[1])
+        ein.parse.parseChain(fSysId, orgRcrdAryObjs, paramEntitiesAry[1], loadAndMergeAuthorsDataSet);
+      }
+    }
+    function loadAndMergeAuthorsDataSet(fSysId, recrdsObj, entity) {
+      ein.ui.setStatus('Select an Authors CSV File, Because you\'re great!');
+      subEntityObjAry.push(recrdsObj); console.log("subEntityObjAry returned to toolbar.js", subEntityObjAry);
+                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
+      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForAuthor);
+
+      function csvToObjForAuthor(fSysId, text) {
+        ein.csvHlpr.csvToObject(fSysId, text, validateAuthors, "authors");
+      }
+      function validateAuthors(fSysId, orgRcrdAryObjs) {
+        ein.parse.parseChain(fSysId, orgRcrdAryObjs, "authors", mergeEntitiesIntoDataObj);
       }
     }
     function mergeEntitiesIntoDataObj(fSysId, recrdsObj, entity) {
-      subEntityObj = recrdsObj; console.log("subEntityObj", subEntityObj)
-      ein.parse.mergeDataSet(fSysId, outerDataObj, [subEntityObj]);
+      subEntityObjAry.push(recrdsObj); console.log("subEntityObjAry returned to toolbar", subEntityObjAry);
+      ein.parse.mergeDataSet(fSysId, outerDataObj, subEntityObjAry);
     }
   }
 

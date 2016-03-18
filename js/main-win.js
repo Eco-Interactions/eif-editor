@@ -15,8 +15,8 @@
         ECO_INT_NAMESPACE.ui.curFileId = fileId;  console.log("show curFileId= ", ECO_INT_NAMESPACE.ui.curFileId);
         editorTxtArea.value = fileText;
       },
-      setStatus: function(statusStr) {
-        statusBar.value = statusStr;
+      setStatus: function(statusStr) { console.log("-----------attempting to set status. statusStr = ", statusStr);
+        statusBar.text = statusStr;
       }
     };
     initDragBar();

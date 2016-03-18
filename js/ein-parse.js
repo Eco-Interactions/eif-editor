@@ -7,6 +7,7 @@
 	var entityParams = {
 		authors: {
 			name: 'authors',
+			subEntityCollection: true,
 			unqKey: ['ShortName'],
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
@@ -15,8 +16,8 @@
 			name: 'citations',
 			subEntities: ['publications'],
 			unqKey: ['CitId'],
-			splitField: 'Authors',
-			cols:	['CitId', 'CitShortDesc', 'FullText', 'Year', 'Authors', 'Title', 'PubTitle', 'Vol', 'Issue', 'Pgs'],
+			splitField: 'authors',
+			cols:	['CitId', 'CitShortDesc', 'FullText', 'Year', 'authors', 'Title', 'PubTitle', 'Vol', 'Issue', 'Pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			valMetaData: {}
 		},
@@ -75,7 +76,7 @@
 	 * @param  {obj||ary} recrds  Record objects in either array or object form
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
-	function recurParseMethods(recrds, entity) { //  console.log("recurParseMethods called. recrds = %O", recrds);
+	function recurParseMethods(recrds, entity) {   console.log("recurParseMethods called. recrds = %O, entity = %s", recrds, entity);
 		var curMethod = parseChain.shift();
 		if (curMethod !== undefined) {
 			curMethod(recrds, entity, recurParseMethods)
@@ -594,19 +595,47 @@
 		}
 		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) {  console.log("replaceUnqKeysWithEntityObjs")
 			var subEntity = subEntityObjMetaData.name;
-			var subEntityUnqKey = entityParams[subEntity].unqKey[0];  // console.log("subEntityUnqKey = ", subEntityUnqKey);
 			var subEntityRecrds = subEntityObjMetaData.finalRecords;
-			for (var key in  outerEntityRecrds) {
-				findMatchingSubEntityObj(outerEntityRecrds[key][0]);  console.log("outerEntityObj = %O", outerEntityRecrds[key]);
+
+			forEachOuterRecrdObj() ;
+
+
+			function forEachOuterRecrdObj() {
+				for (var key in  outerEntityRecrds) {
+						findMatchingSubEntityObj(outerEntityRecrds[key][0]) ; // console.log("outerEntityObj = %O", outerEntityRecrds[key]);
+				}
 			}
 			function findMatchingSubEntityObj(outerEntityObj) {
-				var unqKeyStrToReplace = outerEntityObj[subEntityUnqKey];  console.log("unqKeyStrToReplace = ", unqKeyStrToReplace);
-				for (var key in subEntityRecrds) {
-					if (key === unqKeyStrToReplace) { replaceWithPointer(subEntityRecrds[key]); console.log("foundMatchingSubEntityObj");}
+				var isCollection = false;
+				if (isSubEntityACollection()) {
+					var rcrdsAry = [];
+					isCollection = true;
+					processSubEntityCollection(outerEntityObj);
+				} else {
+					var unqKeyStrToReplace = outerEntityObj[entityParams[subEntity].unqKey[0]]; // console.log("unqKeyStrToReplace = ", unqKeyStrToReplace);
+					findKeyInSubRecords(outerEntityObj, unqKeyStrToReplace);
 				}
-				function replaceWithPointer(subEntityObj) {  console.log("replacedWithPointer called. subEntityObj = %O", subEntityObj);
-					outerEntityObj[subEntity] = subEntityRecrds[key];  console.log("replacedWithPointer")
-					delete outerEntityObj[subEntityUnqKey];
+
+				function isSubEntityACollection() {
+					return ("subEntityCollection" in entityParams[subEntity]);
+				}
+				function processSubEntityCollection(outerEntityObj) { //console.log("outerEntityObj  = %O at processSubEntityCollection", outerEntityObj);
+					var subEntitiesToReplaceAry = outerEntityObj[subEntity]; // console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
+					subEntitiesToReplaceAry.forEach(function(subEntityKey){ // console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
+						findKeyInSubRecords(subEntityKey);
+					}); //  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);
+					replaceWithPointer(rcrdsAry);
+				}
+				function findKeyInSubRecords(unqKeyStrToReplace) {
+					for (var key in subEntityRecrds) {
+						if (key === unqKeyStrToReplace) {  console.log("subEntity record match found. = %O. isCollection = %s", subEntityRecrds[key], isCollection);
+							isCollection ? rcrdsAry.push(subEntityRecrds[key]) : replaceWithPointer(subEntityRecrds[key]); //console.log("foundMatchingSubEntityObj");}
+						}
+					}
+				}
+				function replaceWithPointer(subEntityObjsAry) {  //console.log("replacedWithPointer called. subEntityObjsAry = %O", subEntityObjsAry);
+					outerEntityObj[subEntity] = subEntityObjsAry || subEntityRecrds[key]; // console.log("replacedWithPointer")
+					delete outerEntityObj[unqKeyStrToReplace];
 				}
 			} /* End findMatchingSubEntityObj */
 		} /* End replaceUnqKeysWithEntityObjs */

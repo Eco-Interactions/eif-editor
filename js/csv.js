@@ -46,7 +46,7 @@
       "Citation ID": "CitId",
       "Citation Short Description": "CitShortDesc",
       "Full Text": "FullText",
-      "Authors": "Authors",
+      "Authors": "authors",
       "Year": "Year",
       "Title": "Title",
       "Publication Title": "PubTitle",
