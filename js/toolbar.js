@@ -18,10 +18,10 @@
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     authors: ["authors"],
-    citations: ["citations", "publications"],
-    interactions: ["interactions", "locations"],
-    locations: ["interactions"],
-    publications: ["citations"]
+    citation: ["citation", "publication"],
+    interactions: ["interactions", "location"],
+    location: ["interactions"],
+    publication: ["citation"]
   };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
