@@ -21,7 +21,9 @@
     citation: ["citation", "publication"],
     interactions: ["interactions", "location"],
     location: ["interactions"],
-    publication: ["citation"]
+    publication: ["citation"],
+    interactionSet: ["interactions", "citation", "authors"],
+    citationSet: ["citation", "authors"]
   };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
@@ -80,40 +82,49 @@
   }
 /*----------Select Data Set to parse-------------- */
   function selectCSVDataSetParse() {
-    var subEntityObjAry = [];
+    var curTopEntity, isOuterEntity, outerDataObj, entitiesInFile;
+    var fSysIdAry = subEntityObjAry = [];
     var outerEntityObj = {};
-    var dataSet = document.getElementById('dataSetSelect').value;
-    var paramEntitiesAry = entityCsvParseVals[dataSet];
-                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+    var dataSet = document.getElementById('dataSetSelect').value;  console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
+    var paramTopEntitiesAry = entityCsvParseVals[dataSet];
 
-    function csvToObjForEntity(fSysId, text) {
-      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, paramEntitiesAry[0]);
-    }
-    function validateEntity(fSysId, orgRcrdAryObjs) {
-      ein.parse.parseChain(fSysId, orgRcrdAryObjs, paramEntitiesAry[0], validateSubEntity);
+    forEachTopEntity();
 
-      function validateSubEntity(fSysId, recrdsObj) {
-        outerDataObj = recrdsObj;  console.log("------------validateSubEntity called. Next entity = %s", paramEntitiesAry[1])
-        ein.parse.parseChain(fSysId, orgRcrdAryObjs, paramEntitiesAry[1], loadAndMergeAuthorsDataSet);
-      }
-    }
-    function loadAndMergeAuthorsDataSet(fSysId, recrdsObj, entity) {
-      ein.ui.setStatus('Select an Authors CSV File, Because you\'re great!');
-      subEntityObjAry.push(recrdsObj); console.log("subEntityObjAry returned to toolbar.js", subEntityObjAry);
-                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
-      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForAuthor);
+    // paramTopEntitiesAry.length>0 ? forEachTopEntity() :  ;
+      // mergeEntitiesIntoDataObj();
+    // }
+    function forEachTopEntity() {
+      if ( paramTopEntitiesAry.length === 0 ) { mergeEntitiesIntoDataObj(); }
+      curTopEntity = paramTopEntitiesAry.pop();      console.log("curTopEntity = ", curTopEntity);
+      entitiesInFile = entityCsvParseVals[curTopEntity];
+      isOuterEntity = paramTopEntitiesAry.length === 0;
+      openEntityFile();
 
-      function csvToObjForAuthor(fSysId, text) {
-        ein.csvHlpr.csvToObject(fSysId, text, validateAuthors, "authors");
+      function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
+        ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
       }
-      function validateAuthors(fSysId, orgRcrdAryObjs) {
-        ein.parse.parseChain(fSysId, orgRcrdAryObjs, "authors", mergeEntitiesIntoDataObj);
+      function csvToObjForEntity(fSysId, text) {        console.log("csvToObjForEntity called.");
+        fSysIdAry.push(fSysId);     console.log("curTopEntity inside = ", curTopEntity);
+        ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
       }
-    }
-    function mergeEntitiesIntoDataObj(fSysId, recrdsObj, entity) {
-      subEntityObjAry.push(recrdsObj); console.log("subEntityObjAry returned to toolbar", subEntityObjAry);
-      ein.parse.mergeDataSet(fSysId, outerDataObj, subEntityObjAry);
+      }/* End forEachTopEntity */
+      function forEachEntityInFile(fSysId, orgRcrdAryObjs) {
+        entitiesInFile.forEach(function(parseEntity, idx) {   console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
+          ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
+        });
+        forEachTopEntity();
+        // paramTopEntitiesAry.length===0 ?
+      }
+      function storeParsedEntityRecords(fSysId, recrdsObj) {
+        if (isOuterEntity) {  console.log("storeParsedEntityRecords called. isOuterEntity = ", isOuterEntity);
+          outerDataObj = recrdsObj;
+          isOuterEntity = false;
+        } else {  console.log("forEachEntityInFile called on subEntity");
+          subEntityObjAry.push(recrdsObj);
+        }
+      }
+    function mergeEntitiesIntoDataObj(recrdsObj) {  console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry);
     }
   }
 
