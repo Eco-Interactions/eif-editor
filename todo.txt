@@ -7,27 +7,70 @@ Functions
 
 		parse
 			validate(entityType, recrdsAry)
-				(dict with standized headers, and unqField, for each entity)
-				run extractCols(hdrs) 
+=				run extractCols(hdrs)
 				run deDupIdentical
 				remove entirely null record
 				run checkForConflicts(unqField)
 
 
 								build a validation report obj with results from the various steps
-										colsExtractObj.length 
-												number of cols that were extracted
+										-colsExtractObj.length
+												-number of cols that were extracted
 										deDupIdentical
 												length of return ary
 												number of exact duplicates
-												bool- removed null record 
-										--autofillandcollapse
+												bool- removed null record
+										-autofillandcollapse
+												number filled
+												number collapsed
+												remaining
 										conflicts
 												+(count) of records with unqfields
 												count of how many unqKeys have conflicts (vv obj.keys.length vv)
+
 												conflctsObj w unqField vals as top-keys
-														an array of conflicted recrdobjs 
-																w the unqkey removed 
+														an array of conflicted recrdobjs
+																w the unqkey removed
 
 
 
+// Notes on test csv
+		All dups have one field removed except
+				"Explorama Lodge, Amazon"
+
+NOTES
+
+		-Where to add entityType string? For some reason adding
+				params to the execute api members function are erroring undefined
+		-CONFLICT OBJ
+				Including the null record in the duplicate count rather than as bool
+						due to undefined also being a case for removal and
+						for the sake of the count
+
+		--auto fill is adding extra candidates somewhere. not really affecting anything
+				because the few dups are removed.
+
+
+				---Isolate null records before autofill
+						count
+			ConflictObj
+				---display unqKeyField
+						--rcrds w null key field (cnt) array of obj
+
+			Find where org object is being manipulated and remove clone.
+
+			find conflicts:
+					processed {
+							unqkeys []
+					}
+
+TODO
+	Add placeholders by entity and column to the translation dictionary, so that placeholders can be converted to nulls regardless of format.
+
+GENERAL WORK MOVING FORWARD
+	--PAYMENT PAGE FOR WHM
+	--CRON JOB BACKUPS
+
+
+	???
+	How to best get entity type into parse and csv type into the standardize headers of csv.js

@@ -42,7 +42,7 @@
       "Middle": "Middle",
       "Suffix": "Suffix"
     },
-    citations: {
+    citation: {
       "Citation ID": "CitId",
       "Citation Short Description": "CitShortDesc",
       "Full Text": "FullText",

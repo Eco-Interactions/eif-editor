@@ -607,13 +607,13 @@
 			}
 			function findMatchingSubEntityObj(outerEntityObj) {
 				var isCollection = false;
-				if (isSubEntityACollection()) {
+				if (isSubEntityACollection()) {    console.log("isCollection")
 					var rcrdsAry = [];
 					isCollection = true;
 					processSubEntityCollection(outerEntityObj);
-				} else {
+				} else {  console.log("is not Collection")
 					var unqKeyStrToReplace = outerEntityObj[entityParams[subEntity].unqKey[0]]; // console.log("unqKeyStrToReplace = ", unqKeyStrToReplace);
-					findKeyInSubRecords(outerEntityObj, unqKeyStrToReplace);
+					if (unqKeyStrToReplace !== null) { findKeyInSubRecords(unqKeyStrToReplace);  }
 				}
 
 				function isSubEntityACollection() {
@@ -628,13 +628,13 @@
 				}
 				function findKeyInSubRecords(unqKeyStrToReplace) {
 					for (var key in subEntityRecrds) {
-						if (key === unqKeyStrToReplace) {  console.log("subEntity record match found. = %O. isCollection = %s", subEntityRecrds[key], isCollection);
-							isCollection ? rcrdsAry.push(subEntityRecrds[key]) : replaceWithPointer(subEntityRecrds[key]); //console.log("foundMatchingSubEntityObj");}
+						if (key === unqKeyStrToReplace) {  console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
+							isCollection ? rcrdsAry.push(subEntityRecrds[key][0]) : replaceWithPointer(subEntityRecrds[key][0]); //console.log("foundMatchingSubEntityObj");}
 						}
 					}
 				}
-				function replaceWithPointer(subEntityObjsAry) {  //console.log("replacedWithPointer called. subEntityObjsAry = %O", subEntityObjsAry);
-					outerEntityObj[subEntity] = subEntityObjsAry || subEntityRecrds[key]; // console.log("replacedWithPointer")
+				function replaceWithPointer(matchedRecrd) {  console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
+					outerEntityObj[subEntity] = matchedRecrd; // console.log("replacedWithPointer")
 					delete outerEntityObj[unqKeyStrToReplace];
 				}
 			} /* End findMatchingSubEntityObj */
