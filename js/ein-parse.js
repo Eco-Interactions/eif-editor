@@ -26,7 +26,7 @@
 			subEntities: ['locations'],
 			unqKey: ['Id'],
 			splitField: 'IntTag',
-			cols: ["Directness","CitID","LocDesc","IntType","IntTag","SubOrder","SubFam","SubGenus","SubSpecies","ObjKingdom","ObjClass","ObjOrder","ObjFamily","ObjGenus","ObjSpecies"],
+			cols: ["Directness","CitId","LocDesc","IntType","IntTag","SubOrder","SubFam","SubGenus","SubSpecies","ObjKingdom","ObjClass","ObjOrder","ObjFamily","ObjGenus","ObjSpecies"],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {}
 		},
@@ -529,7 +529,9 @@
 			 */
 			function ifConflictedGrabThisProcesdRcrd(procesd) {
 				if (conflicted) {
-				  if (postProcessConflicted.indexOf(procesd) === -1) { postProcessConflicted.push(procesd); }
+				  if (postProcessConflicted.indexOf(procesd) === -1) {
+				  	postProcessConflicted.push(procesd);
+				  }
 				}
 			}
 		}
@@ -579,24 +581,23 @@
 	}
 /*--------------------------- Merge Entities Methods ------------------------------------- */
 	function mergeEntities(fSysId, outerDataObj, subEntityObjsAry, callback) { console.log("mergeEntities called. Arguments = ", arguments);
-		var dataSetObj = {};
 		var dataSet = outerDataObj.name;
 		var outerEntityRecrds = outerDataObj.finalRecords;     	 console.log("outerEntityRecrds = %O", outerEntityRecrds);
 		//Take outer data obj and grab sub entities
 		//for each, replace their unqKey string with a pointer to the parsed object for the matching entity data from the subEntityObj
 		forEachSubEntityObj(subEntityObjsAry);
 
-		callback ? callback(fSysId, dataSetObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
+		callback ? callback(fSysId, outerDataObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
 
 		function forEachSubEntityObj(subEntityObjs) {
 			subEntityObjsAry.forEach(function(subEntityObjMetaData) {					 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
 				replaceUnqKeysWithEntityObjs(subEntityObjMetaData);
 			});
 		}
-		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) {  //console.log("replaceUnqKeysWithEntityObjs")
+		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) {  console.log("replaceUnqKeysWithEntityObjs. subEntityObjMetaData = %O", subEntityObjMetaData);
 			var outerEntityObj, rcrdsAry;
 			var subEntity = subEntityObjMetaData.name;
-			var subEntityRecrds = subEntityObjMetaData.finalRecords;
+			var subEntityRecrds = subEntityObjMetaData.finalRecords;   console.log("subEntityRecrds = %O", subEntityRecrds);
 			var isCollection = "subEntityCollection" in entityParams[subEntity];
 			var processMethod = isCollection ? processSubEntityCollection : processSingleSubEntity;
 
@@ -607,7 +608,7 @@
 					outerEntityObj = outerEntityRecrds[key][0];
 					processMethod(outerEntityObj); }
 			}
-			function processSubEntityCollection(outerEntityObj) {  console.log("isCollection")
+			function processSubEntityCollection(outerEntityObj) { // console.log("isCollection")
 				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; // console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
 				rcrdsAry = [];
 				forEachSubEntityInCollection();
@@ -619,14 +620,14 @@
 					}); //  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
 				}
 			} /* End processSubEntityCollection */
-			function processSingleSubEntity(outerEntityObj) {   console.log("is not Collection")
+			function processSingleSubEntity(outerEntityObj) {  // console.log("is not Collection")
 			  var unqKey = entityParams[subEntity].unqKey[0];
-				var unqKeyValToReplace = outerEntityObj[unqKey]; // console.log("unqKeyStrToReplace = ", unqKeyStrToReplace);
+				var unqKeyValToReplace = outerEntityObj[unqKey]; // console.log("outerEntityObj = %O. unqKeyValToReplace = %s", outerEntityObj, unqKeyValToReplace);
 				ifKeyValueIsNotNullFindKey();
 
 				function ifKeyValueIsNotNullFindKey() {
 					if (unqKeyValToReplace !== null) {
-						findKeyInSubRecords(unqKeyValToReplace);
+						findKeyInSubRecords(unqKeyValToReplace);// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
 						delete outerEntityObj[unqKey];
 					}
 				}
@@ -635,11 +636,11 @@
 				for (var key in subEntityRecrds) { ifKeyValuesMatch(key, unqKeyStrToReplace); }
 			}
 			function ifKeyValuesMatch(key, unqKeyStrToReplace) {
-				if (key === unqKeyStrToReplace) { // console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
+				if (key == unqKeyStrToReplace) { // console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
 					isCollection ? rcrdsAry.push(subEntityRecrds[key][0]) : replaceWithPointer(subEntityRecrds[key][0]); //console.log("foundMatchingSubEntityObj");}
 				}
 			}
-			function replaceWithPointer(matchedRecrd) { // console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
+			function replaceWithPointer(matchedRecrd) {// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				outerEntityObj[subEntity] = matchedRecrd;
 			}
 		} /* End replaceUnqKeysWithEntityObjs */
@@ -714,15 +715,15 @@
 		 */
 		function splitFields(key) {
 			var newRecrds = recrdsObj[key].map(function(recrd) {
-				recrd[splitField] = recrd[splitField] === null ? [] : trimAuthors(recrd);
+				recrd[splitField] = recrd[splitField] === null ? [] : splitAndTrimField(recrd);
 				return recrd;
 			});
 			return newRecrds;
 		}
-		function trimAuthors(recrd) {
-			var authorsAry = recrd[splitField].split(",");
-			var trimmedAry = authorsAry.map(function(authorStr){
-				return authorStr.trim();
+		function splitAndTrimField(recrd) {  //console.log("splitAndTrimField called. recrd = %O", recrd);
+			var collectionAry = recrd[splitField].split(",");
+			var trimmedAry = collectionAry.map(function(valueStr){
+				return valueStr.trim();
 			});
 			return trimmedAry;
 		}

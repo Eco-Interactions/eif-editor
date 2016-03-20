@@ -12,7 +12,7 @@
   var hdrDict = {
     interactions: {
       "Primary or Secondary interaction": "Directness",
-      "Citation Number": "CitID",
+      "Citation Number": "CitId",
       "Citation Short Description": "CitShortDesc",
       "Region": "Region",
       "Location Description": "LocDesc",

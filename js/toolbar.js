@@ -14,7 +14,8 @@
       setUpTests: initTests,
       runTests: launchTests,
       csvEntity: selectCSVEntityParse,
-      csvSet: selectCSVDataSetParse
+      csvSet: selectCSVDataSetParse,
+      intSet: csvInteractionDataSetParse
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     authors: ["authors"],
@@ -122,10 +123,64 @@
         if (recrdsObj.name === topEntity) { parseEachTopEntity(); }
       }
     } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj() {                                             console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+    function mergeEntitiesIntoDataObj() {                                           console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
       ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry);
     }
   }/* End selectCSVDataSetParse */
+  /*----------Interaction Data Set parsing-------------- */
+  function csvInteractionDataSetParse() {
+    var curTopEntity, citDataObj, intDataObj, entitiesInFile;
+    var outerEntity = false;
+    var fSysIdAry = [];
+    var subEntityObjAry = [];
+    var intSubEntityObjAry = [];
+    var outerEntityObj = {};
+    var dataSet = "interactionSet";                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
+    var paramTopSubEntitiesAry = entityCsvParseVals[dataSet];
+
+    processTopEntities();
+
+    function processTopEntities() {
+      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("curTopEntity = ", curTopEntity);
+      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
+      openEntityFile();
+    }
+    function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
+      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+    }
+    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
+      fSysIdAry.push(fSysId);                                                       console.log("curTopEntity inside = ", curTopEntity);
+      ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
+    }
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile called. arguments = %O", arguments);
+      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
+        ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
+      });
+      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
+        if ("interactions" === recrdsObj.name) {                                       console.log("storeParsedEntityRecords called. isOuterEntity true. recrdsObj = %O", recrdsObj);
+          intDataObj = recrdsObj;
+          mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry, saveJSONresults);
+        } else if ("citation" === recrdsObj.name){   console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
+          citDataObj = recrdsObj;
+          mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
+        } else {
+          subEntityObjAry.push(recrdsObj);
+          if (recrdsObj.name === topEntity) { processTopEntities(); }
+        }                                                                    console.log("forEachEntityInFile called on subEntity");
+      }/* End storeParsedEntityRecords */
+    } /* End forEachEntityInFile */
+    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {   console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry, callback);
+    }
+    function storeMergedCits(fSysId, mergedCitRecrds) {
+      subEntityObjAry = [];
+      subEntityObjAry.push(mergedCitRecrds);
+      processTopEntities();
+    }
+    function saveJSONresults(fSysId, mergedIntRecrds) {
+      ein.fileSys.fileSaveAs(JSON.stringify(mergedIntRecrds.finalRecords, null, 2));
+    }
+  }/* End csvInteractionDataSetParse */
 
 
 
