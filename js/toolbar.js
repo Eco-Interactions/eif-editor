@@ -1,8 +1,5 @@
 (function(){
   var ein = ECO_INT_NAMESPACE;
-  var curFiles = { open: false, appData: false, meta: {} };
-  var curFileId;
-  var msgRouter = { fileSysId: {}, responseObj: {} };
   var toolbarBtnMap = {
       openFile: openFileCmd,
       openFolder: openFolderCmd,
@@ -28,12 +25,7 @@
     authorsSet: ["authors"]
   };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
-
-  /* onDomLoaded and it's helpers run after DOM-loaded code for local (outer window) */
-
-  function onDomLoaded() {
-    document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
-  }
+  function onDomLoaded() { document.getElementById("toolbar").addEventListener("click", toolbarClickHandler); }
 
   /* ============================================================== */
   /* === Toolbar Command functions ================================ */
@@ -53,11 +45,11 @@
     ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
   }
 
-  function saveFileCmd() {  console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
+  function saveFileCmd() {  //console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
     ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
-  function fileSaveAsCmd() {/*  file Text   */    console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
+  function fileSaveAsCmd() {/*  file Text   */   // console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
     ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
   }
 
@@ -88,7 +80,6 @@
     var outerEntity = false;
     var fSysIdAry = [];
     var subEntityObjAry = [];
-    var outerEntityObj = {};
     var dataSet = document.getElementById('dataSetSelect').value;                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
     var paramTopEntitiesAry = entityCsvParseVals[dataSet];
 
@@ -133,15 +124,13 @@
     var outerEntity = false;
     var fSysIdAry = [];
     var subEntityObjAry = [];
-    var intSubEntityObjAry = [];
-    var outerEntityObj = {};
-    var dataSet = "interactionSet";                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
+    var dataSet = "interactionSet";                                                 console.log("csvInteractionDataSetParse called.  dataSet = ", dataSet);
     var paramTopSubEntitiesAry = entityCsvParseVals[dataSet];
 
     processTopEntities();
 
     function processTopEntities() {
-      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("curTopEntity = ", curTopEntity);
+      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("Open file for curTopEntity = ", curTopEntity);
       entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
       openEntityFile();
     }
@@ -149,27 +138,27 @@
       ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
     }
     function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
-      fSysIdAry.push(fSysId);                                                       console.log("curTopEntity inside = ", curTopEntity);
+      fSysIdAry.push(fSysId);
       ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
     }
-    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile called. arguments = %O", arguments);
-      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile first called. arguments = %O", arguments);
+      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile parsing = ", parseEntity);
         ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
       });
       function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if ("interactions" === recrdsObj.name) {                                       console.log("storeParsedEntityRecords called. isOuterEntity true. recrdsObj = %O", recrdsObj);
+        if ("interactions" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
           intDataObj = recrdsObj;
           mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry, saveJSONresults);
-        } else if ("citation" === recrdsObj.name){   console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
+        } else if ("citation" === recrdsObj.name){                                  console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
           citDataObj = recrdsObj;
           mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
         } else {
           subEntityObjAry.push(recrdsObj);
           if (recrdsObj.name === topEntity) { processTopEntities(); }
-        }                                                                    console.log("forEachEntityInFile called on subEntity");
+        }
       }/* End storeParsedEntityRecords */
     } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {   console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {    console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
       ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry, callback);
     }
     function storeMergedCits(fSysId, mergedCitRecrds) {

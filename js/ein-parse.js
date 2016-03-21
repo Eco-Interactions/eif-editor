@@ -8,40 +8,39 @@
 		authors: {
 			name: 'authors',
 			subEntityCollection: true,
-			unqKey: ['ShortName'],
+			unqKey: ['shortName'],
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		citation: {
 			name: 'citation',
 			subEntities: ['publication'],
-			unqKey: ['CitId'],
+			unqKey: ['citId'],
 			splitField: 'authors',
-			cols:	['CitId', 'CitShortDesc', 'FullText', 'Year', 'authors', 'Title', 'PubTitle', 'Vol', 'Issue', 'Pgs'],
+			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'authors', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			valMetaData: {}
 		},
 		interactions: {
 			name: 'interactions',
 			subEntities: ['locations'],
-			unqKey: ['Id'],
-			splitField: 'IntTag',
-			cols: ["Directness","CitId","LocDesc","IntType","IntTag","SubOrder","SubFam","SubGenus","SubSpecies","ObjKingdom","ObjClass","ObjOrder","ObjFamily","ObjGenus","ObjSpecies"],
+			unqKey: ['id'],
+			splitField: 'intTag',
+			cols: ["directness","citId","locDesc","intType","intTag","subOrder","subFam","subGenus","subSpecies","objKingdom","objClass","objOrder","objFamily","objGenus","objSpecies"],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {}
 		},
 		location: {
 			name: 'location',
-			unqKey: ['LocDesc'],
-			cols:	['LocDesc', 'Elev', 'ElevRangeMax', 'Lat', 'Long', 'Region', 'Country', 'HabType'],
+			unqKey: ['locDesc'],
+			cols:	['locDesc', 'elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		publication: {
 			name: 'publication',
-			unqKey: ['PubTitle'],
-			parentkey: ['PubTitle'],
-			cols:	['PubTitle','PubType','Publisher'],
+			unqKey: ['pubTitle'],
+			cols:	['pubTitle','pubType','publisher'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
@@ -626,10 +625,8 @@
 				ifKeyValueIsNotNullFindKey();
 
 				function ifKeyValueIsNotNullFindKey() {
-					if (unqKeyValToReplace !== null) {
-						findKeyInSubRecords(unqKeyValToReplace);// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
-						delete outerEntityObj[unqKey];
-					}
+					unqKeyValToReplace === null ? outerEntityObj[subEntity] = null : findKeyInSubRecords(unqKeyValToReplace) ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
+					delete outerEntityObj[unqKey];
 				}
 			} /* End processSingleSubEntity */
 			function findKeyInSubRecords(unqKeyStrToReplace) {
