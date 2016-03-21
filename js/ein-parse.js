@@ -209,7 +209,7 @@
 		}
 	} /* End isDuplicate */
 	/**
-	 * Head of method chain that seperates records into an object of arrays grouped under their unique key field. ====================================================================
+	 * Head of method chain that seperates records into an object of arrays grouped under their unique key field.
 	 * @param  {array} recrdsAry 	An array of record objects
 	 * @param  {string}  entity   The entity currently being parsed
 	 * @return {object}           An object of arrays grouped under their unique key field.
@@ -273,7 +273,6 @@
 		}
 		/**
 		 * Checks if unique field value exists as key in new record object, adds it if not, and adds the record to that array.
-		 *
 		 * @param  {object}  recrd    Record currently being sorted
 	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 		 */
@@ -334,7 +333,6 @@
 		}
 		/**
 		 * For each of the record arrays grouped by shared unique key value,
-		 *
 		 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
 		 * @return {object}           Object with two keyed arrays: fill candidates and non-candidates
 		 */
@@ -352,8 +350,7 @@
 		} /* End isolateCandidatesForFill */
 		/**
 		 * Head of method chain that will check each collection of records {@link forEachRecAry} grouped by unique key for conflicting data
-		 * If no conflicts, the records are mutually filled and resulting duplicates removed.================================
-		 *
+		 * If no conflicts, the records are mutually filled and resulting duplicates removed.		 *
 		 * @param  {object} candidates  Object with arrays of records with fill potential.
 		 * @return {object}							Record object with any records, that could be, filled and collapsed.
 		 */
@@ -364,7 +361,6 @@
 			/**
 			 * For each array of records, calls {@link checkAndFill }. After any records that can be are filled,
 			 * removes resulting duplicate records {@link deDupIdenticalRecords }
-			 *
 			 * @param  {array} candidateAryKeys  Array of top keys for sorted record arrays
 			 */
 			function forEachRecAry(candidateAryKeys) {
@@ -376,7 +372,6 @@
 			}
 			/**
 			 * For each record in the array, {@link processRecrd } for fill potential
-			 *
 			 * @param  {string} key  unqField value share by all record in the array.
 			 */
 			function checkAndFill(key) {
@@ -387,7 +382,6 @@
 				});
 				/**
 				 * Calls {@link checkAlrdyProcessed }, which fills if able, and adds record to those already processed.
-				 *
 			   * @param  {object}  recrd  Record currently being checked for fill potential.
 				 */
 				function processRecrd(recrd) {
@@ -397,7 +391,6 @@
 				}
 				/**
 				 * Fo every record already processed, calls {@link fillIfNoConflictingData }.
-				 *
 			   * @param  {object}  recrd  Record currently being checked for fill potential.
 				 */
 				function checkAlrdyProcessed(recrd) {
@@ -581,22 +574,21 @@
 /*--------------------------- Merge Entities Methods ------------------------------------- */
 	function mergeEntities(fSysId, outerDataObj, subEntityObjsAry, callback) { console.log("mergeEntities called. Arguments = ", arguments);
 		var dataSet = outerDataObj.name;
-		var outerEntityRecrds = outerDataObj.finalRecords;     	 console.log("outerEntityRecrds = %O", outerEntityRecrds);
-		//Take outer data obj and grab sub entities
-		//for each, replace their unqKey string with a pointer to the parsed object for the matching entity data from the subEntityObj
+		var outerEntityRecrds = outerDataObj.finalRecords;     									 console.log("outerEntityRecrds = %O", outerEntityRecrds);
+
 		forEachSubEntityObj(subEntityObjsAry);
 
 		callback ? callback(fSysId, outerDataObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
 
 		function forEachSubEntityObj(subEntityObjs) {
-			subEntityObjsAry.forEach(function(subEntityObjMetaData) {					 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
+			subEntityObjsAry.forEach(function(subEntityObjMetaData) {							 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
 				replaceUnqKeysWithEntityObjs(subEntityObjMetaData);
 			});
 		}
-		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) {  console.log("replaceUnqKeysWithEntityObjs. subEntityObjMetaData = %O", subEntityObjMetaData);
+		function replaceUnqKeysWithEntityObjs(subEntityObjMetaData) { 					 console.log("replaceUnqKeysWithEntityObjs. subEntityObjMetaData = %O", subEntityObjMetaData);
 			var outerEntityObj, rcrdsAry;
 			var subEntity = subEntityObjMetaData.name;
-			var subEntityRecrds = subEntityObjMetaData.finalRecords;   console.log("subEntityRecrds = %O", subEntityRecrds);
+			var subEntityRecrds = subEntityObjMetaData.finalRecords;  						 console.log("subEntityRecrds = %O", subEntityRecrds);
 			var isCollection = "subEntityCollection" in entityParams[subEntity];
 			var processMethod = isCollection ? processSubEntityCollection : processSingleSubEntity;
 
@@ -607,21 +599,21 @@
 					outerEntityObj = outerEntityRecrds[key][0];
 					processMethod(outerEntityObj); }
 			}
-			function processSubEntityCollection(outerEntityObj) { // console.log("isCollection")
-				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; // console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
+			function processSubEntityCollection(outerEntityObj) { 													// console.log("isCollection")
+				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; 										// console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
 				rcrdsAry = [];
 				forEachSubEntityInCollection();
 				replaceWithPointer(rcrdsAry);
 
 				function forEachSubEntityInCollection() {
-					subEntitiesToReplaceAry.forEach(function(subEntityKey){ // console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
+					subEntitiesToReplaceAry.forEach(function(subEntityKey){ 											// console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
 						findKeyInSubRecords(subEntityKey);
-					}); //  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
+					}); 																																				//  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
 				}
 			} /* End processSubEntityCollection */
-			function processSingleSubEntity(outerEntityObj) {  // console.log("is not Collection")
+			function processSingleSubEntity(outerEntityObj) {  																// console.log("is not Collection")
 			  var unqKey = entityParams[subEntity].unqKey[0];
-				var unqKeyValToReplace = outerEntityObj[unqKey]; // console.log("outerEntityObj = %O. unqKeyValToReplace = %s", outerEntityObj, unqKeyValToReplace);
+				var unqKeyValToReplace = outerEntityObj[unqKey];															 // console.log("outerEntityObj = %O. unqKeyValToReplace = %s", outerEntityObj, unqKeyValToReplace);
 				ifKeyValueIsNotNullFindKey();
 
 				function ifKeyValueIsNotNullFindKey() {
@@ -633,11 +625,11 @@
 				for (var key in subEntityRecrds) { ifKeyValuesMatch(key, unqKeyStrToReplace); }
 			}
 			function ifKeyValuesMatch(key, unqKeyStrToReplace) {
-				if (key == unqKeyStrToReplace) { // console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
+				if (key == unqKeyStrToReplace) { 																								// console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
 					isCollection ? rcrdsAry.push(subEntityRecrds[key][0]) : replaceWithPointer(subEntityRecrds[key][0]); //console.log("foundMatchingSubEntityObj");}
 				}
 			}
-			function replaceWithPointer(matchedRecrd) {// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
+			function replaceWithPointer(matchedRecrd) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				outerEntityObj[subEntity] = matchedRecrd;
 			}
 		} /* End replaceUnqKeysWithEntityObjs */
