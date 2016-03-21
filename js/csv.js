@@ -24,10 +24,10 @@
       "Elev. Range Max": "elevRangeMax",
       "Interaction Type": "intType",
       "Interaction Tags": "intTag",
-      "Subject Order": "subOrder",
-      "Bat Family": "subFam",
+      "Subject Order": "subOrder",    //add j to sub
+      "Bat Family": "subFam",           //add level dict that links level to field (family, order, etc)
       "Bat Genus": "subGenus",
-      "Bat Species": "subSpecies",
+      "Bat Species": "subSpecies",        //
       "Plant/Arthropod": "objKingdom",
       "Object Class": "objClass",
       "Object Order": "objOrder",

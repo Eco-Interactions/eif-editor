@@ -48,13 +48,25 @@
 	/* Parse API member on global namespace */
 	ein.parse = {
 		parseChain: recieveCSVAryReturn,
-		mergeDataSet: mergeEntities
+		mergeDataSet: mergeEntities,
+		parseFileSet: ""/*
+		  * New button on toolbar 
+		  * select folder 
+		  * find all csv files in folder, if more than three- fail validation and return (filter- isFile and .csv for collection)
+		  * for each file, look for known entity file substr in filenames (interaction, citation, author)
+		  * objectify each file and pass all into parse at once {entity: recrds}
+		  * if validates successfully- flag and return results 
+		  * else return meaningful information about any issues in process 
+		  * add fullSet to dictionary
+		  *
+		  * Taxa
+		 */
 	};
 	/**
 	 * Recieves output from the CSVtoObject conversion and calls {@link recurParseMethods} to execute <<<<<<<<<<<<<<<<<<<<<<<
 	 * the specified entity's parse method chain.
 	 *
-   * @param  {int}  fSysId    file sytem id for the original file opened
+	 * @param  {int}  fSysId    file sytem id for the original file opened
 	 * @param  {obj} recrdsAry  An array of record objects
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
@@ -572,13 +584,13 @@
 		return conflicted;
 	}
 /*--------------------------- Merge Entities Methods ------------------------------------- */
-	function mergeEntities(fSysId, outerDataObj, subEntityObjsAry, callback) { console.log("mergeEntities called. Arguments = ", arguments);
+	function mergeEntities(fSysIdAry, outerDataObj, subEntityObjsAry, callback) { console.log("mergeEntities called. Arguments = ", arguments);
 		var dataSet = outerDataObj.name;
 		var outerEntityRecrds = outerDataObj.finalRecords;     									 console.log("outerEntityRecrds = %O", outerEntityRecrds);
 
 		forEachSubEntityObj(subEntityObjsAry);
 
-		callback ? callback(fSysId, outerDataObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
+		callback ? callback(fSysIdAry, outerDataObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
 
 		function forEachSubEntityObj(subEntityObjs) {
 			subEntityObjsAry.forEach(function(subEntityObjMetaData) {							 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
@@ -621,7 +633,7 @@
 					delete outerEntityObj[unqKey];
 				}
 			} /* End processSingleSubEntity */
-			function findKeyInSubRecords(unqKeyStrToReplace) {
+			function findKeyInSubRecords(unqKeyStrToReplace) {							// If key in obj, grab 
 				for (var key in subEntityRecrds) { ifKeyValuesMatch(key, unqKeyStrToReplace); }
 			}
 			function ifKeyValuesMatch(key, unqKeyStrToReplace) {
