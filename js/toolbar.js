@@ -12,17 +12,18 @@
       runTests: launchTests,
       csvEntity: selectCSVEntityParse,
       csvSet: selectCSVDataSetParse,
-      intSet: csvInteractionDataSetParse
+      intSet: csvInteractionDataSetParse,
+      fileSet: csvFileSetParse
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
-    authors: ["authors"],
+    author: ["author"],
     citation: ["citation", "publication"],
-    interactions: ["interactions", "location"],
-    location: ["interactions"],
+    interaction: ["interaction", "location"],
+    location: ["interaction"],
     publication: ["citation"],
-    interactionSet: ["interactions", "citation", "authors"],
-    citationSet: ["citation", "authors"],
-    authorsSet: ["authors"]
+    interactionSet: ["interaction", "citation", "author"],
+    citationSet: ["citation", "author"],
+    authorSet: ["author"]
   };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
   function onDomLoaded() { document.getElementById("toolbar").addEventListener("click", toolbarClickHandler); }
@@ -146,9 +147,9 @@
         ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
       });
       function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if ("interactions" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
+        if ("interaction" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
           intDataObj = recrdsObj;
-          mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry, saveJSONresults);
+          mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry);
         } else if ("citation" === recrdsObj.name){                                  console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
           citDataObj = recrdsObj;
           mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
@@ -170,8 +171,57 @@
       ein.fileSys.fileSaveAs(JSON.stringify(mergedIntRecrds.finalRecords, null, 2));
     }
   }/* End csvInteractionDataSetParse */
+  /*----------Interaction File Set parsing-------------- */
+  function csvFileSetParse() {
+    var fileObjs = {};  console.log("csvFileSetParse called");
+    var fileNameStrngs = ["interaction", "citation", "author"];
+                             /* params,           idHandler,                 objHandler,          fileTxtHandler */
+    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, grabCsvFiles);
 
+    function grabCsvFiles(pathStr, folderMap) {  console.log("grabCsvFiles called. folderMap = %O", folderMap); //Grab files with .csv extensions
+      var fileSetIds = grabCsvFileIds(folderMap);          console.log("fileSetIds = %O", fileSetIds);
+      if ( fileSetIds.length === 3 ) { validateFileSet(fileSet); }
+        else { console.log("There are more or less than 3 .csv files in this folder."); }
+    }
+    function grabCsvFileIds(folderMap) {  console.log("grabCsvFileIds called. folderMap[files] = %O", folderMap[files]);
+      var fileIds = folderMap[files].map(function(file) {  console.log("file = %O", file);
+        return file.id;
+      });
+      return fileIds;
+    }
+    function validateFileSet(fileSet) { console.log("Validate File Set called. Good job sarah! You are amazing and I love you.");
+      var validFileSet = fileSet.every(function(file) { return ifValidFileName(file); });
+      if (validFileSet) { openFiles(); } else { console.log("Not a valid file set."); }
+    }
+    function ifValidFileName(fileId) {
+      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });
+      return validFileName;
 
+      function ifStrInFileName(fileNameStr) {
+        if (fileId.search(fileNameStr) !== -1) {
+          fileObjs[fileNameStr].id = fileId;
+          return true;
+        }
+      }
+    } /* End ifValidFileName */
+    function openFiles() {
+      var curFile = fileNameStrngs.pop();
+      curFile === undefined ?
+        parseAllRecrdObjs() :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
+        ein.fileSys.entryFromId(fileObjs[curFile].id, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
+
+      function objectifyCSV(fSysId, fileText) {
+        ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
+      }
+    } /* End openFiles*/
+    function storeCsvObj(fSysId, rcrdAryObjs, topEntity) {
+      fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
+      openFiles();
+    }
+    function parseAllRecrdObjs() {
+      ein.parse.parseFileSet(fileObjs);
+    }
+  }/* End csvFileSetParse */
 
 /*--------------- Methods For Testing -------------------------- */
   function initTests() {

@@ -5,8 +5,8 @@
 	var ein = ECO_INT_NAMESPACE;
 	/* Parse parameters relevant to each Entity */
 	var entityParams = {
-		authors: {
-			name: 'authors',
+		author: {
+			name: 'author',
 			subEntityCollection: true,
 			unqKey: ['shortName'],
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
@@ -16,17 +16,17 @@
 			name: 'citation',
 			subEntities: ['publication'],
 			unqKey: ['citId'],
-			splitField: 'authors',
-			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'authors', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
+			splitField: 'author',
+			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'author', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			valMetaData: {}
 		},
-		interactions: {
-			name: 'interactions',
-			subEntities: ['locations'],
+		interaction: {
+			name: 'interaction',
+			subEntities: ['location'],
 			unqKey: ['id'],
 			splitField: 'intTag',
-			cols: ["directness","citId","locDesc","intType","intTag","subOrder","subFam","subGenus","subSpecies","objKingdom","objClass","objOrder","objFamily","objGenus","objSpecies"],
+			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFamily', 'objGenus', 'objSpecies'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {}
 		},
@@ -44,19 +44,22 @@
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
+		fullSet: {
+			parseMethods: [],
+		}
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
 		parseChain: recieveCSVAryReturn,
 		mergeDataSet: mergeEntities,
-		parseFileSet: ""/*
-		  * New button on toolbar 
-		  * select folder 
+		parseFileSet: parseFileSetRecrds/*
+		  * New button on toolbar
+		  * select folder
 		  * find all csv files in folder, if more than three- fail validation and return (filter- isFile and .csv for collection)
 		  * for each file, look for known entity file substr in filenames (interaction, citation, author)
 		  * objectify each file and pass all into parse at once {entity: recrds}
-		  * if validates successfully- flag and return results 
-		  * else return meaningful information about any issues in process 
+		  * if validates successfully- flag and return results
+		  * else return meaningful information about any issues in process
 		  * add fullSet to dictionary
 		  *
 		  * Taxa
@@ -590,7 +593,7 @@
 
 		forEachSubEntityObj(subEntityObjsAry);
 
-		callback ? callback(fSysIdAry, outerDataObj) : ein.ui.show(fSysId, JSON.stringify(outerEntityRecrds, null, 2));
+		callback ? callback(fSysIdAry, outerDataObj) : ein.ui.show(fSysIdAry, JSON.stringify(outerEntityRecrds, null, 2));
 
 		function forEachSubEntityObj(subEntityObjs) {
 			subEntityObjsAry.forEach(function(subEntityObjMetaData) {							 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
@@ -633,7 +636,7 @@
 					delete outerEntityObj[unqKey];
 				}
 			} /* End processSingleSubEntity */
-			function findKeyInSubRecords(unqKeyStrToReplace) {							// If key in obj, grab 
+			function findKeyInSubRecords(unqKeyStrToReplace) {							// If key in obj, grab
 				for (var key in subEntityRecrds) { ifKeyValuesMatch(key, unqKeyStrToReplace); }
 			}
 			function ifKeyValuesMatch(key, unqKeyStrToReplace) {
@@ -646,6 +649,12 @@
 			}
 		} /* End replaceUnqKeysWithEntityObjs */
 	} /* End mergeEntites */
+/*--------------Parse File Set Records--------------------------------------------------- */
+	function parseFileSetRecrds(fileSetObj) {
+		console.log("parseFileSetRecrds called. fileSetObj = %O", fileSetObj);
+	}
+
+
 /*--------------Entity Specific Methods--------------------------------------------------- */
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.

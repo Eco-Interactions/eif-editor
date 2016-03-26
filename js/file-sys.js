@@ -153,7 +153,7 @@
       };
   }
 
-  function logFolderData(fSysId, folderObj, fileTxtHandler) {     console.log('logFolderData called. folderObj = %O', folderObj);
+  function logFolderData(fSysId, folderObj, fileTxtHandler) {     console.log('logFolderData called. folderObj = %O. fileTxtHandler = %O', folderObj, fileTxtHandler);
     var folderMap = mapFolderData(folderObj);
     fileTxtHandler('folder data for ' + folderObj.path, folderMap);
   }

@@ -10,7 +10,7 @@
   var rxNeedsQuoting = /^\s|\s$|,|"|\n/;    // If a string has leading or trailing space, contains a comma double quote or a newline, it needs to be quoted in CSV output
   /* Dictionary for standardized headers that should eventually become its own file when any more top keys are added */
   var hdrDict = {
-    interactions: {
+    interaction: {
       "Primary or Secondary interaction": "directness",
       "Citation Number": "citId",
       "Citation Short Description": "citShortDesc",
@@ -24,10 +24,10 @@
       "Elev. Range Max": "elevRangeMax",
       "Interaction Type": "intType",
       "Interaction Tags": "intTag",
-      "Subject Order": "subOrder",    //add j to sub
-      "Bat Family": "subFam",           //add level dict that links level to field (family, order, etc)
-      "Bat Genus": "subGenus",
-      "Bat Species": "subSpecies",        //
+      "Subject Order": "subjOrder",    //add j to sub
+      "Bat Family": "subjFam",           //add level dict that links level to field (family, order, etc)
+      "Bat Genus": "subjGenus",
+      "Bat Species": "subjSpecies",        //
       "Plant/Arthropod": "objKingdom",
       "Object Class": "objClass",
       "Object Order": "objOrder",
@@ -35,7 +35,7 @@
       "Object Genus": "objGenus",
       "Object Species": "objSpecies"
     },
-    authors: {
+    author: {
       "Short Name": "shortName",
       "Last": "last",
       "First": "first",
@@ -46,7 +46,7 @@
       "Citation ID": "citId",
       "Citation Short Description": "citShortDesc",
       "Full Text": "fullText",
-      "Authors": "authors",
+      "Authors": "author",
       "Year": "year",
       "Title": "title",
       "Publication Title": "pubTitle",
