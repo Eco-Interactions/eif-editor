@@ -186,7 +186,7 @@
     function grabCsvFileIds(folderMap) {  console.log("grabCsvFileIds called. folderMap.files = %O", folderMap.files);
       var fileKeys = Object.keys(folderMap.files);
       var fileIds = fileKeys.map(function(fileKey) {  console.log("fileKey = %O", fileKey);
-        return folderMap.files.id;
+        return folderMap.files[fileKey].id;
       });
       return fileIds;
     }
