@@ -183,9 +183,10 @@
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSet); }
         else { console.log("There are more or less than 3 .csv files in this folder."); }
     }
-    function grabCsvFileIds(folderMap) {  console.log("grabCsvFileIds called. folderMap[files] = %O", folderMap[files]);
-      var fileIds = folderMap[files].map(function(file) {  console.log("file = %O", file);
-        return file.id;
+    function grabCsvFileIds(folderMap) {  console.log("grabCsvFileIds called. folderMap.files = %O", folderMap.files);
+      var fileKeys = Object.keys(folderMap.files);
+      var fileIds = fileKeys.map(function(fileKey) {  console.log("fileKey = %O", fileKey);
+        return folderMap.files.id;
       });
       return fileIds;
     }
