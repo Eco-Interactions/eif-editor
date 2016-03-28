@@ -172,34 +172,38 @@
     }
   }/* End csvInteractionDataSetParse */
   /*----------Interaction File Set parsing-------------- */
-  function csvFileSetParse() {
-    var fileObjs = {};  console.log("csvFileSetParse called");
+  function csvFileSetParse() { console.log("csvFileSetParse called");
     var fileNameStrngs = ["interaction", "citation", "author"];
-                             /* params,           idHandler,                 objHandler,          fileTxtHandler */
+    var fileObjs = {
+      author: {},
+      citation: {},
+      interaction: {}
+    };                       /* params,           idHandler,                 objHandler,          fileTxtHandler */
     ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, grabCsvFiles);
 
-    function grabCsvFiles(pathStr, folderMap) {  console.log("grabCsvFiles called. folderMap = %O", folderMap); //Grab files with .csv extensions
-      var fileSetIds = grabCsvFileIds(folderMap);          console.log("fileSetIds = %O", fileSetIds);
-      if ( fileSetIds.length === 3 ) { validateFileSet(fileSet); }
+    function grabCsvFiles(pathStr, folderMap) { // console.log("grabCsvFiles called. folderMap = %O", folderMap); //Grab files with .csv extensions
+      var fileSetIds = grabCsvFileIds(folderMap);
+      if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
         else { console.log("There are more or less than 3 .csv files in this folder."); }
     }
-    function grabCsvFileIds(folderMap) {  console.log("grabCsvFileIds called. folderMap.files = %O", folderMap.files);
+    function grabCsvFileIds(folderMap) { // console.log("grabCsvFileIds called. folderMap.files = %O", folderMap.files);
       var fileKeys = Object.keys(folderMap.files);
-      var fileIds = fileKeys.map(function(fileKey) {  console.log("fileKey = %O", fileKey);
-        return folderMap.files[fileKey].id;
-      });
+      var fileIds = fileKeys.map(function(fileKey) { return folderMap.files[fileKey].id; });
       return fileIds;
     }
-    function validateFileSet(fileSet) { console.log("Validate File Set called. Good job sarah! You are amazing and I love you.");
-      var validFileSet = fileSet.every(function(file) { return ifValidFileName(file); });
+    function validateFileSet(fileSetIds) {
+      var validFileSet = fileSetIds.every(function(fileId) { return ifValidFileName(fileId); });
       if (validFileSet) { openFiles(); } else { console.log("Not a valid file set."); }
     }
-    function ifValidFileName(fileId) {
-      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });
+    function ifValidFileName(fileId) { // console.log("ifValidFileName called.");
+      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); }); // console.log("fileNameStr = %s, fileId = %s", fileNameStr, fileId);
+      console.log("validFileName = ", validFileName);
       return validFileName;
 
       function ifStrInFileName(fileNameStr) {
-        if (fileId.search(fileNameStr) !== -1) {
+        var capsFileNameStr = fileNameStr.toUpperCase();
+        var capsFileId = fileId.toUpperCase();
+        if (capsFileId.search(capsFileNameStr) !== -1) {
           fileObjs[fileNameStr].id = fileId;
           return true;
         }

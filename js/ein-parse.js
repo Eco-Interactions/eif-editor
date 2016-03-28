@@ -650,9 +650,53 @@
 		} /* End replaceUnqKeysWithEntityObjs */
 	} /* End mergeEntites */
 /*--------------Parse File Set Records--------------------------------------------------- */
-	function parseFileSetRecrds(fileSetObj) {
-		console.log("parseFileSetRecrds called. fileSetObj = %O", fileSetObj);
-	}
+	function parseFileSetRecrds(fileSetObj) {   console.log("parseFileSetRecrds called. fileSetObj = %O", fileSetObj);
+    var topEntities = ["interaction", "citation", "author"];
+
+    forEachTopEntity();
+
+    function forEachTopEntity() {
+    	var curTopEntityStr = topEntities.pop();  console.log("forEachTopEntity called. curTopEntityStr = ", curTopEntityStr);
+
+    	curTopEntityStr !== undefined ? parseInnerEntities() : mergeParsedRecords();
+
+	    function parseInnerEntities() { console.log("parseInnerEntities called.");
+	    	var curTopEntity = entityParams[curTopEntityStr];
+    		var curTopEntityId = fileSetObj[curTopEntityStr].id;
+    		var curFileCsvObjAry = curTopEntity.orgRcrdAryObjs;
+	    	var innerEntities = [curTopEntityStr];
+
+	    	grabSubEntites();
+	    	forEachInnerEntity();
+
+	    	function grabSubEntites() {  console.log("grabSubEntites called.");
+	    	  if (subEntities in curTopEntity !== undefined) { console.log("subentities found. adding to innerEntities array");
+	    	 	  curTopEntity.subEntities.forEach(function(subEntity) { innerEntities.push(subEntity); });
+	    	  }
+	    	}
+	    	function forEachInnerEntity(argument) {  console.log("forEachInnerEntity called.");
+	    		var curEntity = innerEntities.pop();
+	    		curEntity !== undefined ?
+	    			ein.parse.parseChain(curTopEntityId, curFileCsvObjAry, curEntity, storeParsedRecords) :
+	    			forEachTopEntity() ;
+	    	}
+	    } /* End parseInnerEntities */
+    }/* End forEachEntityInSet */
+    function storeParsedRecords(fSysId, recrdsObj) { console.log("storeParsedRecords called. recrdsObj = %O", recrdsObj);
+    	if (fileSetObj[recrdsObj.name]) {
+    		fileSetObj[recrdsObj.name].parsedMetaData = recrdsObj;
+    	} else {  console.log("fileSetObj member being added. fileSetObj = %O", fileSetObj);
+    		fileSetObj[recrdsObj.name] = recrdsObj;
+    	}
+    	forEachInnerEntity();
+    }
+    function mergeParsedRecords() {	console.log("mergeParsedRecords called. fileSetObj = %O", fileSetObj);
+
+    }
+
+
+
+	} /* End parseFileSetRecrds */
 
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
