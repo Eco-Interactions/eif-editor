@@ -44,6 +44,13 @@
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
+		taxon: {
+			name: 'taxon',
+			unqKey: ['id'],
+			cols:	['subjOrder','subjFam','subjGenus','subjSpecies','objKingdom','objClass','objOrder','objFam','objGenus','objSpecies'],
+			parseMethods: [extractCols, deDupIdenticalRcrds, buildTaxaObjAry, restructureIntoRecordObj],
+			valMetaData: {}
+		},
 		fullSet: {
 			parseMethods: [],
 		}
@@ -731,6 +738,87 @@
 		if (recrd.Directness === "Secondary") { recrd.IntTag.push("Secondary"); }
 		delete recrd.Directness;
 	}
+
+/* ------------------------Taxon Parse Methods------------------------------------------------ */
+//		Taxon Cols : 'subjOrder','subjFam','subjGenus','subSpecies','objKingdom','objClass','objOrder','objFamily','objGenus','objSpecies'
+
+	function buildTaxaObjAry(recrdsAry, entity, callback) {
+		var taxaObj = {
+			chiroptera: {
+				parent: null,
+				name: "chiroptera",
+				level: 4					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+			},
+		};
+		recrdsAry.forEach(function(recrd) { extractUnqTaxa(recrd); });  console.log("taxaObj = %O", taxaObj);
+		var taxaObjsAry = buildTaxaObjAry(taxaObj);
+		console.log("taxaObjsAry = %O", taxaObjsAry);
+		callback(taxaObjsAry, entity);
+
+		function extractUnqTaxa(recrd) { // console.log("recrd inside extractUnqTaxa = %O", recrd);
+		  ifUnqObjKingdom(recrd.objKingdom);
+		  if (recrd.objClass !== null) { ifUnqObjClass(recrd); }
+		  if (recrd.objOrder !== null) { ifUnqObjOrder(recrd); }
+		  ifUnqTaxaFam(recrd);
+		  ifUnqTaxaGenus(recrd);
+		  ifUnqTaxaSpecies(recrd);
+		}
+		function addToTaxaObj(taxonName, parent, level, multiNameKey, parentKey) {
+			var key = multiNameKey || taxonName;
+			taxaObj[key] = {
+				parent: parent,
+				name: taxonName,
+				level: level					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+			};
+		}
+		function ifUnqObjKingdom(kingdom) {
+			if (!(kingdom in taxaObj)) { addToTaxaObj(kingdom, null, 6); }
+		}
+	  function ifUnqObjClass(recrd) {
+			if (!(recrd.objClass in taxaObj)) { addToTaxaObj(recrd.objClass, recrd.objKingdom, 5); }
+		}
+		function ifUnqObjOrder(recrd) {
+			if (!(recrd.objOrder in taxaObj)) { addToTaxaObj(recrd.objOrder, recrd.objClass, 4); }
+		}
+		function ifUnqTaxaFam(recrd) {
+			if (recrd.subjFam !== null) {
+				if (!(recrd.subjFam in taxaObj)) { addToTaxaObj(recrd.subjFam, recrd.subjOrder, 3); }
+			}
+			if (recrd.objFam !== null) {
+				if (!(recrd.objFamily in taxaObj)) { addToTaxaObj(recrd.objFam, recrd.objOrder, 3); }
+			}
+		}
+		function ifUnqTaxaGenus(recrd) {
+			if (recrd.subjGenus !== null) {
+				var subjGenusKey = recrd.subjFam + " " + recrd.subjGenus;
+				if (!(subjGenusKey in taxaObj)) { addToTaxaObj(recrd.subjGenus, recrd.subjFam, 2, subjGenusKey); }
+			}
+			if (recrd.objGenus !== null) {
+				var objGenusKey = recrd.objFam + " " + recrd.objGenus;
+				if (!(objGenusKey in taxaObj)) { addToTaxaObj(recrd.objGenus, recrd.objFam, 2, objGenusKey); }
+			}
+		}
+		function ifUnqTaxaSpecies(recrd) {
+			if (recrd.subjSpecies !== null) {
+				var subjSpeciesAry = recrd.subjSpecies.split(" ");
+				if (!(recrd.subjSpecies in taxaObj)) { addToTaxaObj(subjSpeciesAry[1], subjSpeciesAry[0], 1, recrd.subjSpecies); }
+		  }
+			if (recrd.objSpecies !== null) {
+				var objSpeciesAry = recrd.objSpecies.split(" ");
+				if (!(recrd.objSpecies in taxaObj)) { addToTaxaObj(objSpeciesAry[1], objSpeciesAry[0], 1, recrd.objSpecies); }
+			}
+		}
+		function buildTaxaObjAry(taxaObj) {
+			var taxaAry = [];
+			for (var key in taxaObj) {
+				taxaAry.push(taxaObj[key]);
+			}
+			return taxaAry;
+		}
+	} /* End buildTaxonObjs */
+
+
+
 
 /*--------------General Helper Methods---------------------------------------------------- */
 	/**

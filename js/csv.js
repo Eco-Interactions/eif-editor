@@ -31,7 +31,7 @@
       "Plant/Arthropod": "objKingdom",
       "Object Class": "objClass",
       "Object Order": "objOrder",
-      "Object Family": "objFamily",
+      "Object Family": "objFam",
       "Object Genus": "objGenus",
       "Object Species": "objSpecies"
     },

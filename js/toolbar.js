@@ -18,9 +18,10 @@
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     author: ["author"],
     citation: ["citation", "publication"],
-    interaction: ["interaction", "location"],
+    interaction: ["interaction", "location", "taxon"],
     location: ["interaction"],
     publication: ["citation"],
+    taxon: ["interaction"],
     interactionSet: ["interaction", "citation", "author"],
     citationSet: ["citation", "author"],
     authorSet: ["author"]
