@@ -663,39 +663,44 @@
 	    function parseInnerEntities() { console.log("parseInnerEntities called.");
 	    	var curTopEntity = entityParams[curTopEntityStr];
     		var curTopEntityId = fileSetObj[curTopEntityStr].id;
-    		var curFileCsvObjAry = curTopEntity.orgRcrdAryObjs;
+    		var curFileCsvObjAry = fileSetObj[curTopEntityStr].orgRcrdAryObjs;
 	    	var innerEntities = [curTopEntityStr];
 
 	    	grabSubEntites();
 	    	forEachInnerEntity();
 
 	    	function grabSubEntites() {  console.log("grabSubEntites called.");
-	    	  if (subEntities in curTopEntity !== undefined) { console.log("subentities found. adding to innerEntities array");
+	    	  if ("subEntities" in curTopEntity) { console.log("subentities found. adding to innerEntities array");
 	    	 	  curTopEntity.subEntities.forEach(function(subEntity) { innerEntities.push(subEntity); });
 	    	  }
 	    	}
-	    	function forEachInnerEntity(argument) {  console.log("forEachInnerEntity called.");
-	    		var curEntity = innerEntities.pop();
+	    	function forEachInnerEntity() {  console.log("forEachInnerEntity called.");
+	    		var curEntity = innerEntities.pop();  console.log("curEntity = ", curEntity);
 	    		curEntity !== undefined ?
 	    			ein.parse.parseChain(curTopEntityId, curFileCsvObjAry, curEntity, storeParsedRecords) :
 	    			forEachTopEntity() ;
 	    	}
+		    function storeParsedRecords(fSysId, recrdsObj) { console.log("storeParsedRecords called. recrdsObj = %O", recrdsObj);
+		    	if (fileSetObj[recrdsObj.name]) {
+		    		fileSetObj[recrdsObj.name].parsedMetaData = recrdsObj;
+		    	} else {  console.log("fileSetObj member being added. fileSetObj = %O", fileSetObj);
+		    		fileSetObj[recrdsObj.name] = recrdsObj;
+		    	}
+		    	forEachInnerEntity();
+		    }
 	    } /* End parseInnerEntities */
-    }/* End forEachEntityInSet */
-    function storeParsedRecords(fSysId, recrdsObj) { console.log("storeParsedRecords called. recrdsObj = %O", recrdsObj);
-    	if (fileSetObj[recrdsObj.name]) {
-    		fileSetObj[recrdsObj.name].parsedMetaData = recrdsObj;
-    	} else {  console.log("fileSetObj member being added. fileSetObj = %O", fileSetObj);
-    		fileSetObj[recrdsObj.name] = recrdsObj;
-    	}
-    	forEachInnerEntity();
-    }
-    function mergeParsedRecords() {	console.log("mergeParsedRecords called. fileSetObj = %O", fileSetObj);
+	    function mergeParsedRecords() {	console.log("mergeParsedRecords called. fileSetObj = %O", fileSetObj);
+	    	var citSubAry = [fileSetObj.publication, fileSetObj.author.parsedMetaData];
+	    	var intSubAry = [fileSetObj.location]
 
-    }
+	    	ein.parse.mergeDataSet([], fileSetObj.citation.parsedMetaData, citSubAry, mergeIntoInteractions)
 
-
-
+	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) {
+	    		intSubAry.push(mergedCitRecrds);
+	    		ein.parse.mergeDataSet(fSysIdAry, fileSetObj.interaction.parsedMetaData, intSubAry)
+	    	}
+	    } /* End mergeParsedRecords */
+    }/* End forEachTopEntity */
 	} /* End parseFileSetRecrds */
 
 
