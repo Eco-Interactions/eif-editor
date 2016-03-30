@@ -829,13 +829,13 @@
 //		Taxon Cols : 'subjOrder','subjFam','subjGenus','subSpecies','objKingdom','objClass','objOrder','objFamily','objGenus','objSpecies'
 	function buildAllTaxonObjs(recrdsAry) {
 		buildBatTaxaObjs(recrdsAry);
-		// buildObjTaxaObjs(recrdsAry);
+		buildObjTaxaObjs(recrdsAry);
 	}
 	function buildBatTaxaObjs(recrdsAry) {
 		var batFields = entityParams.taxon.subjCols.reverse();
 		var curTempId = 0;
 		var batTaxaRefObjAry = {
-			chiroptera: {
+			Chiroptera: {
 				parent: "animalia",
 				name: "chiroptera",
 				level: 4,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
@@ -869,9 +869,9 @@
 			return nameAry[1];
 		}
 		function isInBatObjOrAdd(taxonNameKey, recrd, field, idx) { // console.log("isInBatObjOrAdd called. isAlreadyInObj = %s", (taxonNameKey in batTaxaRefObjAry));
-			if (!(taxonNameKey in batTaxaRefObjAry)) { buildTaxaRefObj(taxonNameKey, recrd, field, idx); }
+			if (!(taxonNameKey in batTaxaRefObjAry)) { buildBatTaxaRefObj(taxonNameKey, recrd, field, idx); }
 		}
-		function buildTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildTaxaRefObj called.")
+		function buildBatTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildBatTaxaRefObj called.")
 			var level = idx + 1;
 			var taxonName = (field === "subjSpecies") ? grabSpecies(recrd[field]) : recrd[field];
 			batTaxaRefObjAry[taxonNameKeyStr] = {
@@ -882,25 +882,92 @@
 			};
 		}
 		function linkParentTaxon(recrd, field, idx) {// console.log("linkParentTaxon called. field = %s, idx = %s", field, idx);
-			if (idx === 2) { return batTaxaRefObjAry.chiroptera; }
-			if (idx === 3) { return batTaxaRefObjAry.animalia; }
+			if (idx === 2) { return batTaxaRefObjAry.Chiroptera; }
+			if (idx === 3) { return "animalia"; }
 			var parentIdx = ++idx;
 			var parentField = batFields[parentIdx];
 			var parentTaxonNameKey = concatTaxaFieldsIntoKey(recrd, parentIdx);
 			isInBatObjOrAdd(parentTaxonNameKey, recrd, parentField, parentIdx);
 			return batTaxaRefObjAry[parentTaxonNameKey];
 		}
-
 	} /* End buildBatTaxaObjs */
+	function buildObjTaxaObjs(recrdsAry) {
+		var objFields = entityParams.taxon.objCols.reverse();
+		var curTempId = 0;
+		var objTaxaRefObjAry = {
+			Plant: {
+				parent: "animalia",
+				name: "plantae",
+				level: 6,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+				tempId:	curTempId++
+			},
+			Arthropod: {
+				parent: "animalia",
+				name: "anthropod",
+				level: 6,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+				tempId:	curTempId++
+			}
+		};
+		recrdsAry.forEach(function(recrd) { extractUnqObjTaxa(recrd); });  console.log("objTaxaRefObjAry = %O", objTaxaRefObjAry);
+
+		entityParams.taxon.objTaxa = objTaxaRefObjAry;
+
+		function extractUnqObjTaxa(recrd) { //console.log("recrd inside extractUnqTaxa = %O", recrd)
+			objFields.some(function(field, idx) {
+				if (recrd[field] !== null) { return foundMostSpecificLevel(recrd, field, idx); }
+			});
+		}
+		function foundMostSpecificLevel(recrd, field, idx) { // console.log("foundMostSpecificLevel called");
+			var taxonNameKey = concatTaxaFieldsIntoKey(recrd, idx);
+			isInRefObjOrAdd(taxonNameKey, recrd, field, idx);
+			return true;
+		}
+		function concatTaxaFieldsIntoKey(recrd, idx) {
+			var taxonNameStr = "";
+			for (var i = 5; i >= idx; i--) {
+				var curField = objFields[i];
+				if (recrd[curField] !== null) { taxonNameStr += recrd[curField]; }
+			}
+			return taxonNameStr;
+		}
+		function grabSpecies(genusSpeciesStr) {
+			var nameAry = genusSpeciesStr.split(" ");
+			return nameAry[1];
+		}
+		function isInRefObjOrAdd(taxonNameKey, recrd, field, idx) { // console.log("isInRefObjOrAdd called. isAlreadyInObj = %s", (taxonNameKey in batTaxaRefObjAry));
+			if (!(taxonNameKey in objTaxaRefObjAry)) { buildObjTaxaRefObj(taxonNameKey, recrd, field, idx); }
+		}
+		function buildObjTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildObjTaxaRefObj called.")
+			var level = idx + 1;
+			var taxonName = (field === "objSpecies") ? grabSpecies(recrd[field]) : recrd[field];
+			objTaxaRefObjAry[taxonNameKeyStr] = {
+				parent: linkParentTaxon(recrd, field, idx),
+				name: taxonName,
+				level: level,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+				tempId:	curTempId++
+			};
+		}
+		function linkParentTaxon(recrd, field, idx) { //console.log("linkParentTaxon called. field = %s, idx = %s", field, idx);
+			if (idx === 5) { return objTaxaRefObjAry[recrd[field]]; }
+			var parentIdx = ++idx;
+			var parentField = objFields[parentIdx];
+			var parentTaxonNameKey = concatTaxaFieldsIntoKey(recrd, parentIdx);
+			isInRefObjOrAdd(parentTaxonNameKey, recrd, parentField, parentIdx);
+			return objTaxaRefObjAry[parentTaxonNameKey];
+		}
+	} /* End buildObjTaxaObjs */
 
   function mergeTaxaIntoInteractions(recrdsObj) {
   	var batTaxa = entityParams.taxon.batTaxa;
+  	var objTaxa = entityParams.taxon.objTaxa;
 
   	for (var key in recrdsObj) { replaceTaxaWithObjs(recrdsObj[key][0]); }
 
   	function replaceTaxaWithObjs(recrd) {
   		var subjTaxonStr = recrd.subjTaxon; // console.log("subjTaxonStr = %s in batTaxa = %O", subjTaxonStr, batTaxa[subjTaxonStr]);
+  		var objTaxonStr = recrd.objTaxon;
   		batTaxa[subjTaxonStr] !== undefined ? recrd.subjTaxon = batTaxa[subjTaxonStr] : console.log("subjTaxon not found.");
+  		objTaxa[objTaxonStr] !== undefined ? recrd.objTaxon = objTaxa[objTaxonStr] : console.log("objTaxon not found.");
   	}
   }
 
