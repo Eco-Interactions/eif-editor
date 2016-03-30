@@ -87,7 +87,7 @@
       ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
     }
     function validateEntity(fSysId, recrdsAry) {
-      ein.parse.parseChain(fSysId, recrdsAry, "interactionTaxa");
+      ein.parse.parseChain(fSysId, recrdsAry, "interaction");
     }
   }
 /*----------Select Data Set to parse-------------- */

@@ -19,21 +19,11 @@
 			splitField: 'author',
 			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'author', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
-			valMetaData: {},
-			extrctdTaxaData: {}
-		},
-		interaction: {
-			name: 'interaction',
-			subEntities: ['location'],
-			unqKey: ['id'],
-			splitField: 'intTag',
-			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFamily', 'objGenus', 'objSpecies'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {}
 		},
-		interactionTaxa: {
+		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs
 			name: 'interaction',
-			subEntities: ['location', 'taxon'],
+			subEntities: ['location'],
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
@@ -800,20 +790,15 @@
 			return taxaNameStr;
 		}
 		function delteTaxaFields(recrd) {
-			taxaFields.forEach(function(field) {
-				delete recrd[field];
-			});
+			taxaFields.forEach(function(field) { delete recrd[field]; });
 		}
 		function storeTaxaData() {
-			entityObj.extrctdTaxaData = {
-				taxaRcrdObjsAry: taxaRcrds,
-			}
+			entityObj.extrctdTaxaData = { taxaRcrdObjsAry: taxaRcrds };
 		}
 	} /* End extractTaxaCols */
 	function buildTaxaObjs(recrdsAry, entity, callback) {
 		buildBatTaxaObjs(recrdsAry);  console.log("Path not fully written. Pick up here. Thank you.");
 		// buildObjTaxaObjs(recrdsAry);
-
 		// callback(recrdsObj, entity);
 	}
 	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) {
@@ -828,23 +813,24 @@
 	}
 //		Taxon Cols : 'subjOrder','subjFam','subjGenus','subSpecies','objKingdom','objClass','objOrder','objFamily','objGenus','objSpecies'
 	function buildAllTaxonObjs(recrdsAry) {
-		buildBatTaxaObjs(recrdsAry);
-		buildObjTaxaObjs(recrdsAry);
+		var curTempId = buildBatTaxaObjs(recrdsAry);
+		buildObjTaxaObjs(recrdsAry, curTempId);
 	}
 	function buildBatTaxaObjs(recrdsAry) {
 		var batFields = entityParams.taxon.subjCols.reverse();
-		var curTempId = 0;
+		var curTempId = 2;
 		var batTaxaRefObjAry = {
 			Chiroptera: {
-				parent: "animalia",
+				parent: 1,				// 1 = animalia
 				name: "chiroptera",
 				level: 4,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
 				tempId:	curTempId++
 			},
 		};
 		recrdsAry.forEach(function(recrd) { extractUnqBatTaxa(recrd); });  console.log("batTaxaRefObjAry = %O", batTaxaRefObjAry);
-
 		entityParams.taxon.batTaxa = batTaxaRefObjAry;
+
+		return curTempId;
 
 		function extractUnqBatTaxa(recrd) { //console.log("recrd inside extractUnqTaxa = %O", recrd)
 			batFields.some(function(field, idx) {
@@ -882,27 +868,26 @@
 			};
 		}
 		function linkParentTaxon(recrd, field, idx) {// console.log("linkParentTaxon called. field = %s, idx = %s", field, idx);
-			if (idx === 2) { return batTaxaRefObjAry.Chiroptera; }
-			if (idx === 3) { return "animalia"; }
+			if (idx === 2) { return batTaxaRefObjAry.Chiroptera.tempId; }
+			if (idx === 3) { return 0; }
 			var parentIdx = ++idx;
 			var parentField = batFields[parentIdx];
 			var parentTaxonNameKey = concatTaxaFieldsIntoKey(recrd, parentIdx);
 			isInBatObjOrAdd(parentTaxonNameKey, recrd, parentField, parentIdx);
-			return batTaxaRefObjAry[parentTaxonNameKey];
+			return batTaxaRefObjAry[parentTaxonNameKey].tempId;
 		}
 	} /* End buildBatTaxaObjs */
-	function buildObjTaxaObjs(recrdsAry) {
+	function buildObjTaxaObjs(recrdsAry, curTempId) {
 		var objFields = entityParams.taxon.objCols.reverse();
-		var curTempId = 0;
 		var objTaxaRefObjAry = {
 			Plant: {
-				parent: "animalia",
+				parent: 1,
 				name: "plantae",
 				level: 6,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
 				tempId:	curTempId++
 			},
 			Arthropod: {
-				parent: "animalia",
+				parent: 1,
 				name: "anthropod",
 				level: 6,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
 				tempId:	curTempId++
@@ -934,7 +919,7 @@
 			var nameAry = genusSpeciesStr.split(" ");
 			return nameAry[1];
 		}
-		function isInRefObjOrAdd(taxonNameKey, recrd, field, idx) { // console.log("isInRefObjOrAdd called. isAlreadyInObj = %s", (taxonNameKey in batTaxaRefObjAry));
+		function isInRefObjOrAdd(taxonNameKey, recrd, field, idx) {
 			if (!(taxonNameKey in objTaxaRefObjAry)) { buildObjTaxaRefObj(taxonNameKey, recrd, field, idx); }
 		}
 		function buildObjTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildObjTaxaRefObj called.")
@@ -948,12 +933,12 @@
 			};
 		}
 		function linkParentTaxon(recrd, field, idx) { //console.log("linkParentTaxon called. field = %s, idx = %s", field, idx);
-			if (idx === 5) { return objTaxaRefObjAry[recrd[field]]; }
+			if (idx === 5) { return objTaxaRefObjAry[recrd[field]].tempId; }
 			var parentIdx = ++idx;
 			var parentField = objFields[parentIdx];
 			var parentTaxonNameKey = concatTaxaFieldsIntoKey(recrd, parentIdx);
 			isInRefObjOrAdd(parentTaxonNameKey, recrd, parentField, parentIdx);
-			return objTaxaRefObjAry[parentTaxonNameKey];
+			return objTaxaRefObjAry[parentTaxonNameKey].tempId;
 		}
 	} /* End buildObjTaxaObjs */
 
@@ -961,16 +946,60 @@
   	var batTaxa = entityParams.taxon.batTaxa;
   	var objTaxa = entityParams.taxon.objTaxa;
 
-  	for (var key in recrdsObj) { replaceTaxaWithObjs(recrdsObj[key][0]); }
+  	for (var key in recrdsObj) { replaceTaxaStrWithObjIds(recrdsObj[key][0]); }
 
-  	function replaceTaxaWithObjs(recrd) {
+  	mergeTaxaTreeObjsIntoInteractions(recrdsObj);
+
+  	function replaceTaxaStrWithObjIds(recrd) {
   		var subjTaxonStr = recrd.subjTaxon; // console.log("subjTaxonStr = %s in batTaxa = %O", subjTaxonStr, batTaxa[subjTaxonStr]);
   		var objTaxonStr = recrd.objTaxon;
-  		batTaxa[subjTaxonStr] !== undefined ? recrd.subjTaxon = batTaxa[subjTaxonStr] : console.log("subjTaxon not found.");
-  		objTaxa[objTaxonStr] !== undefined ? recrd.objTaxon = objTaxa[objTaxonStr] : console.log("objTaxon not found.");
+  		batTaxa[subjTaxonStr] !== undefined ? recrd.subjTaxon = batTaxa[subjTaxonStr].tempId : console.log("subjTaxon not found.");
+  		objTaxa[objTaxonStr] !== undefined ? recrd.objTaxon = objTaxa[objTaxonStr].tempId : console.log("objTaxon not found.");
   	}
+  } /* End mergeTaxaIntoInteractions */
+  function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
+  	var taxaTree = mergeTaxaTreeObjs(); console.log("taxaTree = %O", taxaTree);
+  	replaceIdWithTaxonObj(recrdsObj);
   }
+	function mergeTaxaTreeObjs() {
+  	var taxaAry = [entityParams.taxon.batTaxa, entityParams.taxon.objTaxa];
+  	var taxaTree = entityParams.taxon.taxaTree = {};
 
+  	forEachTaxaSet();
+  	forEachTaxaParent();
+
+  	return taxaTree;
+
+  	function forEachTaxaSet(argument) {
+	  	taxaAry.forEach(function(taxaRecrds) {
+	  		for (var key in taxaRecrds) {
+	  			var newKey = taxaRecrds[key].tempId;
+	  			taxaTree[newKey] = taxaRecrds[key];
+	  		}
+	  	});
+  	}
+  	function forEachTaxaParent() {
+  		addAnimaliaParent();
+  		for (var key in taxaTree) {
+  			taxaTree[key].parent = taxaTree[taxaTree[key].parent];
+  		}
+  	}
+  	function addAnimaliaParent() {
+  		taxaTree[1] = {
+				parent: null,				// 0 = animalia
+				name: "animalia",
+				level: 7,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
+				tempId:	1
+  		}
+  	}
+	} /* End mergeTaxaTreeObjs */
+	function replaceIdWithTaxonObj(recrdsObj) {
+		var taxaTree = entityParams.taxon.taxaTree;
+		for (var key in recrdsObj) {
+			recrdsObj[key][0].subjTaxon = taxaTree[recrdsObj[key][0].subjTaxon];
+			recrdsObj[key][0].objTaxon = taxaTree[recrdsObj[key][0].objTaxon];
+		}
+	}
 
 /*--------------General Helper Methods---------------------------------------------------- */
 	/**
