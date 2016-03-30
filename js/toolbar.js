@@ -12,7 +12,7 @@
       runTests: launchTests,
       csvEntity: selectCSVEntityParse,
       csvSet: selectCSVDataSetParse,
-      intSet: csvInteractionDataSetParse,
+      intSet: intCSVParse,
       fileSet: csvFileSetParse
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
@@ -24,7 +24,8 @@
     taxon: ["interaction"],
     interactionSet: ["interaction", "citation", "author"],
     citationSet: ["citation", "author"],
-    authorSet: ["author"]
+    authorSet: ["author"],
+    intSet: ["interaction", "taxon"]
   };
   document.addEventListener("DOMContentLoaded", onDomLoaded);
   function onDomLoaded() { document.getElementById("toolbar").addEventListener("click", toolbarClickHandler); }
@@ -74,6 +75,19 @@
     }
     function validateEntity(fSysId, recrdsAry) {
       ein.parse.parseChain(fSysId, recrdsAry, entity);
+    }
+  }
+/*----------Select interaction file to parse-------------- */
+  function intCSVParse() {
+    var entitiesInFile = entityCsvParseVals["intSet"];
+                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+
+    function csvToObjForEntity(fSysId, text) {
+      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
+    }
+    function validateEntity(fSysId, recrdsAry) {
+      ein.parse.parseChain(fSysId, recrdsAry, "interactionTaxa");
     }
   }
 /*----------Select Data Set to parse-------------- */
