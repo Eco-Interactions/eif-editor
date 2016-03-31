@@ -21,13 +21,13 @@
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			valMetaData: {}
 		},
-		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs
+		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs  buildAndMergeTaxonObjs temp removed
 			name: 'interaction',
 			subEntities: ['location'],
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags],
 			valMetaData: {},
 			extrctdTaxaData: {}
 		},
@@ -605,6 +605,8 @@
 
 		callback ? callback(fSysIdAry, outerDataObj) : ein.ui.show(fSysIdAry, JSON.stringify(outerEntityRecrds, null, 2));
 
+		ein.fileSys.fileSaveAs(JSON.stringify(outerEntityRecrds, null, 2));
+
 		function forEachSubEntityObj(subEntityObjs) {
 			subEntityObjsAry.forEach(function(subEntityObjMetaData) {							 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
 				replaceUnqKeysWithEntityObjs(subEntityObjMetaData);
@@ -964,9 +966,8 @@
 	function mergeTaxaTreeObjs() {
   	var taxaAry = [entityParams.taxon.batTaxa, entityParams.taxon.objTaxa];
   	var taxaTree = entityParams.taxon.taxaTree = {};
-
   	forEachTaxaSet();
-  	forEachTaxaParent();
+  	forAllTaxaParents();
 
   	return taxaTree;
 
@@ -978,18 +979,9 @@
 	  		}
 	  	});
   	}
-  	function forEachTaxaParent() {
-  		addAnimaliaParent();
+  	function forAllTaxaParents() {
   		for (var key in taxaTree) {
-  			taxaTree[key].parent = taxaTree[taxaTree[key].parent];
-  		}
-  	}
-  	function addAnimaliaParent() {
-  		taxaTree[1] = {
-				parent: null,				// 0 = animalia
-				name: "animalia",
-				level: 7,					// Kingdom (6), Class (5), Order (4), Family (3), Genus (2), Species (1)
-				tempId:	1
+  			taxaTree[key].parent = (taxaTree[key].parent === 1) ? "animalia" : taxaTree[taxaTree[key].parent];
   		}
   	}
 	} /* End mergeTaxaTreeObjs */

@@ -2,11 +2,13 @@
             in a webview element that holds most of enso's UI  -->
   <head>
     <script src="../js/app-init.js"></script>
+    <script src="../grid/ag-grid.js"></script>
     <script src="../js/file-sys.js"></script>
     <script src="../js/csv.js"></script>
     <script src="../js/ein-parse.js"></script>
     <script src="../js/toolbar.js"></script>
     <script src="../js/main-win.js"></script>
+    <link rel="stylesheet" type="text/css" href="../grid/ag-grid.css">
     <link rel="stylesheet" type="text/css" href="../css/main-win.css">
 
 
@@ -23,11 +25,6 @@
       <button id="createFolder">Create Folder</button>
       <button id="setUpTests">Set up Test Env</button>
       <button id="runTests">Run Tests</button> -->
-      <!-- <button id="locParse">Loc CSV</button>
-      <button id="authParse">Auth CSV</button>
-      <button id="pubParse">Pub CSV</button>
-      <button id="citParse">Cit CSV</button>
-      <button id="intParse">Int CSV</button> -->
       <select id="entitySelect">
         <option value="author">Authors</option>
         <option value="citation">Citations</option>
@@ -54,7 +51,9 @@
           <div id="drag-bar"></div>
         </div>
         <div id="right-pane" class="col">
-          <textarea id="editor"></textarea>
+          <div id="grid-cntnr">
+            <!-- <textarea id="editor"></textarea> -->
+          </div>
         </div>
     </div>
   </body>
