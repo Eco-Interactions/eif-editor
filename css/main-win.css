@@ -60,7 +60,7 @@ button {
 }
 #left-pane {
  position: relative;
- min-width: 11px;
+ width: 11px;
 }
 #dev-log {
 	width: 100%;

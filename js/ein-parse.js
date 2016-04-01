@@ -27,7 +27,7 @@
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
+			parseMethods: [autoFillLocDesc, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
 			valMetaData: {},
 			extrctdTaxaData: {}
 		},
@@ -35,7 +35,7 @@
 			name: 'location',
 			unqKey: ['locDesc'],
 			cols:	['locDesc', 'elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			valMetaData: {}
 		},
 		publication: {
@@ -718,6 +718,44 @@
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
 /* -----Interaction Helpers--------------------------------------------------------------- */
+
+	function autoFillLocDesc(recrdsAry, entity, callback) { console.log("autoFillLocDesc called. arguments = %O", arguments);
+		var newRecrd = {};
+		var filledRecrds = recrdsAry.map(function(recrd){// console.log("recrd being processed: %O", arguments);
+			newRecrd = recrd;
+			if (recrd.locDesc === null) { checkCountryAndHabType(recrd); }
+			return newRecrd;
+		});
+
+		callback(recrdsAry, entity);
+
+		function checkCountryAndHabType(recrd) {
+			if (recrd.country !== null || recrd.habType !== null) { checkAllLocData(recrd); }
+		}
+		function checkAllLocData(recrd) {			console.log("checkAllLocData called. Country or HabType found.");
+			if (noOtherLocData(recrd)) { autofillDesc(recrd); }
+		}
+		function noOtherLocData(recrd) {
+			var remainingLocFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region'];
+			var foundNoData = remainingLocFields.every(function(locField) {
+				return recrd[locField] === null;
+			});
+			return foundNoData;
+		}
+		function autofillDesc(recrd) {    console.log("autofillDesc called. Found no other loc data.");
+			if (recrd.country !== null) {
+				var countryStr = recrd.country + ' ';
+				checkForHabType(recrd, countryStr);
+			} else {
+				checkForHabType(recrd);
+			}
+		}
+		function checkForHabType(recrd, countryName) {	//	console.log("checkForHabType called. arguments = %O", arguments);
+			var newLocDesc = countryName || '';
+			if (recrd.habType !== null) { newLocDesc += recrd.habType }
+				recrd.locDesc = newLocDesc.trim();   console.log("newLocDesc= %s", newLocDesc);
+		}
+	}/* End autoFillLocDesc */
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
 	 * @return {ary}  		An array of objects with the tag field as an array
@@ -934,7 +972,7 @@
 				tempId:	curTempId++
 			};
 		}
-		function linkParentTaxon(recrd, field, idx) { console.log("linkParentTaxon called. recrd = %O, field = %s, idx = %s", recrd, field, idx);
+		function linkParentTaxon(recrd, field, idx) {// console.log("linkParentTaxon called. recrd = %O, field = %s, idx = %s", recrd, field, idx);
 			if (idx === 5) { return objTaxaRefObjAry[recrd[field]]; }
 			var parentIdx = ++idx;
 			var parentField = objFields[parentIdx];

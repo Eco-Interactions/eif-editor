@@ -36,7 +36,7 @@
       {headerName: "Habitat Type", field: "habType", width: 150},
       {headerName: "Region", field: "region", width: 150},
       {headerName: "Country", field: "country", width: 150},
-      {headerName: "location", field: "locDesc", width: 150},
+      {headerName: "Location Description", field: "locDesc", width: 150},
       {headerName: "Latitude", field: "lat", width: 100},
       {headerName: "Longitude", field: "long", width: 100},
       {headerName: "Elevation", field: "elev", width: 100},
@@ -45,11 +45,11 @@
       {headerName: "Title", field: "title", width: 400},
       {headerName: "Authors", field: "authors", width: 300},
       {headerName: "Publication", field: "pubTitle", width: 500},
-      {headerName: "Type", field: "pubType", width: 200},
-      {headerName: "Publisher", field: "publisher", width: 150},
-      {headerName: "Volume", field: "vol", width: 100},
-      {headerName: "Issue", field: "issue", width: 100},
-      {headerName: "Pages", field: "pgs", width: 150},
+      {headerName: "Publisher", field: "publisher", width: 100},
+      {headerName: "Type", field: "pubType", width: 100},
+      {headerName: "Vol.", field: "vol", width: 50},
+      {headerName: "Issue", field: "issue", width: 50},
+      {headerName: "Pages", field: "pgs", width: 100},
     ];
   }
   function getTblData() {
@@ -132,7 +132,7 @@ function getTaxon(recrd, role) {
 function getAuthors(recrd) {
 	if (recrd.citation.author !== undefined && recrd.citation.author !== null) {
 		var authors = '';
-		recrd.citation.author.forEach(function(authorObj){ console.log("authorObj = %O", authorObj);
+		recrd.citation.author.forEach(function(authorObj){ //console.log("authorObj = %O", authorObj);
 			authors += authorObj.shortName + ', ';
 		});
 		return authors;
