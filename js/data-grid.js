@@ -30,7 +30,7 @@
     return [
       {headerName: "Id", field: "id", width: 50},
       {headerName: "Interaction Type", field: "intType", width: 150},
-      {headerName: "Int Tags", field: "intTag", width: 150},
+      {headerName: "Int Tags", field: "intTag", width: 100},
       {headerName: "Subject Taxon", field: "subjTaxon", width: 200},
       {headerName: "Object Taxon", field: "objTaxon", width: 200},
       {headerName: "Habitat Type", field: "habType", width: 150},
@@ -53,13 +53,10 @@
     ];
   }
   function getTblData() {
-    return [
-      { id: 2, intType: "Visitation", intTag: "Leaf", subjTaxon: "Bat", objTaxon: "Plant" },
-      { id: 3, intType: "Consumpution", intTag: "Bug", subjTaxon: "Bat", objTaxon: "Anthropod" },
-    ];
+    return [];
   }
 function buildDataGrid(fSysIdAry, recrdsMetaData) {
-	var recrdsObj = recrdsMetaData.finalRecords; //console.log("recrdsObj = %O", recrdsObj);
+	var recrdsObj = recrdsMetaData.finalRecords; console.log("recrdsObj = %O", recrdsObj);
 	gridOptions.rowData = buildRowData(recrdsObj);
 	// buildRowData(recrdsObj);
 	gridOptions.api.destroy();
@@ -76,11 +73,11 @@ function buildRowData(recrdsObj) { console.log("buildRowData called.");
 
 	function translateRecrdIntoRow(recrd) {
 		var row =  {
-			// id: getTempId(),
+			id: recrd.tempId,
 			intType: recrd.intType,
-			// intTag: getIntTags(),
-			// subjTaxon: getSubjTaxon(),
-			// objTaxon: getObjTaxon(),
+			intTag: getIntTags(recrd),
+			subjTaxon: getTaxon(recrd, "subjTaxon"),
+			objTaxon: getTaxon(recrd, "objTaxon"),
 		};
 		return addAllRemainingPresentData(recrd, row);
 	}
@@ -105,7 +102,7 @@ function buildRowData(recrdsObj) { console.log("buildRowData called.");
 		if (recrd.citation !== null && recrd.citation !== undefined) {
 			row.citShortDesc = recrd.citation.citShortDesc,
 			row.title = recrd.citation.title,
-			// row.authors = getAuthors(),
+			row.authors = getAuthors(recrd),
 			row.vol = recrd.citation.vol,
 			row.issue = recrd.citation.issue,
 			row.pgs = recrd.citation.pgs
@@ -117,9 +114,29 @@ function buildRowData(recrdsObj) { console.log("buildRowData called.");
 		}
 		return row;
 	}
-
 } /* End buildRowData */
-
-
+function getIntTags(recrd) {
+	var intTags = '';
+	recrd.intTag.forEach(function(tag){
+		intTags += tag + ', ';
+	});
+	return intTags;
+}
+function getTaxon(recrd, role) {
+	var levels = { 1: "Species", 2: "Genus", 3: "Family", 4: "Order", 5: "Class", 6: "Kingdom" };
+	var taxonLvl = recrd[role].level;
+	var taxonName = taxonLvl === 1 ? recrd[role].parent.name : levels[recrd[role].level];
+	taxonName += ' ' + recrd[role].name;
+	return taxonName;
+}
+function getAuthors(recrd) {
+	if (recrd.citation.author !== undefined && recrd.citation.author !== null) {
+		var authors = '';
+		recrd.citation.author.forEach(function(authorObj){ console.log("authorObj = %O", authorObj);
+			authors += authorObj.shortName + ', ';
+		});
+		return authors;
+	} else { return ''; }
+}
 
 }()); /* end of namespacing anonymous function */

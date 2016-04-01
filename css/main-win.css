@@ -41,7 +41,7 @@ button {
 	width: 100%;
 	padding-left: 10px;
 	background: WhiteSmoke;
-  	border-bottom: 1px solid gray;
+  border-bottom: 1px solid gray;
 }
 #outer {
   display: flex;
@@ -60,7 +60,7 @@ button {
 }
 #left-pane {
  position: relative;
- width: 111px;
+ min-width: 11px;
 }
 #dev-log {
 	width: 100%;
@@ -69,8 +69,10 @@ button {
 #right-pane {
   flex-grow: 1;
   background: white;
-	height: 90vh;
+	height: 95vh;
 	overflow: scroll;
+}
+#grid-cntnr {
 }
 #editor {
 	height: 100%;

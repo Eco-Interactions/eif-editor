@@ -741,7 +741,7 @@
 	 * @param  {obj}  recrd  Record to check and modify.
 	 */
 	function ifSecondary(recrd) {
-		if (recrd.directness === "Secondary") { recrd.IntTag.push("Secondary"); }
+		if (recrd.directness === "Secondary") { recrd.intTag.push("Secondary"); }
 		delete recrd.directness;
 	}
 /* ------------------------Taxon Parse Methods------------------------------------------------ */
@@ -934,8 +934,8 @@
 				tempId:	curTempId++
 			};
 		}
-		function linkParentTaxon(recrd, field, idx) { //console.log("linkParentTaxon called. field = %s, idx = %s", field, idx);
-			if (idx === 5) { return objTaxaRefObjAry[recrd[field]].tempId; }
+		function linkParentTaxon(recrd, field, idx) { console.log("linkParentTaxon called. recrd = %O, field = %s, idx = %s", recrd, field, idx);
+			if (idx === 5) { return objTaxaRefObjAry[recrd[field]]; }
 			var parentIdx = ++idx;
 			var parentField = objFields[parentIdx];
 			var parentTaxonNameKey = concatTaxaFieldsIntoKey(recrd, parentIdx);
@@ -967,7 +967,7 @@
   	var taxaAry = [entityParams.taxon.batTaxa, entityParams.taxon.objTaxa];
   	var taxaTree = entityParams.taxon.taxaTree = {};
   	forEachTaxaSet();
-  	// forAllTaxaParents();    	TEMPORY TO EASE LOG OF OBJECT
+  	forAllTaxaParents();
 
   	return taxaTree;
 
