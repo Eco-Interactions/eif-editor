@@ -60,7 +60,7 @@ button {
 }
 #left-pane {
  position: relative;
- width: 600px;
+ width: 111px;
 }
 #dev-log {
 	width: 100%;
@@ -68,8 +68,9 @@ button {
 }
 #right-pane {
   flex-grow: 1;
-  background: black;
+  background: white;
 	height: 90vh;
+	overflow: scroll;
 }
 #editor {
 	height: 100%;

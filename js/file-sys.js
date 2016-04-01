@@ -54,7 +54,7 @@
     chrome.fileSystem.isRestorable(fSysId, function(isRestorable) {
       if (isRestorable) {
         chrome.fileSystem.restoreEntry(fSysId, function(fSysEntry) {
-          if (!asyncErr())  {   console.log("successful entry");
+          if (!asyncErr())  {//   console.log("successful entry");
             entryHandler(fSysId, fSysEntry, objHandler, fileTxtHandler);
           }
         });
@@ -72,9 +72,9 @@
    * @param  {func} fileTxtHandler  Callback to be used at a later point
    * @callback  {func} objHandler  Callback to consume the file object
    */
-  function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {   console.log("fileObjFromEntry called= fSysEntry =", fSysEntry);
+  function fileObjFromEntry(fSysId, fSysEntry, objHandler, fileTxtHandler) {  // console.log("fileObjFromEntry called= fSysEntry =", fSysEntry);
     asyncErr() || fSysEntry.file(function (fileObj) {
-      objHandler(fSysId, fileObj, fileTxtHandler); console.log("objHandler");
+      objHandler(fSysId, fileObj, fileTxtHandler);
     });
   }
   /**
@@ -119,17 +119,16 @@
    * @param  {func} objHandler  Callback to later consume the file object
    * @param  {func} fileTxtHandler  Callback to later consume the file text
    */
-  function readFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler) { console.log("readFolderData");
-    console.log("folderObj");
+  function readFolderData(fSysId, fSysEntry, objHandler, fileTxtHandler) { //console.log("readFolderData");
     var folderObj = {
       fSysId: fSysId,
       path: fSysEntry.fullPath,
       entries: []
     };
-    var dirReader = fSysEntry.createReader();   console.log("readFolderData create dirReader");
+    var dirReader = fSysEntry.createReader();
     readEntriesThenPost();
 
-    function readEntriesThenPost() {      console.log('readEntriesThenPost called.');
+    function readEntriesThenPost() {   //   console.log('readEntriesThenPost called.');
       dirReader.readEntries(function (entryBatch) {
         if (entryBatch.length > 0) {
           entryBatch.forEach(function (fSysEntry) {
@@ -153,7 +152,7 @@
       };
   }
 
-  function logFolderData(fSysId, folderObj, fileTxtHandler) {     console.log('logFolderData called. folderObj = %O. fileTxtHandler = %O', folderObj, fileTxtHandler);
+  function logFolderData(fSysId, folderObj, fileTxtHandler) {  //   console.log('logFolderData called. folderObj = %O. fileTxtHandler = %O', folderObj, fileTxtHandler);
     var folderMap = mapFolderData(folderObj);
     fileTxtHandler('folder data for ' + folderObj.path, folderMap);
   }
@@ -238,8 +237,8 @@
 // -          postMsg('statusMsg', 'File ' + reqPkg.fSysEntry.name + ' saved');
 
 
-  function createNewFile(writableFolderEntry, fileName, callback, fileText) { console.log("no async error");
-    writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {          console.log("fileEntry", fileEntry);
+  function createNewFile(writableFolderEntry, fileName, callback, fileText) {// console.log("no async error");
+    writableFolderEntry.getFile(fileName, {create:true}, function(fileEntry) {     //     console.log("fileEntry", fileEntry);
       if (callback) {
         var fSysId = chrome.fileSystem.retainEntry(fileEntry);
         callback(fSysId);

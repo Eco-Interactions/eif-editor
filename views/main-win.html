@@ -7,7 +7,9 @@
     <script src="../js/csv.js"></script>
     <script src="../js/ein-parse.js"></script>
     <script src="../js/toolbar.js"></script>
+    <script src="../js/data-grid.js"></script>
     <script src="../js/main-win.js"></script>
+    <link rel="stylesheet" type="text/css" href="../grid/theme-fresh.css">
     <link rel="stylesheet" type="text/css" href="../grid/ag-grid.css">
     <link rel="stylesheet" type="text/css" href="../css/main-win.css">
 
@@ -46,13 +48,13 @@
     <div id="status-bar">status text goes here</div>
     <div id="outer">
         <div id="left-pane" class="col">
-          <textarea id="dev-log"></textarea>
+          <!-- <textarea id="dev-log"></textarea> -->
+          <textarea id="editor"></textarea>
 
           <div id="drag-bar"></div>
         </div>
         <div id="right-pane" class="col">
-          <div id="grid-cntnr">
-            <!-- <textarea id="editor"></textarea> -->
+          <div id="grid-cntnr" class="ag-fresh">
           </div>
         </div>
     </div>

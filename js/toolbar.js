@@ -239,7 +239,7 @@
       openFiles();
     }
     function parseAllRecrdObjs() {
-      ein.parse.parseFileSet(fileObjs);
+      ein.parse.parseFileSet(fileObjs, ein.dataGrid.fillData);
     }
   }/* End csvFileSetParse */
 

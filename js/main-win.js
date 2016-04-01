@@ -17,11 +17,10 @@
       },
       setStatus: function(statusStr) { //console.log("-----------attempting to set status. statusStr = ", statusStr);
         statusBar.text = statusStr;
-      },
-      // initGrid: function()
+      }
     };
     initDragBar();
-    buildGrid();
+    ECO_INT_NAMESPACE.dataGrid.init();
   }
 
   function setDomElementVars() {
@@ -41,78 +40,4 @@
     };
     window.onmouseup = function (e) { window.onmousemove = null; };
   }
-/* ================== Grid Methods ================================================= */
-
-  function buildGrid() { console.log("buildGrid")
-    // var gridOptions = {
-    //       columnDefs: getNewColDefs(),
-    //       rowData: getTblData(),
-    //       // rowSelection: 'multiple',
-    //       // rowsAlreadyGrouped: true,
-    //       // enableColResize: true,
-    //       // enableSorting: true,
-    //       // unSortIcon: true,
-    //       // showToolPanel: true,
-    //       // toolPanelSuppressValues: true,
-    //       // toolPanelSuppressPivot: true,
-    //       // enableFilter: true,
-    //       // rowHeight: 26,
-    //       // onRowClicked: rowClicked
-    //   };
-    var columnDefs = [
-      {headerName: "Make", field: "make"},
-      {headerName: "Model", field: "model"},
-      {headerName: "Price", field: "price"}
-    ];
-
-    var rowData = [
-      {make: "Toyota", model: "Celica", price: 35000},
-      {make: "Ford", model: "Mondeo", price: 32000},
-      {make: "Porsche", model: "Boxter", price: 72000}
-    ];
-
-    var gridOptions = {
-      columnDefs: columnDefs,
-      rowData: rowData
-    };
-
-
-    agGridGlobalFunc('#grid-cntnr', gridOptions);
-
-  }
-
-  function getNewColDefs() {
-    return [
-      {
-        headerName: 'Interaction',
-        children: [
-          {headerName: "Id", field: "id", width: 150},
-          {headerName: "Type", field: "intType"},
-          {headerName: "Tags", field: "intTag"},
-        ]
-      },{
-        headerName: 'Taxa',
-        children: [
-          {headerName: "Subject", field: "subjTaxon"},
-          {headerName: "Object", field: "objTaxon"}
-        ]
-      }
-    ];
-  }
-  function getTblData(argument) {
-    return [
-      { id: 1, intType: "Seed Dispersal", intTag: "Seed", subjTaxon: "Bat", objTaxon: "Plant" },
-      { id: 2, intType: "Visitation", intTag: "Leaf", subjTaxon: "Bat", objTaxon: "Plant" },
-      { id: 3, intType: "Consumpution", intTag: "Bug", subjTaxon: "Bat", objTaxon: "Anthropod" },
-    ];
-  }
-
-
-
-
-
-
-
-
-
 }());  /* end of namespacing anonymous function */

@@ -72,7 +72,7 @@
    * @callback {func}  callback  Recieves the file dystem id and the objectified CSV
    * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
-  function objectifyCSV(fSysId, s, callback, dataSet) { console.log("dataSet", dataSet);
+  function objectifyCSV(fSysId, s, callback, dataSet) {// console.log("dataSet", dataSet);
     var csvArray = csvToArray(s);         // The CSV parsed as a two-dimensional array
     var keys = standardizeHeaders(csvArray.shift(), dataSet);     // Seperates first row of headers to be used as keys for field data
 
@@ -216,7 +216,7 @@
     var dataSetHdrDict = hdrDict[dataSet];
     var newHdrs = hdrArray.map(function(hdr){
       return dataSetHdrDict[hdr];
-    });  console.log("newHdrs = %O", newHdrs);  console.log("headers = %s", JSON.stringify(newHdrs));
+    }); // console.log("newHdrs = %O", newHdrs);  console.log("headers = %s", JSON.stringify(newHdrs));
     return newHdrs;
   }
 
