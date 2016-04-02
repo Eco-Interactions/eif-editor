@@ -188,7 +188,7 @@
     }
   }/* End csvInteractionDataSetParse */
   /*----------Interaction File Set parsing-------------- */
-  function csvFileSetParse() { console.log("csvFileSetParse called");
+  function csvFileSetParse() {// console.log("csvFileSetParse called");
     var fileNameStrngs = ["interaction", "citation", "author"];
     var fileObjs = {
       author: {},
@@ -212,8 +212,7 @@
       if (validFileSet) { openFiles(); } else { console.log("Not a valid file set."); }
     }
     function ifValidFileName(fileId) { // console.log("ifValidFileName called.");
-      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); }); // console.log("fileNameStr = %s, fileId = %s", fileNameStr, fileId);
-      console.log("validFileName = ", validFileName);
+      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); }); // console.log("fileNameStr = %s, fileId = %s", fileNameStr, fileId);console.log("validFileName = ", validFileName);
       return validFileName;
 
       function ifStrInFileName(fileNameStr) {

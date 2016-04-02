@@ -206,8 +206,7 @@
 			return isDup;
 		}
 		function removeNulls(processedRcrds) {
-			var nonNullRecs = processedRcrds.filter(function(recrd){ if (isAllNull(recrd)) { console.log("null recrd found") }
-				return !isAllNull(recrd);	});
+			var nonNullRecs = processedRcrds.filter(function(recrd){ return !isAllNull(recrd); });
 			return nonNullRecs;
 		}
 	} /* End of findUnqRecords */
@@ -1040,7 +1039,7 @@
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
-  	var taxaTree = mergeTaxaTreeObjs(); console.log("taxaTree = %O", taxaTree);
+  	var taxaTree = mergeTaxaTreeObjs(); //console.log("taxaTree = %O", taxaTree);
   	replaceIdWithTaxonObj(recrdsObj);
   }
 	function mergeTaxaTreeObjs() {
