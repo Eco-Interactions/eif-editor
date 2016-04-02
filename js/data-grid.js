@@ -2,7 +2,7 @@
   var ein = ECO_INT_NAMESPACE;
   var gridOptions = {
     columnDefs: getNewColDefs(),
-    rowData: getTblData(),
+    rowData: null,
   	enableColResize: true
   // rowSelection: 'multiple',
   // rowsAlreadyGrouped: true,
@@ -16,15 +16,10 @@
   // onRowClicked: rowClicked
   };
   ein.dataGrid = {
-  	init: initDataGrid,
   	fillData: buildDataGrid
   };
 
 /* ================== Grid Methods ================================================= */
-
-  function initDataGrid() {
-    agGridGlobalFunc('#grid-cntnr', gridOptions);
-  }
 
   function getNewColDefs() {
     return [
@@ -52,17 +47,13 @@
       {headerName: "Pages", field: "pgs", width: 100},
     ];
   }
-  function getTblData() {
-    return [];
-  }
 function buildDataGrid(fSysIdAry, recrdsMetaData) {
 	var recrdsObj = recrdsMetaData.finalRecords; console.log("recrdsObj = %O", recrdsObj);
 	gridOptions.rowData = buildRowData(recrdsObj);
-	// buildRowData(recrdsObj);
-	gridOptions.api.destroy();
+  ein.editorTxtArea.className = "hidden";
+
   agGridGlobalFunc('#grid-cntnr', gridOptions);
-}//id, intype, intTag, subjTaxon, objTaxon, habType, Region, country, locDsc, lat, long, elev,
-//elevRangeMax, citShortDesc, title, authors, pubTitle, pubType, publisher, vol, issue, pgs
+}
 function buildRowData(recrdsObj) { console.log("buildRowData called.");
 	var dataRows = [];
 		for (var key in recrdsObj) {// console.log("for each record called. record = %O", recrdsObj[key][0]);

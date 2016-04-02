@@ -23,6 +23,10 @@
       <button id="saveFile">Save File</button>
       <button id="fileSaveAs">Save File As</button>
       <button id="reload">Reload Editor</button>
+      <span>
+        <input type="checkbox" name="loadIfValid" id="loadIfValid" checked>
+        Validate All Data
+      </span>
       <!-- <button id="createFile">Create File</button>
       <button id="createFolder">Create Folder</button>
       <button id="setUpTests">Set up Test Env</button>
@@ -48,13 +52,13 @@
     <div id="status-bar">status text goes here</div>
     <div id="outer">
         <div id="left-pane" class="col">
-          <!-- <textarea id="dev-log"></textarea> -->
-            <textarea id="editor"></textarea>
+          <textarea id="dev-log"></textarea>
 
           <div id="drag-bar"></div>
         </div>
         <div id="right-pane" class="col">
           <div id="grid-cntnr" class="ag-fresh">
+            <textarea id="editor"></textarea>
           </div>
         </div>
     </div>

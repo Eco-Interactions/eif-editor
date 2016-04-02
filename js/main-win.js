@@ -20,7 +20,6 @@
       }
     };
     initDragBar();
-    ECO_INT_NAMESPACE.dataGrid.init();
   }
 
   function setDomElementVars() {
