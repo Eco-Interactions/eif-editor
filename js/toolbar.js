@@ -250,28 +250,50 @@
       return valChkbxElem.checked ? true : false;
     }
   }/* End csvFileSetParse */
-  function displayValidationResults(fSysIdAry, recrdsMetaData) { console.log("displayValidationResults called. recrdsMetaData = %O", recrdsMetaData);
-    var valResults = extractValidMetaResults(recrdsMetaData);
+  function displayValidationResults(fSysIdAry, recrdsMetaData) {// console.log("displayValidationResults called. recrdsMetaData = %O", recrdsMetaData);
+    var valResults = extractValidMetaResults(recrdsMetaData); console.log("Validation results = %O", valResults);
     ein.editorTxtArea.value = JSON.stringify(valResults, null, 2);
   }
   function extractValidMetaResults(recrdsMetaData) {
-    var metaDataObj = {};
-    for (var topKey in recrdsMetaData) { console.log("topKey = ", topKey);
+    var metaDataObj = {}, returnConflictMetaData = {};
+    for (var topKey in recrdsMetaData) { //console.log("topKey = ", topKey);
       topKey === "finalMergedResults" ? ifFinalResultRcrds(recrdsMetaData[topKey]) : grabEntityMetaData(recrdsMetaData[topKey]);
     } console.log("Final metaDataObj = %O", metaDataObj);
-    return metaDataObj;
+    return returnConflictMetaData;
 
-    function grabEntityMetaData(entityMetaData) {console.log("grabEntityMetaData metaData: %O", entityMetaData);
-      var curEntity = entityMetaData.parsedMetaData.name; console.log("curEntity = %s", curEntity);
+    function grabEntityMetaData(entityMetaData) {//console.log("grabEntityMetaData metaData: %O", entityMetaData);
+      var curEntity = entityMetaData.parsedMetaData.name;// console.log("curEntity = %s", curEntity);
       metaDataObj[curEntity] = {
         cleanRecrds: entityMetaData.parsedMetaData.finalRecords,
-        validationMetaData: entityMetaData.parsedMetaData.validationMetaData
+        validationMetaData: entityMetaData.parsedMetaData.validationMetaData,
+        conflicts: addConflicts(entityMetaData.parsedMetaData.validationMetaData)
+      }
+    }
+    function addConflicts(valMetaData) {
+      var hasConflicts = false;
+      var conflictObj = {};
+      for (var key in valMetaData) {
+        ifConflicts(valMetaData[key]);
+      }
+      if (hasConflicts) { return conflictObj }
+        else { return null }
+
+      function ifConflicts(conflictMetaData) {
+        if (conflictMetaData !== null ) {
+          hasConflicts = true;
+          conflictObj[key] = conflictMetaData }
       }
     }
     function ifFinalResultRcrds(finalRecrds) {  //console.log("ifFinalResultRcrdscalled");
+      returnConflicts(metaDataObj);
       metaDataObj.finalCleanRecordObjs = finalRecrds;
     }
-  }
+    function returnConflicts(metaDataObj) { // console.log("returnConflictMetaData = ")
+      for (var k in metaDataObj) {
+        returnConflictMetaData[k] = metaDataObj[k].conflicts;
+      }
+    }
+  } /* End extractValidMetaResults */
 
 /*--------------- Methods For Testing -------------------------- */
   function initTests() {
