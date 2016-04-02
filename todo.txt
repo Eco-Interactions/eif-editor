@@ -1,3 +1,10 @@
+nullRef
+add region to autoFillLocDesc
+remove final merge recrds from return resultobj
+taxon
+
+validation focused alpha branch
+	pull out splitter, xtra buttons, chkbx
 
 
 Functions

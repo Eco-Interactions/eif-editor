@@ -14,6 +14,7 @@
 		},
 		citation: {
 			name: 'citation',
+			childEntites: ['publication', 'author'],
 			subEntities: ['publication'],
 			unqKey: ['citId'],
 			splitField: 'author',
@@ -21,8 +22,9 @@
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationMetaData: {}
 		},
-		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs   temp removed
+		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs 
 			name: 'interaction',
+			childEntites: ['location', 'citation'],
 			subEntities: ['location'],
 			unqKey: ['id'],
 			splitField: 'intTag',
@@ -46,13 +48,8 @@
 			validationMetaData: {}
 		},
 		taxon: {
-			name: 'taxon',
-			unqKey: ['tempId'],
-			cols:	['subjSpecies','subjGenus','subjFam','subjOrder','objKingdom','objClass','objOrder','objFam','objGenus','objSpecies'],
 			objCols: ['objKingdom','objClass','objOrder','objFam','objGenus','objSpecies'],
-			subjCols: ['subjOrder', 'subjFam', 'subjGenus', 'subjSpecies'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, buildTaxaObjs, restructureIntoRecordObj],
-			validationMetaData: {}
+			subjCols: ['subjOrder', 'subjFam', 'subjGenus', 'subjSpecies']
 		}
 	};
 	/* Parse API member on global namespace */
@@ -629,7 +626,7 @@
 		var outerEntityRecrds = outerDataObj.finalRecords;     							//		 console.log("outerEntityRecrds = %O", outerEntityRecrds);
 
 		forEachSubEntityObj(subEntityObjsAry);
-		handleCallback();
+		handleCallback();																//	PARENT AND CHILD ENTITY V OUTER & INNER
 
 		// ein.fileSys.fileSaveAs(JSON.stringify(outerEntityRecrds, null, 2));
 
@@ -654,7 +651,7 @@
 		}
 		function replaceUnqKeysWithEntityObjs(subEntityObjMetaDataObj) { 		//			 console.log("replaceUnqKeysWithEntityObjs. subEntityObjMetaDataObj = %O", subEntityObjMetaDataObj);
 			var outerEntityObj, rcrdsAry;
-			var subEntityObjMetaData = subEntityObjMetaDataObj.parsedMetaData || subEntityObjMetaDataObj;// console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
+			var subEntityObjMetaData = subEntityObjMetaDataObj; // || subEntityObjMetaDataObj;// console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
 			var subEntity = subEntityObjMetaData.name; //console.log("subEntity = %s", subEntity);
 			var subEntityRecrds = subEntityObjMetaData.finalRecords;  					//	 console.log("subEntityRecrds = %O", subEntityRecrds);
 			var isCollection = "subEntityCollection" in entityParams[subEntity];
@@ -668,7 +665,7 @@
 					processMethod(outerEntityObj); }
 			}
 			function processSubEntityCollection(outerEntityObj) { 													// console.log("isCollection")
-				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; 										// console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
+				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; 									//	 console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
 				rcrdsAry = [];
 				forEachSubEntityInCollection();
 				replaceWithPointer(rcrdsAry);
@@ -704,59 +701,43 @@
 	} /* End mergeEntites */
 /*--------------Parse File Set Records--------------------------------------------------- */
 	function parseFileSetRecrds(fileSetObj, validationMode, callback) {  // console.log("parseFileSetRecrds called. arguments = %O", arguments);
-    var topEntities = ["interaction", "citation", "author"];
-    var validMode = validationMode;
-    forEachTopEntity();
+	    var csvRowEntities = ["author", "citation", "interaction"];
+	    var resultData = {};
 
-    function forEachTopEntity() {
-    	var curTopEntityStr = topEntities.pop(); // console.log("forEachTopEntity called. curTopEntityStr = ", curTopEntityStr);
+	    csvRowEntities.forEach(parseCsvContent);
+	    mergeParsedRecords(callback, validationMode);
 
-    	curTopEntityStr !== undefined ? parseInnerEntities() : mergeParsedRecords(callback, validMode);
+	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
+	    	var entityMetaData = entityParams[entityName];						//Super reference. Fix.
+			var csvFileId = fileSetObj[entityName].fileId;
+			var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
+	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
 
-	    function parseInnerEntities() {// console.log("parseInnerEntities called.");
-	    	var curTopEntity = entityParams[curTopEntityStr];
-    		var curTopEntityId = fileSetObj[curTopEntityStr].id;
-    		var curFileCsvObjAry = fileSetObj[curTopEntityStr].orgRcrdAryObjs;
-	    	var innerEntities = [curTopEntityStr];
+	    	if ("subEntities" in entityMetaData) { entityMetaData.subEntities.forEach(parseSubEntity) }
 
-	    	grabSubEntites();
-	    	forEachInnerEntity();
-
-	    	function grabSubEntites() { // console.log("grabSubEntites called.");
-	    	  if ("subEntities" in curTopEntity) { //console.log("subentities found. adding to innerEntities array");
-	    	 	  curTopEntity.subEntities.forEach(function(subEntity) { innerEntities.push(subEntity); });
-	    	  }
+	    	function parseSubEntity(subEntityName) { // console.log("parseSubEntity called.");
+	    		resultData[subEntityName] = runParseChain(csvFileId, csvRcrdsAry, subEntityName);
 	    	}
-	    	function forEachInnerEntity() {  //console.log("forEachInnerEntity called.");
-	    		var curEntity = innerEntities.pop(); // console.log("curEntity = ", curEntity);
-	    		curEntity !== undefined ?
-	    			ein.parse.parseChain(curTopEntityId, curFileCsvObjAry, curEntity, storeParsedRecords) :
-	    			forEachTopEntity() ;
-	    	}
-		    function storeParsedRecords(fSysId, recrdsObj) { //console.log("storeParsedRecords called. recrdsObj = %O", JSON.parse(JSON.stringify(recrdsObj)));
-		    	if (fileSetObj[recrdsObj.name] !== undefined) {
-		    		fileSetObj[recrdsObj.name].parsedMetaData =  JSON.parse(JSON.stringify(recrdsObj));
-		    	} else {
-		    		fileSetObj[recrdsObj.name] = { parsedMetaData: JSON.parse(JSON.stringify(recrdsObj)) }
-		    	}
-		    	forEachInnerEntity();
-		    }
-	    } /* End parseInnerEntities */
-	    function mergeParsedRecords(callback, validMode) {	//console.log("mergeParsedRecords called. arguments = %O", arguments);
-	    	var citSubAry = [fileSetObj.publication.parsedMetaData, fileSetObj.author.parsedMetaData];
-	    	var intSubAry = [fileSetObj.location.parsedMetaData]
+	    } /* End parseCsvContent */
+	    function mergeParsedRecords(callback, validMode) { //	console.log("resultData = %O", resultData);	//console.log("mergeParsedRecords called. arguments = %O", arguments);
+	    	var citSubAry = [resultData.publication, resultData.author];
+	    	var intSubAry = [resultData.location]
 
-	    	ein.parse.mergeDataSet([], fileSetObj.citation.parsedMetaData, citSubAry, mergeIntoInteractions)
+	    	ein.parse.mergeDataSet([], resultData.citation, citSubAry, mergeIntoInteractions)
 
 	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) {
-	    		var cb = callback || null;			//	console.log("fileSetObj = %O", fileSetObj);
-	    		var metaData = validMode ? fileSetObj : false;
+	    		// var cb = callback || null		//	console.log("resultData = %O", resultData);
+	    		var valData = validMode ? resultData : false;
 	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
-	    		ein.parse.mergeDataSet(fSysIdAry, fileSetObj.interaction.parsedMetaData, intSubAry, cb, metaData)
+	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
 	    	}
 	    } /* End mergeParsedRecords */
-    }/* End forEachTopEntity */
 	} /* End parseFileSetRecrds */
+	function runParseChain(csvFileId, csvRcrdsAry, curEntity) {
+		var result;
+		ein.parse.parseChain(csvFileId, csvRcrdsAry, curEntity, function(fSysId, resultObj){ result = JSON.parse(JSON.stringify(resultObj)); });
+		return result;
+	}
 
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
@@ -1039,7 +1020,7 @@
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
-  	var taxaTree = mergeTaxaTreeObjs(); //console.log("taxaTree = %O", taxaTree);
+  	var taxaTree = mergeTaxaTreeObjs(); console.log("taxaTree = %O", taxaTree);
   	replaceIdWithTaxonObj(recrdsObj);
   }
 	function mergeTaxaTreeObjs() {

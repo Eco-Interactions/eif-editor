@@ -219,7 +219,7 @@
         var capsFileNameStr = fileNameStr.toUpperCase();
         var capsFileId = fileId.toUpperCase();
         if (capsFileId.search(capsFileNameStr) !== -1) {
-          fileObjs[fileNameStr].id = fileId;
+          fileObjs[fileNameStr].fileId = fileId;
           return true;
         }
       }
@@ -228,7 +228,7 @@
       var curFile = fileNameStrngs.pop();
       curFile === undefined ?
         parseAllRecrdObjs() :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
-        ein.fileSys.entryFromId(fileObjs[curFile].id, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
+        ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
 
       function objectifyCSV(fSysId, fileText) {
         ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
@@ -249,47 +249,27 @@
       return valChkbxElem.checked ? true : false;
     }
   }/* End csvFileSetParse */
-  function displayValidationResults(fSysIdAry, recrdsMetaData) {// console.log("displayValidationResults called. recrdsMetaData = %O", recrdsMetaData);
-    var valResults = extractValidMetaResults(recrdsMetaData); console.log("Validation results = %O", valResults);
+  function displayValidationResults(fSysIdAry, resultData) {// console.log("displayValidationResults called. resultData = %O", resultData);
+    var valResults = extractValidationResults(resultData); console.log("Validation results = %O", valResults);
     ein.editorTxtArea.value = JSON.stringify(valResults, null, 2);
   }
-  function extractValidMetaResults(recrdsMetaData) {
-    var metaDataObj = {}, returnConflictMetaData = {};
-    for (var topKey in recrdsMetaData) { //console.log("topKey = ", topKey);
-      topKey === "finalMergedResults" ? ifFinalResultRcrds(recrdsMetaData[topKey]) : grabEntityMetaData(recrdsMetaData[topKey]);
-    } console.log("Final metaDataObj = %O", metaDataObj);
-    return returnConflictMetaData;
+  function extractValidationResults(resultData) {
+    var valData = {}, valErrors = {};
+    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }
+    xxx();                                            console.log("Final valData = %O", valData);
+    return valErrors;
 
-    function grabEntityMetaData(entityMetaData) {//console.log("grabEntityMetaData metaData: %O", entityMetaData);
-      var curEntity = entityMetaData.parsedMetaData.name;// console.log("curEntity = %s", curEntity);
-      metaDataObj[curEntity] = {
-        cleanRecrds: entityMetaData.parsedMetaData.finalRecords,
-        validationMetaData: entityMetaData.parsedMetaData.validationMetaData,
-        conflicts: addConflicts(entityMetaData.parsedMetaData.validationMetaData)
+    function getEntityResultData(entityResultData) {//console.log("getEntityResultData metaData: %O", entityResultData);
+      var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
+      valData[curEntity] = {
+        cleanRecrds: entityResultData.finalRecords,
+        parseRpt: entityResultData.validationMetaData, //parseRpt
+        valErrs: xxxx//valErrs (conflicts, invalidNulls, nullRef)
       }
     }
-    function addConflicts(valMetaData) {
-      var hasConflicts = false;
-      var conflictObj = {};
-      for (var key in valMetaData) {
-        ifConflicts(valMetaData[key]);
-      }
-      if (hasConflicts) { return conflictObj }
-        else { return null }
-
-      function ifConflicts(conflictMetaData) {
-        if (conflictMetaData !== null ) {
-          hasConflicts = true;
-          conflictObj[key] = conflictMetaData }
-      }
-    }
-    function ifFinalResultRcrds(finalRecrds) {  //console.log("ifFinalResultRcrdscalled");
-      returnConflicts(metaDataObj);
-      metaDataObj.finalCleanRecordObjs = finalRecrds;
-    }
-    function returnConflicts(metaDataObj) { // console.log("returnConflictMetaData = ")
-      for (var k in metaDataObj) {
-        returnConflictMetaData[k] = metaDataObj[k].conflicts;
+    function xxx() { // console.log("valErrors = ")
+      for (var k in valData) {
+        valErrors[k] = valData[k].conflicts;
       }
     }
   } /* End extractValidMetaResults */
