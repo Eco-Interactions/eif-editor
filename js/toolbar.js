@@ -249,30 +249,95 @@
       return valChkbxElem.checked ? true : false;
     }
   }/* End csvFileSetParse */
-  function displayValidationResults(fSysIdAry, resultData) {// console.log("displayValidationResults called. resultData = %O", resultData);
-    var valResults = extractValidationResults(resultData); console.log("Validation results = %O", valResults);
-    ein.editorTxtArea.value = JSON.stringify(valResults, null, 2);
+  function displayValidationResults(fSysIdAry, resultData) { console.log("displayValidationResults called. resultData = %O", resultData);
+    var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
+    var textRprt = buildRprt(valResults); //console.log("textRprt = %s", textRprt);
+    ein.editorTxtArea.innerHTML = textRprt;
   }
   function extractValidationResults(resultData) {
-    var valData = {}, valErrors = {};
-    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }
-    xxx();                                            console.log("Final valData = %O", valData);
-    return valErrors;
+    var valData = {};
+    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }    console.log("Final valData = %O", valData);
+    return valData;
 
     function getEntityResultData(entityResultData) {//console.log("getEntityResultData metaData: %O", entityResultData);
       var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
-      valData[curEntity] = {
-        cleanRecrds: entityResultData.finalRecords,
-        parseRpt: entityResultData.validationMetaData, //parseRpt
-        valErrs: xxxx//valErrs (conflicts, invalidNulls, nullRef)
+      valData[curEntity] = { cleanRecrds: entityResultData.finalRecords };
+      if (entityResultData.valRpt !== undefined) {
+        valData[curEntity].parseRpt = getParseRpt(curEntity), //parseRpt
+        valData[curEntity].valErrs = getValErrs(curEntity)//valErrs (conflicts, invalidNulls, nullRef)
       }
-    }
-    function xxx() { // console.log("valErrors = ")
-      for (var k in valData) {
-        valErrors[k] = valData[k].conflicts;
+
+      function getValErrs() { // console.log("valErrors = ")
+        var errFields = ['rcrdsWithNullUnqKeyField', 'nullRefResults', 'shareUnqKeyWithConflictedData'];
+        var errs = {};
+        errFields.forEach(function(field){
+          if (entityResultData.valRpt[field] !== undefined) { errs[field] = entityResultData.valRpt[field]; }
+        });
+        return errs;
       }
-    }
+      function getParseRpt() { // console.log("valErrors = ")
+        var rptFields = ['autoFill', 'dupCnt'];
+        var rpt = {};
+        rptFields.forEach(function(field){
+          if (entityResultData.valRpt[field] !== undefined) { rpt[field] = entityResultData.valRpt[field]; }
+        });
+        return rpt;
+      }
+    } /* End getEntityResultData */
   } /* End extractValidMetaResults */
+  function buildRprt(valData) {
+    var rprtStr = '\n';
+    var invalidNullsStr = 'Records with no data in a required field: \n';
+    var conflictsStr = '\n\n\nRecords that share unqKeys and have conflicting data in other fields: \n';
+    var nullRefStr = '\n\nRecrds with references to non-existent, required entity recrods:\n'
+    for (var key in valData) {
+      if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
+    }
+    rprtStr += invalidNullsStr + conflictsStr + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
+    return rprtStr;
+
+    function buildRprtStrngs(valErrs, entityName) {
+      if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
+      if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
+      if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
+
+      function nonNullErrType(errType) {
+        return valErrs[errType] !== null && valErrs[errType] !== undefined;
+      }
+      function addInvalidNulls(invldNullRprt, entityName) {
+        invalidNullsStr += '\n' + entityName + ' records: \n';
+        invldNullRprt.recrds.forEach(function(recrd){  //console.log("recrd = %O", recrd)
+          invalidNullsStr += 'Interaction id(s): [Not sure how to grab these]';
+          invalidNullsStr += addFieldsInRecrd(recrd);
+        });
+      }
+      function addConflicts(conflictObj, entityName) { console.log("conflictObj = ", conflictObj);
+        conflictsStr += '\nThere are ' + conflictObj.conCnt + ' ' + entityName + ' records to address: '
+        for (var unqKey in conflictObj.recrds) {
+          conflictsStr += '\n' + conflictObj.unqKey + ': ' + unqKey + ' \n';
+          conflictObj.recrds[unqKey].forEach(function(recrd) {
+            conflictsStr += addFieldsInRecrd(recrd, conflictObj.unqKey) + '\n';
+          });
+        }
+      }
+      function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. arguments = %O", arguments)
+        for (var entity in nullRefResults) {
+          nullRefStr += 'There are ' + nullRefResults[entity].cnt + ' ' + entity + ' records references not found.\n';
+          for (var key in nullRefResults[entity]) { console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
+            nullRefStr += 'Interaction id: [#], ' + addFieldsInRecrd(nullRefResults[entity][key][0]) + '\n';
+          }
+        }
+      }
+      function addFieldsInRecrd(recrd, unqKey) {
+        var str = '';
+        for (var field in recrd) { //console.log("field = %s, recrd = %O", field, recrd)
+          if (field === unqKey) { continue }
+          if (recrd[field] !== null) { str += ' ' + field + ': ' + recrd[field] + ',' }
+        }
+        return str;
+      }
+    } /* End buildRprtStr */
+  } /* End buildRprt */
 
 /*--------------- Methods For Testing -------------------------- */
   function initTests() {

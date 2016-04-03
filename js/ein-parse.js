@@ -10,7 +10,7 @@
 			subEntityCollection: true,
 			unqKey: ['shortName'],
 			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
-			validationMetaData: {}
+			validationResults: {}
 		},
 		citation: {
 			name: 'citation',
@@ -20,9 +20,9 @@
 			splitField: 'author',
 			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'author', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
-			validationMetaData: {}
+			validationResults: {}
 		},
-		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs 
+		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs
 			name: 'interaction',
 			childEntites: ['location', 'citation'],
 			subEntities: ['location'],
@@ -30,7 +30,7 @@
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
 			parseMethods: [autoFillLocDesc, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
-			validationMetaData: {},
+			validationResults: {},
 			extrctdTaxaData: {}
 		},
 		location: {
@@ -38,14 +38,14 @@
 			unqKey: ['locDesc'],
 			cols:	['locDesc', 'elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
-			validationMetaData: {}
+			validationResults: {}
 		},
 		publication: {
 			name: 'publication',
 			unqKey: ['pubTitle'],
 			cols:	['pubTitle','pubType','publisher'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
-			validationMetaData: {}
+			validationResults: {}
 		},
 		taxon: {
 			objCols: ['objKingdom','objClass','objOrder','objFam','objGenus','objSpecies'],
@@ -83,8 +83,8 @@
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback, validMode) { // console.log("entityParams[entity] = %O", entityParams[entity]);
-		entityObj = Object.assign(entityObj, entityParams[entity]);  //console.log("entity = %s, entityObj = %O", entity, entityObj);
-		parseChain = Object.assign(parseChain, entityObj.parseMethods); // console.log("parseChain = %O", parseChain);
+		entityObj = Object.assign({}, entityParams[entity]);  //console.log("entity = %s, entityObj = %O", entity, entityObj);
+		parseChain = copyParseChain(entityObj.parseMethods); // console.log("parseChain = %O", parseChain);
 		entityObj.fSyId = fSysId;
 
 		recurParseMethods(recrdsAry, entity);
@@ -92,8 +92,8 @@
 		if (validMode) { validationObj[entity] = entityObj; }
 
 		callback ?
-			callback(fSysId, entityObj) :
-			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationMetaData);
+			callback(fSysId, entityObj.valResults) :
+			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationResults);
 	}
 	function copyParseChain(parseMethodChain) {
 		return parseMethodChain.map(function(method){ return method });
@@ -109,8 +109,16 @@
 		if (curMethod !== undefined) {
 			curMethod(recrds, entity, recurParseMethods)
 		} else {
-			entityObj.finalRecords = recrds;
+			cleanUpReturnResults(recrds);
 		}
+	}
+	function cleanUpReturnResults(recrdsObj) {
+		entityObj.valResults = {
+			name: entityObj.name,
+			finalRecords: recrdsObj,
+			valRpt : entityObj.validationResults
+		};
+		if ("taxaObjs" in entityObj) { entityObj.valResults.taxaObjs = entityObj.taxaObjs; } // console.log("entityObj.valResults = %O", entityObj.valResults);
 	}
 	/**
 	 * Takes an array of record objects and extracts specified columns/keys and values.
@@ -129,7 +137,7 @@
 		 * @return {[type]} [description]
 		 */
 		function buildExtrctResultObj() {
-			entityObj.validationMetaData.extractCols = {
+			entityObj.validationResults.extractCols = {
 				unqField: entityCols[entityType].unqKey,
 				extrctedCols: columns.length
 			};
@@ -161,7 +169,7 @@
 		 * Adds data related to the duplication removal to the validation results.
 		 */
 		function addDeDupMetaData() {
-			entityObj.validationMetaData.duplicateCnt = recrdsAry.length - unqRecords.length;
+			entityObj.validationResults.dupCnt = recrdsAry.length - unqRecords.length;
 		}
 	} /* End deDupIdenticalRcrds */
 	/**
@@ -336,8 +344,8 @@
 		 */
 		function addNullRecsMetaData() {
 			isEmpty(rcrdsWithNullUnqField) ?
-				entityObj.validationMetaData.rcrdsWithNullUnqKeyField = null :
-				entityObj.validationMetaData.rcrdsWithNullUnqKeyField = {
+				entityObj.validationResults.rcrdsWithNullUnqKeyField = null :
+				entityObj.validationResults.rcrdsWithNullUnqKeyField = {
 					recordCnt: rcrdsWithNullUnqField.length,
 					recrds: rcrdsWithNullUnqField
 				};
@@ -364,8 +372,8 @@
 		 */
 		function addAutoFillAndCollapseMetaData() {
 			filledRecsCnt === 0 ?
-				entityObj.validationMetaData.autoFill = null :
-				entityObj.validationMetaData.autoFill = {
+				entityObj.validationResults.autoFill = null :
+				entityObj.validationResults.autoFill = {
 			  	received: countRecrdsInObj(recrdsObj),
 			  	filled: filledRecsCnt,
 			  	collapsed: collapsedCnt,
@@ -579,12 +587,13 @@
 		 */
 		function addConflictMetaData() {
 			countRecrdsInObj(conflictedRecrds) === 0 ?
-				entityObj.validationMetaData.shareUnqKeyWithConflictedData = null :
-				entityObj.validationMetaData.shareUnqKeyWithConflictedData = {
+				entityObj.validationResults.shareUnqKeyWithConflictedData = null :
+				entityObj.validationResults.shareUnqKeyWithConflictedData = {
 					received: countRecrdsInObj(recrdsObj),
 					cleanRecrdsCnt: calculateDiff(recrdsObj, conflictedRecrds),
-					conflictedCnt: countRecrdsInObj(conflictedRecrds),
-					conflictedRecrds: conflictedRecrds
+					unqKey: entityObj.unqKey[0],
+					conCnt: countRecrdsInObj(conflictedRecrds),
+					recrds: conflictedRecrds
 				};
 		}
 	}		/* End of hasConflicts */
@@ -621,86 +630,85 @@
 		return conflicted;
 	}
 /*--------------------------- Merge Entities Methods ------------------------------------- */
-	function mergeEntities(fSysIdAry, outerDataObj, subEntityObjsAry, callback, fileSetMetaData) { //console.log("mergeEntities called. Arguments = ", arguments);
-		var dataSet = outerDataObj.name;
-		var outerEntityRecrds = outerDataObj.finalRecords;     							//		 console.log("outerEntityRecrds = %O", outerEntityRecrds);
+	function mergeEntities(fSysIdAry, parentEntity, childEntities, callback, prevEntityReslts) { //console.log("mergeEntities called. Arguments = ", arguments);
+		var nullRefResults = {};
+		var dataSet = parentEntity.name;
+		var parentRcrds = parentEntity.finalRecords;     							//		 console.log("parentRcrds = %O", parentRcrds);
+		var parentValRpt = parentEntity.valRpt
+		var returnRecrdsObj = prevEntityReslts ?  prevEntityReslts : parentEntity;
 
-		forEachSubEntityObj(subEntityObjsAry);
-		handleCallback();																//	PARENT AND CHILD ENTITY V OUTER & INNER
+		childEntities.forEach(function(subEntityObjMetaData) { replaceRefsWithPointers(subEntityObjMetaData); });
 
-		// ein.fileSys.fileSaveAs(JSON.stringify(outerEntityRecrds, null, 2));
 
-		function handleCallback(){
-			var returnRecrdsObj = outerDataObj;
-			ifValidMode();
+		callback(fSysIdAry, returnRecrdsObj);
 
-			callback ? callback(fSysIdAry, returnRecrdsObj) : ein.ui.show(fSysIdAry, JSON.stringify(outerEntityRecrds, null, 2));
+		function replaceRefsWithPointers(childParseResults) { 				//	 console.log("replaceRefsWithPointers. childParseResults = %O", childParseResults);
+			var parentEntityRecrd, rcrdsAry;
+			var childName = childParseResults.name; //console.log("childName = %s", childName);
+			var childRecrds = childParseResults.finalRecords;  				//	 console.log("entityParams = %O", entityParams);
+			var isCollection = "subEntityCollection" in entityParams[childName];
+			var processMethod = isCollection ? processChildCollection : processSingleChildEntity;
 
-			function ifValidMode() {
-				if (typeof fileSetMetaData === "object" ) {
-					fileSetMetaData.finalMergedResults = outerDataObj.finalRecords;
-					returnRecrdsObj = fileSetMetaData;
-				}
+			processParentEntity();
+			if (parentValRpt.nullRefResults!== undefined) { addToNullRefResults(childName) }
+
+			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
+				for (var key in  parentRcrds) {
+					parentEntityRecrd = parentRcrds[key][0];
+					processMethod(parentEntityRecrd, key); }
 			}
-		}
-
-		function forEachSubEntityObj(subEntityObjs) {
-			subEntityObjsAry.forEach(function(subEntityObjMetaData) {				//			 console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
-				replaceUnqKeysWithEntityObjs(subEntityObjMetaData);
-			});
-		}
-		function replaceUnqKeysWithEntityObjs(subEntityObjMetaDataObj) { 		//			 console.log("replaceUnqKeysWithEntityObjs. subEntityObjMetaDataObj = %O", subEntityObjMetaDataObj);
-			var outerEntityObj, rcrdsAry;
-			var subEntityObjMetaData = subEntityObjMetaDataObj; // || subEntityObjMetaDataObj;// console.log("subEntityObjMetaData = %O", subEntityObjMetaData);
-			var subEntity = subEntityObjMetaData.name; //console.log("subEntity = %s", subEntity);
-			var subEntityRecrds = subEntityObjMetaData.finalRecords;  					//	 console.log("subEntityRecrds = %O", subEntityRecrds);
-			var isCollection = "subEntityCollection" in entityParams[subEntity];
-			var processMethod = isCollection ? processSubEntityCollection : processSingleSubEntity;
-
-			forEachOuterRecrdObj();
-
-			function forEachOuterRecrdObj() {
-				for (var key in  outerEntityRecrds) {
-					outerEntityObj = outerEntityRecrds[key][0];
-					processMethod(outerEntityObj); }
-			}
-			function processSubEntityCollection(outerEntityObj) { 													// console.log("isCollection")
-				var subEntitiesToReplaceAry = outerEntityObj[subEntity]; 									//	 console.log("subEntitiesToReplaceAry= %O ",subEntitiesToReplaceAry);
+			function processChildCollection(parentEntityRecrd, parentKey) { 													// console.log("isCollection")
+				var childrenToReplace = parentEntityRecrd[childName]; 									//	 console.log("childrenToReplace= %O ",childrenToReplace);
 				rcrdsAry = [];
-				forEachSubEntityInCollection();
-				replaceWithPointer(rcrdsAry);
+				forEachChildInCollection(parentKey);
+				replaceWithPointer(rcrdsAry, parentKey);
 
-				function forEachSubEntityInCollection() {
-					subEntitiesToReplaceAry.forEach(function(subEntityKey){ 											// console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
-						findKeyInSubRecords(subEntityKey);
+				function forEachChildInCollection(parentKey) {
+					childrenToReplace.forEach(function(childEntityRef){ 											// console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
+						matchRefInChildRecrds(childEntityRef, parentKey);
 					}); 																																				//  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
 				}
-			} /* End processSubEntityCollection */
-			function processSingleSubEntity(outerEntityObj) {  																// console.log("is not Collection")
-			  var unqKey = entityParams[subEntity].unqKey[0];
-				var unqKeyValToReplace = outerEntityObj[unqKey];														//	 console.log("outerEntityObj = %O. unqKeyValToReplace = %s", outerEntityObj, unqKeyValToReplace);
-				ifKeyValueIsNotNullFindKey();
+			} /* End processChildCollection */
+			function processSingleChildEntity(parentEntityRecrd, parentKey) {  																// console.log("is not Collection")
+			  var unqKey = entityParams[childName].unqKey[0];
+				var unqKeyValToReplace = parentEntityRecrd[unqKey];														//	 console.log("parentEntityRecrd = %O. unqKeyValToReplace = %s", parentEntityRecrd, unqKeyValToReplace);
+				ifKeyValueIsNotNullFindKey(parentKey);
 
-				function ifKeyValueIsNotNullFindKey() {
-					unqKeyValToReplace === null ? outerEntityObj[subEntity] = null : findKeyInSubRecords(unqKeyValToReplace) ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
-					delete outerEntityObj[unqKey];
+				function ifKeyValueIsNotNullFindKey(parentKey) {
+					if (unqKeyValToReplace === null) { parentEntityRecrd[childName] = null;
+					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
 				}
-			} /* End processSingleSubEntity */
-			function findKeyInSubRecords(unqKeyStrToReplace) {							// If key in obj, grab
-				for (var key in subEntityRecrds) { ifKeyValuesMatch(key, unqKeyStrToReplace); }
-			}
-			function ifKeyValuesMatch(key, unqKeyStrToReplace) {
-				if (key == unqKeyStrToReplace) { 																								// console.log("subEntity record match found. = %O.", subEntityRecrds[key]);
-					isCollection ? rcrdsAry.push(subEntityRecrds[key][0]) : replaceWithPointer(subEntityRecrds[key][0]); //console.log("foundMatchingSubEntityObj");}
+			} /* End processSingleChildEntity */
+			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey) {							// If key in obj, grab
+				var matched = false;
+				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace); }
+				if (!matched) { extractNullRefRecrd(parentKey) }
+
+				function ifKeyValuesMatch(childKey, unqKeyStrToReplace) {
+					if (childKey == unqKeyStrToReplace) { 																								// console.log("subEntity record match found. = %O.", childRecrds[key]);
+						matched = true;
+						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0]); //console.log("foundMatchingSubEntityObj");}
+					}
 				}
+			} /* End matchRefInChildRecrds */
+			function extractNullRefRecrd(parentKey) {
+				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
+				if (parentValRpt.nullRefResults[childName] === undefined) { parentValRpt.nullRefResults[childName] = {}; }
+				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
+				delete parentRcrds[parentKey];  //console.log("nullRefResults = %O", nullRefResults);
 			}
 			function replaceWithPointer(matchedRecrd) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
-				outerEntityObj[subEntity] = matchedRecrd;
+				parentEntityRecrd[childName] = matchedRecrd;
 			}
-		} /* End replaceUnqKeysWithEntityObjs */
+		} /* End replaceRefsWithPointers */
+		function addToNullRefResults(childName) { console.log("childsName = ", childName)
+		  if (parentValRpt.nullRefResults[childName] !== undefined) { console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
+		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
+		  }
+		}
 	} /* End mergeEntites */
 /*--------------Parse File Set Records--------------------------------------------------- */
-	function parseFileSetRecrds(fileSetObj, validationMode, callback) {  // console.log("parseFileSetRecrds called. arguments = %O", arguments);
+	function parseFileSetRecrds(fileSetObj, validationMode, callback) {   //console.log("parseFileSetRecrds called. arguments = %O", arguments);
 	    var csvRowEntities = ["author", "citation", "interaction"];
 	    var resultData = {};
 
@@ -708,9 +716,9 @@
 	    mergeParsedRecords(callback, validationMode);
 
 	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
-	    	var entityMetaData = entityParams[entityName];						//Super reference. Fix.
-			var csvFileId = fileSetObj[entityName].fileId;
-			var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
+	    	var entityMetaData = Object.assign({}, entityParams[entityName]); //console.log("entityMetaData = %O", entityMetaData);
+			  var csvFileId = fileSetObj[entityName].fileId;
+			  var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
 	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
 
 	    	if ("subEntities" in entityMetaData) { entityMetaData.subEntities.forEach(parseSubEntity) }
@@ -719,19 +727,25 @@
 	    		resultData[subEntityName] = runParseChain(csvFileId, csvRcrdsAry, subEntityName);
 	    	}
 	    } /* End parseCsvContent */
-	    function mergeParsedRecords(callback, validMode) { //	console.log("resultData = %O", resultData);	//console.log("mergeParsedRecords called. arguments = %O", arguments);
+	    function mergeParsedRecords(callback, validMode) {// 	console.log("resultData = %O", resultData);	//console.log("mergeParsedRecords called. arguments = %O", arguments);
 	    	var citSubAry = [resultData.publication, resultData.author];
 	    	var intSubAry = [resultData.location]
 
 	    	ein.parse.mergeDataSet([], resultData.citation, citSubAry, mergeIntoInteractions)
 
-	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) {
-	    		// var cb = callback || null		//	console.log("resultData = %O", resultData);
+	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData);	// var cb = callback || null		//	console.log("resultData = %O", resultData);
+	    		storeTaxaResults();
 	    		var valData = validMode ? resultData : false;
 	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
 	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
 	    	}
 	    } /* End mergeParsedRecords */
+	    function storeTaxaResults() {
+    		resultData.taxon = {
+    			finalRecords: resultData.interaction.taxaObjs,
+    			name: "taxon"
+    		}
+	    }
 	} /* End parseFileSetRecrds */
 	function runParseChain(csvFileId, csvRcrdsAry, curEntity) {
 		var result;
@@ -759,7 +773,7 @@
 			if (noOtherLocData(recrd)) { autofillDesc(recrd); }
 		}
 		function noOtherLocData(recrd) {
-			var remainingLocFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region'];
+			var remainingLocFields = ['elev', 'elevRangeMax', 'lat', 'long'];
 			var foundNoData = remainingLocFields.every(function(locField) {
 				return recrd[locField] === null;
 			});
@@ -774,7 +788,7 @@
 		function checkForHabType(recrd, countryName) {	//	console.log("checkForHabType called. arguments = %O", arguments);
 			var newLocDesc = countryName || '';
 			if (recrd.habType !== null) { newLocDesc += recrd.habType }
-				recrd.locDesc = newLocDesc.trim();   //console.log("newLocDesc= %s", newLocDesc);
+			recrd.locDesc = newLocDesc.trim();   //console.log("newLocDesc= %s", newLocDesc);
 		}
 	}/* End autoFillLocDesc */
 /* -----Interaction Helpers--------------------------------------------------------------- */
@@ -863,7 +877,7 @@
 		// buildObjTaxaObjs(recrdsAry);
 		// callback(recrdsObj, entity);
 	}
-	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) {
+	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { console.log("entityObj = %O", entityObj)
 		var taxonRecrdObjsAry = entityObj.extrctdTaxaData.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
 		var curTempId = taxonRecrdObjsAry.length;					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
@@ -1020,7 +1034,8 @@
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
-  	var taxaTree = mergeTaxaTreeObjs(); console.log("taxaTree = %O", taxaTree);
+  	var taxaTree = mergeTaxaTreeObjs(); //console.log("taxaTree = %O", taxaTree, entityObj);
+  	entityObj.taxaObjs = taxaTree;
   	replaceIdWithTaxonObj(recrdsObj);
   }
 	function mergeTaxaTreeObjs() {
