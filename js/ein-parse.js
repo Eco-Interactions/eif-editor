@@ -19,7 +19,7 @@
 			unqKey: ['citId'],
 			splitField: 'author',
 			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
-			parseMethods: [extractAuthors, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationResults: {},
 			extrctdAuths: {}
 		},
@@ -659,7 +659,6 @@
 			var processMethod = isCollection ? processChildCollection : processSingleChildEntity;
 
 			processParentEntity();
-			if (parentValRpt.nullRefResults!== undefined) { addToNullRefResults(childName) }
 
 			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
 				for (var key in  parentRcrds) {
@@ -673,8 +672,9 @@
 				replaceWithPointer(rcrdsAry, parentKey);
 
 				function forEachChildInCollection(parentKey) {
-					childrenToReplace.forEach(function(childEntityRef){ 											// console.log("pushing record rcrdsAry = %s", JSON.stringify(rcrdsAry))
+					childrenToReplace.forEach(function(childEntityRef){
 						matchRefInChildRecrds(childEntityRef, parentKey);
+						if (parentValRpt.nullRefResults!== undefined) { addNullRefResults(childName) }
 					}); 																																				//  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
 				}
 			} /* End processChildCollection */
@@ -691,7 +691,7 @@
 			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey, refKey) {							// If key in obj, grab
 				var matched = false;
 				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace, refKey); }
-				if (!matched) { extractNullRefRecrd(parentKey) }
+				if (!matched) { extractNullRefRecrd(parentKey, unqKeyStrToReplace) }
 
 				function ifKeyValuesMatch(childKey, refVal, refKey) {
 					if (childKey == refVal) { 																								// console.log("subEntity record match found. = %O.", childRecrds[key]);
@@ -700,10 +700,10 @@
 					}
 				}
 			} /* End matchRefInChildRecrds */
-			function extractNullRefRecrd(parentKey) { //console.log("extractNullRefRecrd called. parentEntityRecrd = %O", parentEntityRecrd)
+			function extractNullRefRecrd(parentKey, unqKeyStrVal) { //console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
 				if (parentValRpt.nullRefResults[childName] === undefined) { parentValRpt.nullRefResults[childName] = {}; }
-				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
+				parentValRpt.nullRefResults[childName][unqKeyStrVal] = Object.assign({}, parentRcrds[parentKey]);
 				  //console.log("nullRefResults = %O", nullRefResults);
 			}
 			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
@@ -711,10 +711,10 @@
 				delete parentEntityRecrd[refKey];
 			}
 		} /* End replaceRefsWithPointers */
-		function addToNullRefResults(childName) { //console.log("childsName = ", childName)
+		function addNullRefResults(childName) { //console.log("childsName = ", childName)
 		  if (parentValRpt.nullRefResults[childName] !== undefined) {// console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
 		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
-		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey;
+		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey[0];
 		  }
 		}
 		function removeNullRefRcrds() {
@@ -774,10 +774,10 @@
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
 	/* --------------------Citation Helpers----------------------------------------------------*/
-	function extractAuthors(recrdsAry, entity, callback) {
-		// entityObj.validationResults["extrctdAuths"] = runParseChain(null, recrdsAry, entity);
-		callback(recrdsAry, entity)
-	}
+	// function extractAuthors(recrdsAry, entity, callback) {
+	// 	// entityObj.validationResults["extrctdAuths"] = runParseChain(null, recrdsAry, entity);
+	// 	callback(recrdsAry, entity)
+	// }
 
 	/* --------------------Location Helpers----------------------------------------------------*/
 	function getIntIds(recrdsAry, entity, callback) {

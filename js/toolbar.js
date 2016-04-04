@@ -301,28 +301,30 @@
     function getIntroStr() {
       return `                                 Reference Table
 ---------------------------------------------------------------------------------------------------
-Some column headers in the spreadsheets are long, have spaces, or otherwise make the data reports more difficult to comprehend.
-They have been replaced with shorter keys. These are the new keys and their related column headers in the spreadsheets.
-
-+----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
-|                                            Interaction                                             |                 Citation                 |        Author         |
-+----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
-| Primary or Secondary interaction: (Merged with intTag)                                             | Citation ID: citId                       | Short Name: shortName |
-| Citation Number: citId                                                                             | Citation Short Description: citShortDesc | Last: last            |
-| Citation Short Description: citShortDesc                                                           | Full Text: fullText                      | First: first          |
-| Region: region                                                                                     | Authors: author                          | Middle: middle        |
-| Location Description: locDesc                                                                      | Year: year                               | Suffix: suffix        |
-| Country: country                                                                                   | Title: Title                             |                       |
-| Habitat Type: habType                                                                              | Publication Title: pubTitle              |                       |
-| Lat.: lat                                                                                          | Publication Type: pubType                |                       |
-| Long.: long                                                                                        | Publisher: publisher                     |                       |
-| Elev. (or Range Min): elev                                                                         | Issue: issue                             |                       |
-| Elev. Range Max: elevRangeMax                                                                      | Pages: pgs                               |                       |
-| Interaction Type: intType                                                                          |                                          |                       |
-| Interaction Tags: intTag                                                                           |                                          |                       |
-| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon                                       |                                          |                       |
-| Plant/Arthropod, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon |                                          |                       |
-+----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+Some column headers in the spreadsheets are long, have spaces, or otherwise make this report more difficult to format in a way that is easy to read.
+These names have been replaced with shorter ones. The table below shows the column headers from the spreadsheets with their shortened equivalents.
++-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
+|                                             Interaction                                             |                 Citation                 |         Author         |
++-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
+| ----Interaction id explanation----                                                                  | Citation ID: citId                       | Short Name: shortName  |
+| Primary or Secondary interaction: (Merged with intTag)                                              | Citation Short Description: citShortDesc | Last: last             |
+| Citation Number: citId                                                                              | Full Text: fullText                      | First: first           |
+| Citation Short Description: citShortDesc                                                            | Authors: author                          | Middle: middle         |
+| Region: region                                                                                      | Year: year                               | Suffix: suffix         |
+| Location Description: locDesc                                                                       | Publication Title: pubTitle              |                        |
+| Country: country                                                                                    | Publication Type: pubType                |                        |
+| Habitat Type: habType                                                                               | Publisher: publisher                     |                        |
+| Lat.: lat                                                                                           | Issue: issue                             |                        |
+| Long.: long                                                                                         | Pages: pgs                               |                        |
+| Elev. (or Range Min): elev                                                                          |                                          |                        |
+| Elev. Range Max: elevRangeMax                                                                       |                                          |                        |
+| Interaction Type: intType                                                                           |                                          |                        |
+| Interaction Tags: intTag                                                                            |                                          |                        |
+| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon* (Most specific Taxon Only)            |                                          |                        |
+| Plant/Arthropod, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon* |                                          |                        |
+|                                                                                                     |                                          |                        |
+| *Only the most specific taxon is shown, for each subject and object.                                |                                          |                        |
++-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
 ===================================================================================================
                                 Data Validation Errors
 ===================================================================================================\n`;
@@ -342,7 +344,7 @@ They have been replaced with shorter keys. These are the new keys and their rela
         });
         invalidNullsStr += '\n';
       }
-      function addConflicts(conflictObj, entityName) { console.log("conflictObj = ", conflictObj);
+      function addConflicts(conflictObj, entityName) { //console.log("conflictObj = ", conflictObj);
         conflictsStr += '-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address: \n'
         for (var unqKey in conflictObj.recrds) {
           conflictsStr += '\n' + conflictObj.unqKey + ': ' + unqKey + ' \n';
@@ -375,7 +377,7 @@ They have been replaced with shorter keys. These are the new keys and their rela
               recrdsWithNoAuth.push(authorNullRefs[key][0]);
               nullAuthCnt++;
             } else { tempStr += processCitFields(authorNullRefs[key][0]); }
-          } console.log("tempStr = ", tempStr);
+          } //console.log("tempStr = ", tempStr);
         }
         return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
 
@@ -416,7 +418,7 @@ They have been replaced with shorter keys. These are the new keys and their rela
         }
         return pubStr + '\n';
       }
-      function addFieldsInRecrd(recrd, unqKey, skipKeyAry) { console.log("addFieldsInRecrd. arguments = %O", arguments);
+      function addFieldsInRecrd(recrd, unqKey, skipKeyAry) {// console.log("addFieldsInRecrd. arguments = %O", arguments);
         var skipKeyAry = skipKeyAry || [];
         var str = '';
         for (var field in recrd) {// console.log("field = %s, recrd = %O", field, recrd)
@@ -431,7 +433,7 @@ They have been replaced with shorter keys. These are the new keys and their rela
         var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
         if (recrd[field] !== undefined) {
           var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
-          subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
+          // subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
           return subStr;
         }
       }

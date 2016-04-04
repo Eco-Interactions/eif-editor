@@ -26,7 +26,9 @@ a.button {
 	display: none;
 }
 /* Core UI Styles */
-
+#grid-cntnr {
+	overflow: scroll;
+}
 button {
 	height: 20px;
 	margin: 5px 0 0 5px;
@@ -70,15 +72,13 @@ button {
 	height:500px;
 }
 #right-pane {
-  flex-grow: 1;
-  background: white;
+	flex-grow: 1;
+	background: white;
 	height: 95vh;
-	overflow: scroll;
-}
-#grid-cntnr {
+	overflow: hidden;
 }
 #editor {
-	height: 100%;
+	height: 95vh;
 	width: 100%;
 	padding-bottom: 3em;
 }
