@@ -287,6 +287,9 @@
   } /* End extractValidMetaResults */
   function buildRprt(valData) {
     var rprtStr = '';
+    var introStrng = `\nSome column headers in the spreadsheets are long, have spaces, or otherwise make the data reports more difficult to comprehend.
+They have been replaced with shorter keys. There is a table at the bottom with the new keys and their related column headers in the spreadsheets.\n
+Interaction ids correspond to the row number of the imported interaction csv.\n`;
     var invalidNullsStr = '\nRecords with no data in a required field: \n';
     var conflictsStr = '\nRecords that share unique key values and have conflicting data in other fields: \n';
     var nullRefStr = '\nRecords with references to non-existent, required entity records:\n';
@@ -294,7 +297,7 @@
     for (var key in valData) {
       if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
     }
-    rprtStr += divider + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
+    rprtStr += divider + introStrng + divider + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
     return rprtStr;
 
     function buildRprtStrngs(valErrs, entityName) {
@@ -323,22 +326,22 @@
         }
         conflictsStr += '\n';
       }
-      function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. arguments = %O", arguments)
+      function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
         for (var entity in nullRefResults) {
           nullRefStr += '-- ' + 'Not able to match ' + nullRefResults[entity].cnt + ' ' + entity + ' record references (' + nullRefResults[entity].refKey + ') with valid records.\n\n';
-          for (var key in nullRefResults[entity]) { console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
-            if (key == "cnt" || key == "refKey") {continue}
+          for (var key in nullRefResults[entity]) { //console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
+            if (key == "cnt" || key == "refKey") { continue }
             nullRefStr += 'Interaction id: ' + key + ', ' + processIntFields(nullRefResults[entity][key][0]) + '\n\n';
           }
         }
       }
-      function processIntFields(recrd) { console.log("recrd = %O", recrd)
+      function processIntFields(recrd) { //console.log("recrd = %O", recrd)
         var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
         str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
         str += addFieldsInRecrd(recrd.location);
         return str;
       }
-      function addTaxonFields(recrd, field) { console.log("recrd[field] = %O", recrd[field])
+      function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
         var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
         var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
         subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';

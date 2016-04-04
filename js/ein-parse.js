@@ -29,7 +29,7 @@
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [autoFillLocDesc, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
+			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
 			validationResults: {},
 			extrctdTaxaData: {}
 		},
@@ -692,7 +692,7 @@
 					}
 				}
 			} /* End matchRefInChildRecrds */
-			function extractNullRefRecrd(parentKey) { console.log("extractNullRefRecrd called. parentEntityRecrd = %O", parentEntityRecrd)
+			function extractNullRefRecrd(parentKey) { //console.log("extractNullRefRecrd called. parentEntityRecrd = %O", parentEntityRecrd)
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
 				if (parentValRpt.nullRefResults[childName] === undefined) { parentValRpt.nullRefResults[childName] = {}; }
 				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
@@ -703,8 +703,8 @@
 				delete parentEntityRecrd[refKey];
 			}
 		} /* End replaceRefsWithPointers */
-		function addToNullRefResults(childName) { console.log("childsName = ", childName)
-		  if (parentValRpt.nullRefResults[childName] !== undefined) { console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
+		function addToNullRefResults(childName) { //console.log("childsName = ", childName)
+		  if (parentValRpt.nullRefResults[childName] !== undefined) {// console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
 		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
 		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey;
 		  }
@@ -802,6 +802,10 @@
 		}
 	}/* End autoFillLocDesc */
 /* -----Interaction Helpers--------------------------------------------------------------- */
+  function fillIntIds(recrdsAry, entity, callback) {
+		var newRcrdAry = attachTempIds(recrdsAry);
+		callback(newRcrdAry, entity);
+	}
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
 	 * @return {ary}  		An array of objects with the tag field as an array
