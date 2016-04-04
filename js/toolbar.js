@@ -286,14 +286,15 @@
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
   function buildRprt(valData) {
-    var rprtStr = '\n';
-    var invalidNullsStr = 'Records with no data in a required field: \n';
-    var conflictsStr = '\n\n\nRecords that share unqKeys and have conflicting data in other fields: \n';
-    var nullRefStr = '\n\nRecrds with references to non-existent, required entity recrods:\n'
+    var rprtStr = '';
+    var invalidNullsStr = '\nRecords with no data in a required field: \n';
+    var conflictsStr = '\nRecords that share unique key values and have conflicting data in other fields: \n';
+    var nullRefStr = '\nRecords with references to non-existent, required entity records:\n';
+    var divider = '---------------------------------------------------------------------------------------------------';
     for (var key in valData) {
       if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
     }
-    rprtStr += invalidNullsStr + conflictsStr + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
+    rprtStr += divider + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
     return rprtStr;
 
     function buildRprtStrngs(valErrs, entityName) {
@@ -305,37 +306,60 @@
         return valErrs[errType] !== null && valErrs[errType] !== undefined;
       }
       function addInvalidNulls(invldNullRprt, entityName) {
-        invalidNullsStr += '\n' + entityName + ' records: \n';
+        invalidNullsStr += '-- ' + entityName + ' records with ' + invldNullRprt.unqKey + ' field empty: \n\n';
         invldNullRprt.recrds.forEach(function(recrd){  //console.log("recrd = %O", recrd)
           invalidNullsStr += 'Interaction id(s): [Not sure how to grab these]';
-          invalidNullsStr += addFieldsInRecrd(recrd);
+          invalidNullsStr += addFieldsInRecrd(recrd) + '\n';
         });
+        invalidNullsStr += '\n';
       }
       function addConflicts(conflictObj, entityName) { console.log("conflictObj = ", conflictObj);
-        conflictsStr += '\nThere are ' + conflictObj.conCnt + ' ' + entityName + ' records to address: '
+        conflictsStr += '-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address: \n'
         for (var unqKey in conflictObj.recrds) {
           conflictsStr += '\n' + conflictObj.unqKey + ': ' + unqKey + ' \n';
           conflictObj.recrds[unqKey].forEach(function(recrd) {
             conflictsStr += addFieldsInRecrd(recrd, conflictObj.unqKey) + '\n';
           });
         }
+        conflictsStr += '\n';
       }
       function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. arguments = %O", arguments)
         for (var entity in nullRefResults) {
-          nullRefStr += 'There are ' + nullRefResults[entity].cnt + ' ' + entity + ' records references not found.\n';
+          nullRefStr += '-- ' + 'Not able to match ' + nullRefResults[entity].cnt + ' ' + entity + ' record references (' + nullRefResults[entity].refKey + ') with valid records.\n\n';
           for (var key in nullRefResults[entity]) { console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
-            nullRefStr += 'Interaction id: [#], ' + addFieldsInRecrd(nullRefResults[entity][key][0]) + '\n';
+            if (key == "cnt" || key == "refKey") {continue}
+            nullRefStr += 'Interaction id: ' + key + ', ' + processIntFields(nullRefResults[entity][key][0]) + '\n\n';
           }
         }
+      }
+      function processIntFields(recrd) { console.log("recrd = %O", recrd)
+        var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
+        str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
+        str += addFieldsInRecrd(recrd.location);
+        return str;
+      }
+      function addTaxonFields(recrd, field) { console.log("recrd[field] = %O", recrd[field])
+        var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
+        var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
+        subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
+        return subStr;
+      }
+      function addIntTags(tagAry) {
+        var subStr = ' intTags: ';
+        tagAry.forEach(function(tag){
+          subStr += tag + ','
+        });
+        return subStr;
       }
       function addFieldsInRecrd(recrd, unqKey) {
         var str = '';
         for (var field in recrd) { //console.log("field = %s, recrd = %O", field, recrd)
-          if (field === unqKey) { continue }
-          if (recrd[field] !== null) { str += ' ' + field + ': ' + recrd[field] + ',' }
+          if (field === unqKey || recrd[field] === null) { continue }
+          if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {  str += ' ' + field + ': ' + recrd[field] + ',';
+          } else { str += addFieldsInRecrd(recrd[field]); }
         }
         return str;
-      }
+      }/* End addFieldsInRecrd */
     } /* End buildRprtStr */
   } /* End buildRprt */
 

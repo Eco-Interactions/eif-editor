@@ -347,7 +347,8 @@
 				entityObj.validationResults.rcrdsWithNullUnqKeyField = null :
 				entityObj.validationResults.rcrdsWithNullUnqKeyField = {
 					recordCnt: rcrdsWithNullUnqField.length,
-					recrds: rcrdsWithNullUnqField
+					recrds: rcrdsWithNullUnqField,
+					unqKey: entityObj.unqKey
 				};
 		}
 	} /* End restructureIntoRecordObj */
@@ -638,7 +639,7 @@
 		var returnRecrdsObj = prevEntityReslts ?  prevEntityReslts : parentEntity;
 
 		childEntities.forEach(function(subEntityObjMetaData) { replaceRefsWithPointers(subEntityObjMetaData); });
-
+		if (parentValRpt.nullRefResults !== undefined) { removeNullRefRcrds(); }
 
 		callback(fSysIdAry, returnRecrdsObj);
 
@@ -670,41 +671,50 @@
 				}
 			} /* End processChildCollection */
 			function processSingleChildEntity(parentEntityRecrd, parentKey) {  																// console.log("is not Collection")
-			  var unqKey = entityParams[childName].unqKey[0];
-				var unqKeyValToReplace = parentEntityRecrd[unqKey];														//	 console.log("parentEntityRecrd = %O. unqKeyValToReplace = %s", parentEntityRecrd, unqKeyValToReplace);
+			  var refKey = entityParams[childName].unqKey[0];
+				var unqKeyValToReplace = parentEntityRecrd[refKey];														//	 console.log("parentEntityRecrd = %O. unqKeyValToReplace = %s", parentEntityRecrd, unqKeyValToReplace);
 				ifKeyValueIsNotNullFindKey(parentKey);
 
 				function ifKeyValueIsNotNullFindKey(parentKey) {
 					if (unqKeyValToReplace === null) { parentEntityRecrd[childName] = null;
-					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
+					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey, refKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
 				}
 			} /* End processSingleChildEntity */
-			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey) {							// If key in obj, grab
+			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey, refKey) {							// If key in obj, grab
 				var matched = false;
-				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace); }
+				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace, refKey); }
 				if (!matched) { extractNullRefRecrd(parentKey) }
 
-				function ifKeyValuesMatch(childKey, unqKeyStrToReplace) {
-					if (childKey == unqKeyStrToReplace) { 																								// console.log("subEntity record match found. = %O.", childRecrds[key]);
+				function ifKeyValuesMatch(childKey, refVal, refKey) {
+					if (childKey == refVal) { 																								// console.log("subEntity record match found. = %O.", childRecrds[key]);
 						matched = true;
-						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0]); //console.log("foundMatchingSubEntityObj");}
+						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0], refKey); //console.log("foundMatchingSubEntityObj");}
 					}
 				}
 			} /* End matchRefInChildRecrds */
-			function extractNullRefRecrd(parentKey) {
+			function extractNullRefRecrd(parentKey) { console.log("extractNullRefRecrd called. parentEntityRecrd = %O", parentEntityRecrd)
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
 				if (parentValRpt.nullRefResults[childName] === undefined) { parentValRpt.nullRefResults[childName] = {}; }
 				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
-				delete parentRcrds[parentKey];  //console.log("nullRefResults = %O", nullRefResults);
+				  //console.log("nullRefResults = %O", nullRefResults);
 			}
-			function replaceWithPointer(matchedRecrd) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
+			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				parentEntityRecrd[childName] = matchedRecrd;
+				delete parentEntityRecrd[refKey];
 			}
 		} /* End replaceRefsWithPointers */
 		function addToNullRefResults(childName) { console.log("childsName = ", childName)
 		  if (parentValRpt.nullRefResults[childName] !== undefined) { console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
 		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
+		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey;
 		  }
+		}
+		function removeNullRefRcrds() {
+			for (var entity in parentValRpt.nullRefResults) {
+				for (var parentKey in parentValRpt.nullRefResults[entity]) {
+					delete parentRcrds[parentKey];
+				}
+			}
 		}
 	} /* End mergeEntites */
 /*--------------Parse File Set Records--------------------------------------------------- */
