@@ -32,6 +32,7 @@
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
 			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
 			validationResults: {},
+			taxaRcrdObjsAry: {}
 		},
 		location: {
 			name: 'location',
@@ -774,7 +775,8 @@
 /*--------------Entity Specific Methods--------------------------------------------------- */
 	/* --------------------Citation Helpers----------------------------------------------------*/
 	function extractAuthors(recrdsAry, entity, callback) {
-		entityObj.validationResults["extrctdAuths"] runParseChain(null, recrdsAry, entity);
+		// entityObj.validationResults["extrctdAuths"] = runParseChain(null, recrdsAry, entity);
+		callback(recrdsAry, entity)
 	}
 
 	/* --------------------Location Helpers----------------------------------------------------*/
@@ -861,7 +863,7 @@
 		var intRefIdx = [];
 
 		forEachRecrd();		//	console.log("taxaRcrds = %O", taxaRcrds);
-		storeTaxaData();
+		storeTaxaData(taxaRcrds);
 
 		callback(recrdsObj, entity);
 
@@ -902,6 +904,9 @@
 		function delteTaxaFields(recrd) {
 			taxaFields.forEach(function(field) { delete recrd[field]; });
 		}
+		function storeTaxaData(taxaRcrds) {
+			entityObj.taxaRcrdObjsAry = taxaRcrds;
+		}
 	} /* End extractTaxaCols */
 	function buildTaxaObjs(recrdsAry, entity, callback) {
 		buildBatTaxaObjs(recrdsAry);  console.log("Path not fully written. Pick up here. Thank you.");
@@ -909,7 +914,7 @@
 		// callback(recrdsObj, entity);
 	}
 	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { console.log("entityObj = %O", entityObj)
-		var taxonRecrdObjsAry = entityObj.extrctdTaxa.taxaRcrdObjsAry;
+		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
 		var curTempId = taxonRecrdObjsAry.length;					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
 

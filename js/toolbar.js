@@ -287,9 +287,7 @@
   } /* End extractValidMetaResults */
   function buildRprt(valData) {
     var rprtStr = '';
-    var introStrng = `\nSome column headers in the spreadsheets are long, have spaces, or otherwise make the data reports more difficult to comprehend.
-They have been replaced with shorter keys. There is a table at the bottom with the new keys and their related column headers in the spreadsheets.\n
-Interaction ids correspond to the row number of the imported interaction csv.\n`;
+    var introStrng = getIntroStr();
     var invalidNullsStr = '\nRecords with no data in a required field: \n';
     var conflictsStr = '\nRecords that share unique key values and have conflicting data in other fields: \n';
     var nullRefStr = '\nRecords with references to non-existent, required entity records:\n';
@@ -297,9 +295,38 @@ Interaction ids correspond to the row number of the imported interaction csv.\n`
     for (var key in valData) {
       if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
     }
-    rprtStr += divider + introStrng + divider + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
+    rprtStr += introStrng + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
     return rprtStr;
 
+    function getIntroStr() {
+      return `                                 Reference Table
+---------------------------------------------------------------------------------------------------
+Some column headers in the spreadsheets are long, have spaces, or otherwise make the data reports more difficult to comprehend.
+They have been replaced with shorter keys. These are the new keys and their related column headers in the spreadsheets.
+
++----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+|                                            Interaction                                             |                 Citation                 |        Author         |
++----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+| Primary or Secondary interaction: (Merged with intTag)                                             | Citation ID: citId                       | Short Name: shortName |
+| Citation Number: citId                                                                             | Citation Short Description: citShortDesc | Last: last            |
+| Citation Short Description: citShortDesc                                                           | Full Text: fullText                      | First: first          |
+| Region: region                                                                                     | Authors: author                          | Middle: middle        |
+| Location Description: locDesc                                                                      | Year: year                               | Suffix: suffix        |
+| Country: country                                                                                   | Title: Title                             |                       |
+| Habitat Type: habType                                                                              | Publication Title: pubTitle              |                       |
+| Lat.: lat                                                                                          | Publication Type: pubType                |                       |
+| Long.: long                                                                                        | Publisher: publisher                     |                       |
+| Elev. (or Range Min): elev                                                                         | Issue: issue                             |                       |
+| Elev. Range Max: elevRangeMax                                                                      | Pages: pgs                               |                       |
+| Interaction Type: intType                                                                          |                                          |                       |
+| Interaction Tags: intTag                                                                           |                                          |                       |
+| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon                                       |                                          |                       |
+| Plant/Arthropod, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon |                                          |                       |
++----------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+===================================================================================================
+                                Data Validation Errors
+===================================================================================================\n`;
+    }
     function buildRprtStrngs(valErrs, entityName) {
       if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
       if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
