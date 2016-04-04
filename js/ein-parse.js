@@ -19,8 +19,9 @@
 			unqKey: ['citId'],
 			splitField: 'author',
 			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
-			validationResults: {}
+			parseMethods: [extractAuthors, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
+			validationResults: {},
+			extrctdAuths: {}
 		},
 		interaction: {			// Taxa are handled in last method: buildAndMergeTaxonObjs
 			name: 'interaction',
@@ -31,7 +32,6 @@
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
 			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
 			validationResults: {},
-			extrctdTaxaData: {}
 		},
 		location: {
 			name: 'location',
@@ -772,6 +772,11 @@
 
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
+	/* --------------------Citation Helpers----------------------------------------------------*/
+	function extractAuthors(recrdsAry, entity, callback) {
+		entityObj.validationResults["extrctdAuths"] runParseChain(null, recrdsAry, entity);
+	}
+
 	/* --------------------Location Helpers----------------------------------------------------*/
 	function getIntIds(recrdsAry, entity, callback) {
 		var row = 1;
@@ -897,9 +902,6 @@
 		function delteTaxaFields(recrd) {
 			taxaFields.forEach(function(field) { delete recrd[field]; });
 		}
-		function storeTaxaData() {
-			entityObj.extrctdTaxaData = { taxaRcrdObjsAry: taxaRcrds };
-		}
 	} /* End extractTaxaCols */
 	function buildTaxaObjs(recrdsAry, entity, callback) {
 		buildBatTaxaObjs(recrdsAry);  console.log("Path not fully written. Pick up here. Thank you.");
@@ -907,7 +909,7 @@
 		// callback(recrdsObj, entity);
 	}
 	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { console.log("entityObj = %O", entityObj)
-		var taxonRecrdObjsAry = entityObj.extrctdTaxaData.taxaRcrdObjsAry;
+		var taxonRecrdObjsAry = entityObj.extrctdTaxa.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
 		var curTempId = taxonRecrdObjsAry.length;					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
 

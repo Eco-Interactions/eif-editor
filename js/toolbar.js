@@ -330,7 +330,7 @@ Interaction ids correspond to the row number of the imported interaction csv.\n`
           if (entity === "author") {
             nullRefStr += processAuthorNullRefs(nullRefResults[entity]);
             continue
-          } //console.log("nullRefStr = ", nullRefStr)
+          }  //console.log("nullRefStr = ", nullRefStr)
           nullRefStr += '-- ' + 'Not able to match ' + nullRefResults[entity].cnt + ' ' + entity + ' record references (' + nullRefResults[entity].refKey + ') with valid records.\n\n';
           for (var key in nullRefResults[entity]) { //console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
             if (key == "cnt" || key == "refKey") { continue }
