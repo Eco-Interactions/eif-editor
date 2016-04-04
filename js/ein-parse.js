@@ -18,7 +18,7 @@
 			subEntities: ['publication'],
 			unqKey: ['citId'],
 			splitField: 'author',
-			cols:	['citId', 'citShortDesc', 'fullText', 'year', 'author', 'title', 'pubTitle', 'vol', 'issue', 'pgs'],
+			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationResults: {}
 		},
@@ -29,7 +29,7 @@
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
+			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
 			validationResults: {},
 			extrctdTaxaData: {}
 		},
@@ -179,7 +179,7 @@
 	 * @return {array}  					Returns an array of unique, and non-null, record objects.
 	 */
 	function findUnqRecords(recrdsAry) {																																	//	console.log("deDupIdenticalRcrds called. Original Records = %O", recrdsAry);
-	  var isDup = false, dupCount = 0, processed = [];
+	  var isDup = false, dupCount = 0, processed = [], dupIntIdRefs = {};
 
 		removeDups(recrdsAry);		  // console.log("%s duplicates", dupCount);
 		var unqRecrds = removeNulls(processed);
@@ -197,6 +197,12 @@
 				isDup ? dupCount++ : processed.push(recrd);
 			});
 		}
+		// function processDup(recrd) {
+		// 	var unqKey = entityObj.unqKey;
+		// 	dupCount++;
+		// 	if (dupIntIdRefs[recrd[unqKey]] === undefined) { dupIntIdRefs[recrd[unqKey]] = []; }
+		// 	dupIntIdRefs[recrd[unqKey]].push(recrd.intId);
+		// }
 		/**
 		 * Checks a record against every previously processed record for an exact duplicate record.
 		 *
@@ -245,6 +251,7 @@
 		 */
 		function checkEachKey(recrdOne, recrdTwo) {
 			for (var key in recrdOne) {															// Loop through each key/value in the matching records
+				// if (key === "intId") { continue }
 				if (recrdOne[key] !== recrdTwo[key]) {								// If a value is unique this is not an exact duplicate
 					isDup = false;			//		console.log("Records not equal. recrdOne = %O, recrdTwo = %O", recrdOne, recrdTwo);
 					break;
@@ -766,6 +773,14 @@
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
 	/* --------------------Location Helpers----------------------------------------------------*/
+	function getIntIds(recrdsAry, entity, callback) {
+		var row = 1;
+		var newRcrdsAry = recrdsAry.map(function(recrd){
+			recrd.intId = row++;
+			return recrd;
+		});
+		callback(newRcrdsAry, entity);
+	}
 	function autoFillLocDesc(recrdsAry, entity, callback) {//console.log("autoFillLocDesc called. arguments = %O", arguments);
 		var newRecrd = {};
 		var filledRecrds = recrdsAry.map(function(recrd){// console.log("recrd being processed: %O", arguments);

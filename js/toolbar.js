@@ -309,9 +309,8 @@ Interaction ids correspond to the row number of the imported interaction csv.\n`
         return valErrs[errType] !== null && valErrs[errType] !== undefined;
       }
       function addInvalidNulls(invldNullRprt, entityName) {
-        invalidNullsStr += '-- ' + entityName + ' records with ' + invldNullRprt.unqKey + ' field empty: \n\n';
+        invalidNullsStr += '-- There are ' + invldNullRprt.recordCnt + ' ' + entityName + ' records with data and with ' + invldNullRprt.unqKey + ' field empty: \n\n';
         invldNullRprt.recrds.forEach(function(recrd){  //console.log("recrd = %O", recrd)
-          invalidNullsStr += 'Interaction id(s): [Not sure how to grab these]';
           invalidNullsStr += addFieldsInRecrd(recrd) + '\n';
         });
         invalidNullsStr += '\n';
@@ -328,6 +327,10 @@ Interaction ids correspond to the row number of the imported interaction csv.\n`
       }
       function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
         for (var entity in nullRefResults) {
+          if (entity === "author") {
+            nullRefStr += processAuthorNullRefs(nullRefResults[entity]);
+            continue
+          } //console.log("nullRefStr = ", nullRefStr)
           nullRefStr += '-- ' + 'Not able to match ' + nullRefResults[entity].cnt + ' ' + entity + ' record references (' + nullRefResults[entity].refKey + ') with valid records.\n\n';
           for (var key in nullRefResults[entity]) { //console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
             if (key == "cnt" || key == "refKey") { continue }
@@ -335,34 +338,85 @@ Interaction ids correspond to the row number of the imported interaction csv.\n`
           }
         }
       }
+      function processAuthorNullRefs(authorNullRefs) { console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
+        var recrdsWithNoAuth = [];
+        var nullAuthCnt = 0;
+        var tempStr = '';
+        for(var key in authorNullRefs) {// console.log("authorNullRefs[key] = %O", authorNullRefs[key]);
+          if (authorNullRefs[key][0] !== undefined) {
+            if (noAuthors(key)) {
+              recrdsWithNoAuth.push(authorNullRefs[key][0]);
+              nullAuthCnt++;
+            } else { tempStr += processCitFields(authorNullRefs[key][0]); }
+          } console.log("tempStr = ", tempStr);
+        }
+        return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
+
+        function noAuthors(key) {
+          return authorNullRefs[key][0].author !== undefined && authorNullRefs[key][0].author.length === 0;
+        }
+      } /* End processAuthorNullRefs */
+      function processCitFields(citRecrd) { console.log("processCitFields. citRecrd = %O", citRecrd);
+        var str = authStr = pubStr = '';
+        if (citRecrd.author !== undefined) {
+          authStr +=  processAuthFields(citRecrd.author);
+        } else if (citRecrd.publication !== null) {
+          pubStr +=  'Publication: ' + processPubFields(citRecrd.publications);
+        }
+        str += addFieldsInRecrd(citRecrd, null, ['fullText', 'author', 'publication', 'pubTitle', 'pubType', 'publisher']);
+          //console.log('str = ', str)
+        return '\n' + str + ', ' + authStr + ', ' + pubStr +'\n';
+      }
+      function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
+        var authStr = '';
+        authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
+          authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
+        }); console.log("authStr = ", authStr);
+        return authStr;
+      }
       function processIntFields(recrd) { //console.log("recrd = %O", recrd)
         var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
         str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
         str += addFieldsInRecrd(recrd.location);
         return str;
       }
-      function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
-        var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
-        var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
-        subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
-        return subStr;
+      function processPubFields(pubRecrd) {
+        var pubStr = '';
+        for (var key in pubRecrd) {
+          if (pubRecrd[key] !== null) {
+            pubStr += key + ': ' + pubRecrd[key] + ', '
+          }
+        }
+        return pubStr + '\n';
       }
-      function addIntTags(tagAry) {
-        var subStr = ' intTags: ';
-        tagAry.forEach(function(tag){
-          subStr += tag + ','
-        });
-        return subStr;
-      }
-      function addFieldsInRecrd(recrd, unqKey) {
+      function addFieldsInRecrd(recrd, unqKey, skipKeyAry) { console.log("addFieldsInRecrd. arguments = %O", arguments);
+        var skipKeyAry = skipKeyAry || [];
         var str = '';
-        for (var field in recrd) { //console.log("field = %s, recrd = %O", field, recrd)
-          if (field === unqKey || recrd[field] === null) { continue }
+        for (var field in recrd) {// console.log("field = %s, recrd = %O", field, recrd)
+          if (skipKeyAry.indexOf(field) > -1) { continue } //console.log("field = ", field);
+          if (field === unqKey || recrd[field] === null || recrd[field] === undefined) { continue }
           if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {  str += ' ' + field + ': ' + recrd[field] + ',';
           } else { str += addFieldsInRecrd(recrd[field]); }
         }
         return str;
       }/* End addFieldsInRecrd */
+      function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
+        var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
+        if (recrd[field] !== undefined) {
+          var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
+          subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
+          return subStr;
+        }
+      }
+      function addIntTags(tagAry) {
+        if (tagAry !== undefined) {
+          var subStr = ' intTags: ';
+          tagAry.forEach(function(tag){
+            subStr += tag + ', '
+          });
+          return subStr;
+        }
+      }
     } /* End buildRprtStr */
   } /* End buildRprt */
 
