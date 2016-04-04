@@ -320,10 +320,10 @@ These names have been replaced with shorter ones. The table below shows the colu
 | Elev. Range Max: elevRangeMax                                                                       |                                          |                        |
 | Interaction Type: intType                                                                           |                                          |                        |
 | Interaction Tags: intTag                                                                            |                                          |                        |
-| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon* (Most specific Taxon Only)            |                                          |                        |
+| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon*                                       |                                          |                        |
 | Plant/Arthropod, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon* |                                          |                        |
 |                                                                                                     |                                          |                        |
-| *Only the most specific taxon is shown, for each subject and object.                                |                                          |                        |
+| *Only the most specific taxon for subject and object is shown.                                      |                                          |                        |
 +-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
 ===================================================================================================
                                 Data Validation Errors
@@ -360,8 +360,8 @@ These names have been replaced with shorter ones. The table below shows the colu
             nullRefStr += processAuthorNullRefs(nullRefResults[entity]);
             continue
           }  //console.log("nullRefStr = ", nullRefStr)
-          nullRefStr += '-- ' + 'Not able to match ' + nullRefResults[entity].cnt + ' ' + entity + ' record references (' + nullRefResults[entity].refKey + ') with valid records.\n\n';
-          for (var key in nullRefResults[entity]) { //console.log("nullRefResults[entity] = %O", nullRefResults[entity][key]);
+          nullRefStr += '-- ' + 'Not able to match ' + Object.keys(nullRefResults[entity]).length + ' ' + entity + ' record references with valid records.\n\n';
+          for (var key in nullRefResults[entity]) { console.log("nullRefResults = %O", nullRefResults);
             if (key == "cnt" || key == "refKey") { continue }
             nullRefStr += 'Interaction id: ' + key + ', ' + processIntFields(nullRefResults[entity][key][0]) + '\n\n';
           }
@@ -379,7 +379,9 @@ These names have been replaced with shorter ones. The table below shows the colu
             } else { tempStr += processCitFields(authorNullRefs[key][0]); }
           } //console.log("tempStr = ", tempStr);
         }
-        return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
+        return "";
+//        return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
+
 
         function noAuthors(key) {
           return authorNullRefs[key][0].author !== undefined && authorNullRefs[key][0].author.length === 0;
