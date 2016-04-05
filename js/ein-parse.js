@@ -19,7 +19,7 @@
 			unqKey: ['citId'],
 			splitField: 'author',
 			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
+			parseMethods: [extractCols, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationResults: {},
 			extrctdAuths: {}
 		},
@@ -271,7 +271,7 @@
 		var unqFieldAry = entityObj.unqKey;
 		findUnqField();
 		sortRecords(recrdsAry);
-		addNullRecsMetaData();			//		console.log("restructureIntoRecordObj entityObj= %O", entityObj);
+		addNullRecsMetaData();			//	console.log("restructureIntoRecordObj entityObj= %O", entityObj);
 		callback(recrdObjsByUnqKey, entity);
 
 		function findUnqField() {
@@ -640,7 +640,7 @@
 	}
 /*--------------------------- Merge Entities Methods ------------------------------------- */
 	function mergeEntities(fSysIdAry, parentEntity, childEntities, callback, prevEntityReslts) { //console.log("mergeEntities called. Arguments = ", arguments);
-		var nullRefResults = {};
+		var nullRefResults = {}, nullRefChildKeys = [];
 		var dataSet = parentEntity.name;
 		var parentRcrds = parentEntity.finalRecords;     							//		 console.log("parentRcrds = %O", parentRcrds);
 		var parentValRpt = parentEntity.valRpt
@@ -702,9 +702,15 @@
 			} /* End matchRefInChildRecrds */
 			function extractNullRefRecrd(parentKey, unqKeyStrVal) { //console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
-				if (parentValRpt.nullRefResults[childName] === undefined) { parentValRpt.nullRefResults[childName] = {}; }
-				parentValRpt.nullRefResults[childName][unqKeyStrVal] = Object.assign({}, parentRcrds[parentKey]);
-				  //console.log("nullRefResults = %O", nullRefResults);
+				if (parentValRpt.nullRefResults[childName] === undefined) {
+					parentValRpt.nullRefResults[childName] = {};
+					parentValRpt.nullRefResults[childName].nullRefChildKeys = [];
+					parentValRpt.nullRefResults[childName].nullRefParentKeys = [];
+				}
+				parentValRpt.nullRefResults[childName].nullRefChildKeys  //console.log("nullRefResults = %O", nullRefResults);
+				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
+				// parentValRpt.nullRefResults[childName].nullRefChildKeys.push(unqKeyStrVal);
+				// parentValRpt.nullRefResults[childName].nullRefParentKeys.push(parentKey);
 			}
 			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				parentEntityRecrd[childName] = matchedRecrd;

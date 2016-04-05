@@ -286,6 +286,7 @@
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
   function buildRprt(valData) {
+    var rcrdsRmvdWithNullRefs = {};
     var rprtStr = '';
     var introStrng = getIntroStr();
     var invalidNullsStr = '\nRecords with no data in a required field: \n';
@@ -359,35 +360,53 @@ These names have been replaced with shorter ones. The table below shows the colu
           if (entity === "author") {
             nullRefStr += processAuthorNullRefs(nullRefResults[entity]);
             continue
-          }  //console.log("nullRefStr = ", nullRefStr)
+          } else if (entity === "citation") { nullRefStr += processCitNullRefs(nullRefResults, nullRefResults[entity]); continue } //console.log("nullRefStr = ", nullRefStr)
           nullRefStr += '-- ' + 'Not able to match ' + Object.keys(nullRefResults[entity]).length + ' ' + entity + ' record references with valid records.\n\n';
-          for (var key in nullRefResults[entity]) { console.log("nullRefResults = %O", nullRefResults);
-            if (key == "cnt" || key == "refKey") { continue }
-            nullRefStr += 'Interaction id: ' + key + ', ' + processIntFields(nullRefResults[entity][key][0]) + '\n\n';
-          }
         }
       }
-      function processAuthorNullRefs(authorNullRefs) { console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
+      function processCitNullRefs(nullRefResults, citNullRefs) { //console.log("nullRefResults = %O", nullRefResults);
+        var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation; console.log("citRcrdsRmvdWithNullRefs = %O", citRcrdsRmvdWithNullRefs);
+        var citRefsToRmvdRcrds = 0;
+        var returnStr = '';
+        var citRefs = {};
+        for (var key in citNullRefs) {
+          if(citNullRefs[key][0] !== undefined) {
+            if (citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
+            } else {
+              if (citRefs[citNullRefs[key][0].citId] === undefined) { citRefs[citNullRefs[key][0].citId] = []; }
+              citRefs[citNullRefs[key][0].citId].push(key);
+            }
+          }
+        }
+        returnStr += '\nThere are ' + citRefsToRmvdRcrds + ' Interaction records with references to Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';
+        returnStr += buildCitRefRprtStr(citRefs);
+        return returnStr;
+      }
+      function buildCitRefRprtStr(citRefs) {
+        var str = '';
+        for ( var citId in citRefs ) {
+          str += 'There are ' + citRefs[citId].length + ' Interaction records referencing a missing Citation record with ID ' + citId + '.\n\n';
+        }
+        return str;
+      }
+      function processAuthorNullRefs(authorNullRefs) {                //console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
         var recrdsWithNoAuth = [];
-        var nullAuthCnt = 0;
         var tempStr = '';
-        for(var key in authorNullRefs) {// console.log("authorNullRefs[key] = %O", authorNullRefs[key]);
+        rcrdsRmvdWithNullRefs.citation = [];
+        for(var key in authorNullRefs) { //console.log("key === 'number'", typeof key === "number");
           if (authorNullRefs[key][0] !== undefined) {
-            if (noAuthors(key)) {
-              recrdsWithNoAuth.push(authorNullRefs[key][0]);
-              nullAuthCnt++;
+            rcrdsRmvdWithNullRefs.citation.push(parseInt(key));
+            if (noAuthors(key)) { recrdsWithNoAuth.push(authorNullRefs[key][0]);
             } else { tempStr += processCitFields(authorNullRefs[key][0]); }
           } //console.log("tempStr = ", tempStr);
         }
         return "";
 //        return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
-
-
         function noAuthors(key) {
           return authorNullRefs[key][0].author !== undefined && authorNullRefs[key][0].author.length === 0;
         }
       } /* End processAuthorNullRefs */
-      function processCitFields(citRecrd) { console.log("processCitFields. citRecrd = %O", citRecrd);
+      function processCitFields(citRecrd) {               //console.log("processCitFields. citRecrd = %O", citRecrd);
         var str = authStr = pubStr = '';
         if (citRecrd.author !== undefined) {
           authStr +=  processAuthFields(citRecrd.author);
@@ -402,7 +421,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         var authStr = '';
         authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
           authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
-        }); console.log("authStr = ", authStr);
+        });                                                                   //console.log("authStr = ", authStr);
         return authStr;
       }
       function processIntFields(recrd) { //console.log("recrd = %O", recrd)
