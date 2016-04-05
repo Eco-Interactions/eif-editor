@@ -370,17 +370,19 @@ These names have been replaced with shorter ones. The table below shows the colu
         var returnStr = '\n--Missing Citation ID references in Interaction records:\n\n';
         var citRefs = {};
         for (var key in citNullRefs) {
-          if(citNullRefs[key][0] !== undefined) {
-            if (citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
-            } else {
-              if (citRefs[citNullRefs[key][0].citId] === undefined) { citRefs[citNullRefs[key][0].citId] = []; }
-              citRefs[citNullRefs[key][0].citId].push(key);
-            }
-          }
+          if(citNullRefs[key][0] !== undefined) { processCitRef(); }
         }
         returnStr += 'There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';
         returnStr += buildCitRefRprtStr(citRefs);
         return returnStr;
+
+        function processCitRef() {
+          if (citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
+          } else {
+            if (citRefs[citNullRefs[key][0].citId] === undefined) { citRefs[citNullRefs[key][0].citId] = []; }
+            citRefs[citNullRefs[key][0].citId].push(key);
+          }
+        }
       }
       function buildCitRefRprtStr(citRefs) {
         var str = '';
@@ -390,58 +392,32 @@ These names have been replaced with shorter ones. The table below shows the colu
         return str;
       }
       function processAuthorNullRefs(authorNullRefs) {                console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
-        var recrdsWithNoAuth = [];
+        var tempAuthRefObj = {};
         var str = '';
-        var authRef = {};
         rcrdsRmvdWithNullRefs.citation = [];
         for(var key in authorNullRefs) {
           if (authorNullRefs[key][0] !== undefined) {
             rcrdsRmvdWithNullRefs.citation.push(parseInt(key));
-            if (noAuthors(key)) { recrdsWithNoAuth.push(authorNullRefs[key][0]);
-            } else {
-              if (typeof authorNullRefs[key][0] === "object") {
-                if (authRef[authorNullRefs[key].nullRefKeys] === undefined) { authRef[authorNullRefs[key].nullRefKeys] = []; };
-                authRef[authorNullRefs[key].nullRefKeys].push(key);
-              }
-            }
-          } //console.log("tempStr = ", tempStr);
+            processAuth();
+          }
         }
-        str += buildAuthRefReturnStr(authRef, rcrdsRmvdWithNullRefs.citation.length);
+        str += buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length);
         return str;
 
-        function noAuthors(key) {
-          return authorNullRefs[key][0].author !== undefined && authorNullRefs[key][0].author.length === 0;
+        function processAuth() {
+          if (typeof authorNullRefs[key][0] === "object") {
+            if (tempAuthRefObj[authorNullRefs[key].nullRefKeys] === undefined) { tempAuthRefObj[authorNullRefs[key].nullRefKeys] = []; };
+              tempAuthRefObj[authorNullRefs[key].nullRefKeys].push(key);
+          }
         }
-        function buildAuthRefReturnStr(authRefObj, citRecCnt) {               //console.log("processCitFields. citRecrd = %O", citRecrd);
+        function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {               console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
           var str = '\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n\n';
-          for (var auth in authRefObj) {
-            str += auth + ' -referenced in Citation record: ' + authRefObj[auth].join(', ') + '.\n';
+          for (var auth in tempAuthRefObj) {
+            str += auth + ' -referenced in Citation record: ' + tempAuthRefObj[auth].join(', ') + '.\n';
           }
           return str;
         }
       } /* End processAuthorNullRefs */
-      function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
-        var authStr = '';
-        authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
-          authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
-        });                                                                   //console.log("authStr = ", authStr);
-        return authStr;
-      }
-      function processIntFields(recrd) { //console.log("recrd = %O", recrd)
-        var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
-        str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
-        str += addFieldsInRecrd(recrd.location);
-        return str;
-      }
-      function processPubFields(pubRecrd) {
-        var pubStr = '';
-        for (var key in pubRecrd) {
-          if (pubRecrd[key] !== null) {
-            pubStr += key + ': ' + pubRecrd[key] + ', '
-          }
-        }
-        return pubStr + '\n';
-      }
       function addFieldsInRecrd(recrd, unqKey, skipKeyAry) {// console.log("addFieldsInRecrd. arguments = %O", arguments);
         var skipKeyAry = skipKeyAry || [];
         var str = '';
@@ -452,24 +428,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           } else { str += addFieldsInRecrd(recrd[field]); }
         }
         return str;
-      }/* End addFieldsInRecrd */
-      function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
-        var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
-        if (recrd[field] !== undefined) {
-          var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
-          // subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
-          return subStr;
-        }
-      }
-      function addIntTags(tagAry) {
-        if (tagAry !== undefined) {
-          var subStr = ' intTags: ';
-          tagAry.forEach(function(tag){
-            subStr += tag + ', '
-          });
-          return subStr;
-        }
-      }
+      } /* End addFieldsInRecrd */
     } /* End buildRprtStr */
   } /* End buildRprt */
 
@@ -513,6 +472,48 @@ These names have been replaced with shorter ones. The table below shows the colu
   function openFolderParams() {
     return {type: 'openDirectory'};
   }
+
+
+/*-------------Not in use----------------------------------------------------------------------- */
+  // function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
+  //   var authStr = '';
+  //   authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
+  //     authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
+  //   });                                                                   //console.log("authStr = ", authStr);
+  //   return authStr;
+  // }
+  // function processIntFields(recrd) { //console.log("recrd = %O", recrd)
+  //   var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
+  //   str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
+  //   str += addFieldsInRecrd(recrd.location);
+  //   return str;
+  // }
+  // function processPubFields(pubRecrd) {
+  //   var pubStr = '';
+  //   for (var key in pubRecrd) {
+  //     if (pubRecrd[key] !== null) {
+  //       pubStr += key + ': ' + pubRecrd[key] + ', '
+  //     }
+  //   }
+  //   return pubStr + '\n';
+  // }
+  // function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
+  //   var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
+  //   if (recrd[field] !== undefined) {
+  //     var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
+  //     // subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
+  //     return subStr;
+  //   }
+  // }
+  // function addIntTags(tagAry) {
+  //   if (tagAry !== undefined) {
+  //     var subStr = ' intTags: ';
+  //     tagAry.forEach(function(tag){
+  //       subStr += tag + ', '
+  //     });
+  //     return subStr;
+  //   }
+  // }
 
 }());  /* end of namespacing anonymous function */
 
