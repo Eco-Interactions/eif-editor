@@ -373,7 +373,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         for (var key in citNullRefs) {
           if(citNullRefs[key][0] !== undefined) { processCitRef(); }
         }
-        returnStr += 'There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';
+        if (citRcrdsRmvdWithNullRefs) {returnStr += 'There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';}
         returnStr += buildCitRefRprtStr(citRefs);
         return returnStr;
 
