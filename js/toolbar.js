@@ -225,6 +225,7 @@
       }
     } /* End ifValidFileName */
     function openFiles() {
+      ein.editorTxtArea.value = 'Parsing and validating files...';
       var curFile = fileNameStrngs.pop();
       curFile === undefined ?
         parseAllRecrdObjs() :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
@@ -249,14 +250,14 @@
       return valChkbxElem.checked ? true : false;
     }
   }/* End csvFileSetParse */
-  function displayValidationResults(fSysIdAry, resultData) { console.log("displayValidationResults called. resultData = %O", resultData);
+  function displayValidationResults(fSysIdAry, resultData) { // console.log("displayValidationResults called. resultData = %O", resultData);
     var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
     var textRprt = buildRprt(valResults); //console.log("textRprt = %s", textRprt);
-    ein.editorTxtArea.innerHTML = textRprt;
+    ein.editorTxtArea.value = textRprt;
   }
   function extractValidationResults(resultData) {
     var valData = {};
-    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }    console.log("Final valData = %O", valData);
+    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
     return valData;
 
     function getEntityResultData(entityResultData) {//console.log("getEntityResultData metaData: %O", entityResultData);
@@ -365,7 +366,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         }
       }
       function processCitNullRefs(nullRefResults, citNullRefs) { //console.log("nullRefResults = %O", nullRefResults);
-        var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation; console.log("citRcrdsRmvdWithNullRefs = %O", citRcrdsRmvdWithNullRefs);
+        var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation || false;                 //console.log("citRcrdsRmvdWithNullRefs = %O", citRcrdsRmvdWithNullRefs);
         var citRefsToRmvdRcrds = 0;
         var returnStr = '\n--Missing Citation ID references in Interaction records:\n\n';
         var citRefs = {};
@@ -377,7 +378,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         return returnStr;
 
         function processCitRef() {
-          if (citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
+          if (citRcrdsRmvdWithNullRefs && citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
           } else {
             if (citRefs[citNullRefs[key][0].citId] === undefined) { citRefs[citNullRefs[key][0].citId] = []; }
             citRefs[citNullRefs[key][0].citId].push(key);
@@ -391,7 +392,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         }
         return str;
       }
-      function processAuthorNullRefs(authorNullRefs) {                console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
+      function processAuthorNullRefs(authorNullRefs) {           //     console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
         var tempAuthRefObj = {};
         var str = '';
         rcrdsRmvdWithNullRefs.citation = [];
@@ -410,7 +411,7 @@ These names have been replaced with shorter ones. The table below shows the colu
               tempAuthRefObj[authorNullRefs[key].nullRefKeys].push(key);
           }
         }
-        function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {               console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
+        function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {           //    console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
           var str = '\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n\n';
           for (var auth in tempAuthRefObj) {
             str += auth + ' -referenced in Citation record: ' + tempAuthRefObj[auth].join(', ') + '.\n';

@@ -84,14 +84,16 @@
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback, validMode) { // console.log("entityParams[entity] = %O", entityParams[entity]);
-		entityObj = Object.assign({}, entityParams[entity]);  //console.log("entity = %s, entityObj = %O", entity, entityObj);
-		parseChain = copyParseChain(entityObj.parseMethods); // console.log("parseChain = %O", parseChain);
-		entityObj.fSyId = fSysId;
+		entityObj = JSON.parse(JSON.stringify(entityParams[entity]));
+		// entityObj = Object.assign({}, entityParams[entity]);  //console.log("entity = %s, entityObj = %O", entity, entityObj);
+		entityObj.parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
+		entityObj.fSyId = fSysId;				console.log("entity = %s, entityObj = %O", entity, entityObj);
+		parseChain = entityObj.parseMethods;
 
 		recurParseMethods(recrdsAry, entity);
 
 		if (validMode) { validationObj[entity] = entityObj; }
-
+																			//		console.log("entityParams[entity] = %O", entityParams[entity]);
 		callback ?
 			callback(fSysId, entityObj.valResults) :
 			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationResults);
@@ -660,7 +662,7 @@
 
 			processParentEntity();
 
-			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
+			function processParentEntity() { //console.log("parentRcrds = %O", parentRcrds);
 				for (var key in  parentRcrds) {
 					parentEntityRecrd = parentRcrds[key][0];
 					processMethod(parentEntityRecrd, key); }
@@ -731,14 +733,14 @@
 	} /* End mergeEntites */
 /*--------------Parse File Set Records--------------------------------------------------- */
 	function parseFileSetRecrds(fileSetObj, validationMode, callback) {   //console.log("parseFileSetRecrds called. arguments = %O", arguments);
-	    var csvRowEntities = ["author", "citation", "interaction"];
+	    var csvRowEntities = ["author", "citation", "interaction"]; // console.log("parseFileSetRecrds. entityParams = %O", JSON.parse(JSON.stringify(entityParams)));
 	    var resultData = {};
 
 	    csvRowEntities.forEach(parseCsvContent);
 	    mergeParsedRecords(callback, validationMode);
 
 	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
-	    	var entityMetaData = Object.assign({}, entityParams[entityName]); //console.log("entityMetaData = %O", entityMetaData);
+	    	  var entityMetaData = Object.assign({}, entityParams[entityName]);// console.log("entityMetaData = %O", entityMetaData);
 			  var csvFileId = fileSetObj[entityName].fileId;
 			  var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
 	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
@@ -861,8 +863,8 @@
 /* ------------------------Taxon Parse Methods------------------------------------------------ */
 	function extractTaxaCols(recrdsObj, entity, callback) {
 		var subjFields = entityParams.taxon.subjCols;
-		var objFields = entityParams.taxon.objCols;
-		var taxaFields = subjFields.concat(objFields);
+		var objFields = entityParams.taxon.objCols;							console.log("objFields = %O", objFields)
+		var taxaFields = subjFields.concat(objFields);						console.log("taxaFields = %O", taxaFields)
 		var taxaRcrds = [];
 		var intRefIdx = [];
 
@@ -917,7 +919,7 @@
 		// buildObjTaxaObjs(recrdsAry);
 		// callback(recrdsObj, entity);
 	}
-	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { console.log("entityObj = %O", entityObj)
+	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { console.log("buildAndMergeTaxonObjs. arguments = %O, entityObj = %O", arguments, entityObj)
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
 		var curTempId = taxonRecrdObjsAry.length;					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
@@ -948,7 +950,7 @@
 
 		return curTempId;
 
-		function extractUnqBatTaxa(recrd) { //console.log("recrd inside extractUnqTaxa = %O", recrd)
+		function extractUnqBatTaxa(recrd) { // console.log("recrd inside extractUnqTaxa = %O", recrd)
 			batFields.some(function(field, idx) {
 				if (recrd[field] !== null) { return foundMostSpecificLevel(recrd, field, idx); }
 			});
@@ -993,8 +995,9 @@
 			return batTaxaRefObjAry[parentTaxonNameKey].tempId;
 		}
 	} /* End buildBatTaxaObjs */
-	function buildObjTaxaObjs(recrdsAry, curTempId) {
-		var objFields = entityParams.taxon.objCols.reverse();
+	function buildObjTaxaObjs(recrdsAry, curTempId) {				console.log("entityParams.taxon.objCols = %O", entityParams.taxon.objCols);
+		var objFields = JSON.parse(JSON.stringify(entityParams.taxon.objCols));  console.log("objFields = %O", objFields)
+		objFields.reverse();
 		var objTaxaRefObjAry = {
 			Plant: {
 				parent: 1,
@@ -1013,12 +1016,12 @@
 
 		entityParams.taxon.objTaxa = objTaxaRefObjAry;
 
-		function extractUnqObjTaxa(recrd) { //console.log("recrd inside extractUnqTaxa = %O", recrd)
-			objFields.some(function(field, idx) {
+		function extractUnqObjTaxa(recrd) {// console.log("recrd inside extractUnqTaxa = %O", recrd)
+			objFields.some(function(field, idx) { console.log("recrd[field] = %O, field = %s", recrd[field], field)
 				if (recrd[field] !== null) { return foundMostSpecificLevel(recrd, field, idx); }
 			});
 		}
-		function foundMostSpecificLevel(recrd, field, idx) { // console.log("foundMostSpecificLevel called");
+		function foundMostSpecificLevel(recrd, field, idx) {  console.log("foundMostSpecificLevel called");
 			var taxonNameKey = concatTaxaFieldsIntoKey(recrd, idx);
 			isInRefObjOrAdd(taxonNameKey, recrd, field, idx);
 			return true;
@@ -1031,14 +1034,14 @@
 			}
 			return taxonNameStr;
 		}
-		function grabSpecies(genusSpeciesStr) {
+		function grabSpecies(genusSpeciesStr) { //console.log("grabSpecies. arguments= %O", arguments);
 			var nameAry = genusSpeciesStr.split(" ");
 			return nameAry[1];
 		}
 		function isInRefObjOrAdd(taxonNameKey, recrd, field, idx) {
 			if (!(taxonNameKey in objTaxaRefObjAry)) { buildObjTaxaRefObj(taxonNameKey, recrd, field, idx); }
 		}
-		function buildObjTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildObjTaxaRefObj called.")
+		function buildObjTaxaRefObj(taxonNameKeyStr, recrd, field, idx) { console.log("buildObjTaxaRefObj called. arguments = %O", arguments);
 			var level = idx + 1;
 			var taxonName = (field === "objSpecies") ? grabSpecies(recrd[field]) : recrd[field];
 			objTaxaRefObjAry[taxonNameKeyStr] = {
