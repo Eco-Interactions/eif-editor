@@ -704,13 +704,11 @@
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
 				if (parentValRpt.nullRefResults[childName] === undefined) {
 					parentValRpt.nullRefResults[childName] = {};
-					parentValRpt.nullRefResults[childName].nullRefChildKeys = [];
-					parentValRpt.nullRefResults[childName].nullRefParentKeys = [];
 				}
-				parentValRpt.nullRefResults[childName].nullRefChildKeys  //console.log("nullRefResults = %O", nullRefResults);
-				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);
-				// parentValRpt.nullRefResults[childName].nullRefChildKeys.push(unqKeyStrVal);
-				// parentValRpt.nullRefResults[childName].nullRefParentKeys.push(parentKey);
+				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);  //console.log("nullRefResults = %O", nullRefResults);
+				if (parentValRpt.nullRefResults[childName][parentKey].nullRefKeys === undefined) {parentValRpt.nullRefResults[childName][parentKey].nullRefKeys = []; }  //console.log("nullRefResults = %O", nullRefResults);
+				parentValRpt.nullRefResults[childName][parentKey].nullRefKeys.push(unqKeyStrVal);  //console.log("nullRefResults = %O", nullRefResults);
+
 			}
 			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				parentEntityRecrd[childName] = matchedRecrd;

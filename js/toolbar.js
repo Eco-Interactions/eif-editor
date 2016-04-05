@@ -367,7 +367,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       function processCitNullRefs(nullRefResults, citNullRefs) { //console.log("nullRefResults = %O", nullRefResults);
         var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation; console.log("citRcrdsRmvdWithNullRefs = %O", citRcrdsRmvdWithNullRefs);
         var citRefsToRmvdRcrds = 0;
-        var returnStr = '';
+        var returnStr = '\n--Missing Citation ID references in Interaction records:\n\n';
         var citRefs = {};
         for (var key in citNullRefs) {
           if(citNullRefs[key][0] !== undefined) {
@@ -378,45 +378,48 @@ These names have been replaced with shorter ones. The table below shows the colu
             }
           }
         }
-        returnStr += '\nThere are ' + citRefsToRmvdRcrds + ' Interaction records with references to Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';
+        returnStr += 'There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';
         returnStr += buildCitRefRprtStr(citRefs);
         return returnStr;
       }
       function buildCitRefRprtStr(citRefs) {
         var str = '';
         for ( var citId in citRefs ) {
-          str += 'There are ' + citRefs[citId].length + ' Interaction records referencing a missing Citation record with ID ' + citId + '.\n\n';
+          str += 'There are ' + citRefs[citId].length + ' Interaction records referencing missing Citation ' + citId + '.\n';
         }
         return str;
       }
-      function processAuthorNullRefs(authorNullRefs) {                //console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
+      function processAuthorNullRefs(authorNullRefs) {                console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
         var recrdsWithNoAuth = [];
-        var tempStr = '';
+        var str = '';
+        var authRef = {};
         rcrdsRmvdWithNullRefs.citation = [];
-        for(var key in authorNullRefs) { //console.log("key === 'number'", typeof key === "number");
+        for(var key in authorNullRefs) {
           if (authorNullRefs[key][0] !== undefined) {
             rcrdsRmvdWithNullRefs.citation.push(parseInt(key));
             if (noAuthors(key)) { recrdsWithNoAuth.push(authorNullRefs[key][0]);
-            } else { tempStr += processCitFields(authorNullRefs[key][0]); }
+            } else {
+              if (typeof authorNullRefs[key][0] === "object") {
+                if (authRef[authorNullRefs[key].nullRefKeys] === undefined) { authRef[authorNullRefs[key].nullRefKeys] = []; };
+                authRef[authorNullRefs[key].nullRefKeys].push(key);
+              }
+            }
           } //console.log("tempStr = ", tempStr);
         }
-        return "";
-//        return "\n-- There are " + nullAuthCnt + " citation records without an author (shortName).\n"
+        str += buildAuthRefReturnStr(authRef, rcrdsRmvdWithNullRefs.citation.length);
+        return str;
+
         function noAuthors(key) {
           return authorNullRefs[key][0].author !== undefined && authorNullRefs[key][0].author.length === 0;
         }
-      } /* End processAuthorNullRefs */
-      function processCitFields(citRecrd) {               //console.log("processCitFields. citRecrd = %O", citRecrd);
-        var str = authStr = pubStr = '';
-        if (citRecrd.author !== undefined) {
-          authStr +=  processAuthFields(citRecrd.author);
-        } else if (citRecrd.publication !== null) {
-          pubStr +=  'Publication: ' + processPubFields(citRecrd.publications);
+        function buildAuthRefReturnStr(authRefObj, citRecCnt) {               //console.log("processCitFields. citRecrd = %O", citRecrd);
+          var str = '\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n\n';
+          for (var auth in authRefObj) {
+            str += auth + ' -referenced in Citation record: ' + authRefObj[auth].join(', ') + '.\n';
+          }
+          return str;
         }
-        str += addFieldsInRecrd(citRecrd, null, ['fullText', 'author', 'publication', 'pubTitle', 'pubType', 'publisher']);
-          //console.log('str = ', str)
-        return '\n' + str + ', ' + authStr + ', ' + pubStr +'\n';
-      }
+      } /* End processAuthorNullRefs */
       function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
         var authStr = '';
         authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
