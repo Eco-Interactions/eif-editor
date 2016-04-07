@@ -22,72 +22,72 @@ a.button {
     text-decoration: none;
     color: initial;
 }
-.hidden {
-	display: none;
-}
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
-}
-.fade-in {
-  opacity: 0;
-  animation: fadeIn .5s ease-in 1 forwards;
-}
-/* Core UI Styles */
-#overlay {
-		display: none;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    background: #999;
-    width: 100%;
-    height: 100%;
-    opacity: 0.8;
-    z-index: 100;
-}
-#popUpDiv {
-		display: none;
-		flex-direction: column;
-		align-items: stretch;
-    position: absolute;
-    background: whiteSmoke;
-    top: 50%;
-    left: 50%;
-    width: 500px;
-    height: 200px;
-    margin-left: -250px; /*Half the value of width to center div*/
-    margin-top: -100px; /*Half the value of height to center div*/
-    z-index: 200;
-}
-.popUpBtn {
-	  display: flex;
-	  flex-direction: row;
-	  margin: 5px auto 3px auto;
-}
-#popupclose {
-		margin: auto;
-    cursor: pointer;
-	  font-weight: bold;
-}
-#popUpContnt {
-    align-self: flex-start;
-    height: 170px;
-    text-align: center;
-    padding: 50px;
-}
-#grid-cntnr {
-	overflow: scroll;
-}
 button {
 	text-align: center;
 	height: 20px;
 	margin: 5px 0 0 5px;
 }
+.hidden {	/* Removed from DOM flow */
+	display: none;
+}
+/* Animation Styles */
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+.fade-in {
+  opacity: 0;
+  animation: fadeIn .5s ease-in 1 forwards;
+}
+.fade-out {
+  opacity: 1;
+  animation: fadeOut .3s ease-out 1 forwards;
+}
+/* Core UI Styles */
 .toolbar {
   height: 30px;
   background: WhiteSmoke;
   border-bottom: 1px solid gray;
+}
+#outer {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+#drag-bar {
+  position: absolute;
+  flex-basis: auto;
+  right: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: gray;
+  cursor: col-resize;
+}
+#left-pane {
+ position: relative;
+ width: 11px;
+}
+#dev-log {
+	width: 100%;
+	height:500px;
+}
+#right-pane {
+	flex-grow: 1;
+	background: white;
+	height: 95vh;
+	overflow: hidden;
+}
+#editor {
+	height: 90vh;
+	width: 100%;
+	padding-bottom: 3em;
+}
+#grid-cntnr {
+	overflow: scroll;
 }
 #entitySelect {
 	margin-left: 12em;
@@ -135,40 +135,46 @@ progress::-webkit-progress::after {
 	color: #1b3b1b;
 	font-weight: bold;
 }
-#outer {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  height: 100%;
+#overlay {
+		display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #999;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+    z-index: 100;
 }
-#drag-bar {
-  position: absolute;
-  flex-basis: auto;
-  right: 0;
-  top: 0;
-  width: 5px;
-  height: 100%;
-  background: gray;
-  cursor: col-resize;
+#popUpDiv {
+		display: none;
+		flex-direction: column;
+		align-items: stretch;
+    position: absolute;
+    background: #FFF;
+    top: 50%;
+    left: 50%;
+    width: 500px;
+    height: 200px;
+    margin-left: -250px; /*Half the value of width to center div*/
+    margin-top: -100px; /*Half the value of height to center div*/
+    z-index: 200;
 }
-#left-pane {
- position: relative;
- width: 11px;
+.popUpBtn {
+	  display: flex;
+	  flex-direction: row;
+	  margin: 5px auto 3px auto;
 }
-#dev-log {
-	width: 100%;
-	height:500px;
+#popupclose {
+		margin: auto;
+    cursor: pointer;
+	  font-weight: bold;
 }
-#right-pane {
-	flex-grow: 1;
-	background: white;
-	height: 95vh;
-	overflow: hidden;
-}
-#editor {
-	height: 95vh;
-	width: 100%;
-	padding-bottom: 3em;
+#popUpContnt {
+    align-self: flex-start;
+    height: 170px;
+    text-align: center;
+    padding: 50px;
 }
 /*
 #progCntnr {

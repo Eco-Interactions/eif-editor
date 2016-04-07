@@ -1,10 +1,9 @@
 (function(){
   var statusBar, devLogTxtArea, editorTxtArea;
   document.addEventListener("DOMContentLoaded", onDomLoaded);
-
   function onDomLoaded() {
     setDomElementVars();
-    ECO_INT_NAMESPACE.editorTxtArea = document.getElementById("editor");
+    ECO_INT_NAMESPACE.editorTxtArea = editorTxtArea,
     ECO_INT_NAMESPACE.ui = {
       curFileId: null,
       devLog: function(label, obj) {  console.log('devLog called. obj = %O', obj);
@@ -27,8 +26,7 @@
     statusBar = document.getElementById("status-msg");        console.log("statusBar = %O", statusBar);
     devLogTxtArea = document.getElementById("dev-log");
   }
-
-/* =================== Zartens UI Behaviors (self-contained) ======================= */
+/* =================== UI Behaviors (self-contained) ======================= */
 
   function initDragBar() {
     document.getElementById("drag-bar").onmousedown = function (e) {

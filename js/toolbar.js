@@ -1,6 +1,6 @@
 (function(){
   var ein = ECO_INT_NAMESPACE;
-  var progBar, boundSetProgress, boundPopUp;
+  var progBar, boundPopUp;
   var validationObj = {};
   var toolbarBtnMap = {
       openFile: openFileCmd,
@@ -44,10 +44,10 @@
 
   document.addEventListener("DOMContentLoaded", onDomLoaded);
   function onDomLoaded() {
-    progBar = document.getElementById("progBar"); //console.log(progBar);
     overlay = document.getElementById("overlay");
     popup = document.getElementById("popUpDiv");
-    boundSetProgress = setProgress.bind(null, progBar);
+    progBar = document.getElementById("progBar"); //console.log(progBar);
+    boundSetProgress = setProgressStatus.bind(null, progBar);
     boundPopUp = popUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
     document.getElementById("popupclose").onclick = function() {
@@ -55,17 +55,19 @@
         popup.style.display = 'none';
     };
   }
+  /*---------------------Progress and Status Methods--------------------------------------*/
 
-/*---------------------Progress Bar Methods--------------------------------------*/
-  function setProgress(barElem, percent) {     console.log("setProgress to %s\%", percent)
+  function setProgressStatus(barElem, percent) {     console.log("setProgress to %s\%", percent)
     var status = percent.toString() + '%' + statusMsgDict[percent];
     barElem.value = percent;
     ein.ui.setStatus(status);
   }
   function clearProgStatus() {
-    document.getElementById('progBar').className = 'hidden';
+    document.getElementById('progBar').className = 'fade-out';
     ein.ui.setStatus("");
+    setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 500);
   }
+
 /*-------------PopUp Methods----------------------------------------------------*/
   function popUp(overlay, popup, contnt) {        console.log("popUp contnt = ", contnt)
       overlay.style.display = 'block';
@@ -79,7 +81,7 @@
 
   function toolbarClickHandler(clickEvent) {
     var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
-    ein.ui.setStatus('Button Clicked. btnId=' + btnId);
+    ein.ui.setStatus('Button Clicked. btnId= ' + btnId);
     if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
   }
 
@@ -155,9 +157,7 @@
     function openFiles() {
       var curFile = fileNameStrngs.pop();
       curProg = curProg + 5;
-      boundSetProgress(curProg);
-      // if (ein.dataGrid.gridOpts.api !== undefined) { console.log("ein.dataGrid.gridOpts.api !== undefined");  ein.dataGrid.gridOpts.api.destroy();}
-      ein.editorTxtArea.value = 'Parsing and validating files...';     console.log("openFile %s. curProg = ", curFile, curProg);
+      boundSetProgress(curProg);        console.log("openFile %s. curProg = ", curFile, curProg);
       curFile === undefined ?
         parseAllRecrdObjs(curProg) :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
         ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
@@ -175,7 +175,7 @@
     function parseAllRecrdObjs(curProg) {         console.log("parseAllRecrdObjs curProg= ", curProg);
       curProg = curProg + 3;            console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
-      var cb = ein.dataGrid.fillData;
+      var cb = buildDataGridConfig;
       var validMode = isValidOnlyMode();
       if (validMode === true) { cb = displayValidationResults; }
       ein.parse.parseFileSet(fileObjs, validMode, cb, boundSetProgress);
@@ -186,13 +186,26 @@
       //return true;
     }
   }/* End csvFileSetParse */
+  function buildDataGridConfig(fSysIdAry, recrdsMetaData) {
+    boundSetProgress(99);
+    ein.dataGrid.buildConfig(recrdsMetaData.finalRecords, loadDataGrid);
+  }
+  function loadDataGrid(gridConfig) {
+    ein.editorTxtArea.className = "hidden";
+
+    agGridGlobalFunc('#grid-cntnr', gridConfig);       //return datagrid code, and config, to toolbar      //
+
+    boundSetProgress(100);
+    setTimeout(clearProgStatus, 3000);
+  }
   function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
     boundSetProgress(98);
     var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
-    var textRprt = buildRprt(valResults); //console.log("textRprt = %s", textRprt);
+    var textRprt = buildRprt(valResults); console.log("textRprt = %s", textRprt);
     boundSetProgress(100);
     ein.editorTxtArea.value = textRprt;
-    setTimeout(clearProgStatus, 3000);  }
+    setTimeout(clearProgStatus, 3000);
+  }
 
   function extractValidationResults(resultData) {
     var valData = {};

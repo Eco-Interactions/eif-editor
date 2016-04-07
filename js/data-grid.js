@@ -16,54 +16,50 @@
   // onRowClicked: rowClicked
   };
   ein.dataGrid = {
-  	fillData: buildDataGrid,
-  	gridOpts: gridOptions
+  	 buildConfig: buildDataGrid
   };
 
 /* ================== Grid Methods ================================================= */
 
   function getNewColDefs() {
     return [
-      {headerName: "Id", field: "id", width: 50},
+      {headerName: "Id", field: "id", width: 50,  filter: 'number'},
       {headerName: "Interaction Type", field: "intType", width: 150},
       {headerName: "Int Tags", field: "intTag", width: 100},
-      {headerName: "Subject Taxon", field: "subjTaxon", width: 200},
-      {headerName: "Object Taxon", field: "objTaxon", width: 200},
+      {headerName: "Subject Taxon", field: "subjTaxon", width: 200, filter: 'text'},
+      {headerName: "Object Taxon", field: "objTaxon", width: 200, filter: 'text'},
       {headerName: "Habitat Type", field: "habType", width: 150},
       {headerName: "Region", field: "region", width: 150},
       {headerName: "Country", field: "country", width: 150},
-      {headerName: "Location Description", field: "locDesc", width: 150},
-      {headerName: "Latitude", field: "lat", width: 100},
-      {headerName: "Longitude", field: "long", width: 100},
-      {headerName: "Elevation", field: "elev", width: 100},
-      {headerName: "Elev. Max", field: "elevRangeMax", width: 100},
-      {headerName: "Citation Short Description", field: "citShortDesc", width: 300},
-      {headerName: "Title", field: "title", width: 400},
-      {headerName: "Authors", field: "authors", width: 300},
-      {headerName: "Publication", field: "pubTitle", width: 500},
-      {headerName: "Publisher", field: "publisher", width: 100},
-      {headerName: "Type", field: "pubType", width: 100},
-      {headerName: "Vol.", field: "vol", width: 50},
-      {headerName: "Issue", field: "issue", width: 50},
-      {headerName: "Pages", field: "pgs", width: 100},
+      {headerName: "Location Description", field: "locDesc", width: 150, filter: 'text'},
+      {headerName: "Latitude", field: "lat", width: 100, filter: 'number'},
+      {headerName: "Longitude", field: "long", width: 100, filter: 'number'},
+      {headerName: "Elevation", field: "elev", width: 100, filter: 'number'},
+      {headerName: "Elev. Max", field: "elevRangeMax", width: 100, filter: 'number'},
+      {headerName: "Citation Short Description", field: "citShortDesc", width: 300, filter: 'text'},
+      {headerName: "Title", field: "title", width: 400, filter: 'text'},
+      {headerName: "Authors", field: "authors", width: 300, filter: 'text'},
+      {headerName: "Publication", field: "pubTitle", width: 500, filter: 'text'},
+      {headerName: "Publisher", field: "publisher", width: 100, filter: 'text'},
+      {headerName: "Type", field: "pubType", width: 100, filter: 'text'},
+      {headerName: "Vol.", field: "vol", width: 50, filter: 'number'},
+      {headerName: "Issue", field: "issue", width: 50, filter: 'number'},
+      {headerName: "Pages", field: "pgs", width: 100, filter: 'number'},
     ];
   }
-function buildDataGrid(fSysIdAry, recrdsMetaData) {// console.log("buildDataGrid begun @ ", Date.now());
-	var recrdsObj = recrdsMetaData.finalRecords;// console.log("recrdsObj = %O", recrdsObj);
+function buildDataGrid(recrdsObj, callback) {// console.log("buildDataGrid begun @ ", Date.now());
 	gridOptions.rowData = buildRowData(recrdsObj);
-  ein.editorTxtArea.className = "hidden";
 
-  agGridGlobalFunc('#grid-cntnr', gridOptions);
+	callback(gridOptions);
 }
-function buildRowData(recrdsObj) { console.log("buildRowData called.");
+function buildRowData(recrdsObj) {// console.log("buildRowData called.");
 	var dataRows = [];
 		for (var key in recrdsObj) {// console.log("for each record called. record = %O", recrdsObj[key][0]);
 		dataRows.push(translateRecrdIntoRow(recrdsObj[key][0]));
-	}
-		console.log("data rows about to be returned: %O", dataRows)
+	}																																											//console.log("data rows about to be returned: %O", dataRows)
 	return dataRows;
 
-	function translateRecrdIntoRow(recrd) { console.log("recrd = %O", recrd)
+	function translateRecrdIntoRow(recrd) {// console.log("recrd = %O", recrd)
 		var row =  {
 			id: recrd.tempId,
 			intType: recrd.intType,
@@ -114,7 +110,7 @@ function getIntTags(recrd) {
 	});
 	return intTags;
 }
-function getTaxon(recrd, role) {  console.log("getTaxon. arguments = %O", arguments)
+function getTaxon(recrd, role) {
 	var levels = { 1: "Species", 2: "Genus", 3: "Family", 4: "Order", 5: "Class", 6: "Kingdom" };
 	var taxonLvl = recrd[role].level;
 	var taxonName = taxonLvl === 1 ? recrd[role].parent.name : levels[recrd[role].level];
