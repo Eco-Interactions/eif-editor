@@ -1,5 +1,6 @@
 (function(){
   var ein = ECO_INT_NAMESPACE;
+  var progBar, boundSetProgress, boundPopUp;
   var validationObj = {};
   var toolbarBtnMap = {
       openFile: openFileCmd,
@@ -28,8 +29,49 @@
     authorSet: ["author"],
     intSet: ["interaction", "taxon"]
   };
+  var statusMsgDict = {
+     2: " - Load file set",                       63: " - Validating Author entity",
+    16: " - Finding files",                       68: " - Validating Citation entity",
+    25: " - Reading Author file",                 75: " - Validating Publication entity",
+    30: " - Parsing Author CSV",                  80: " - Validating Interaction entity",
+    35: " - Reading Citation file",               87: " - Validating Location entity",
+    40: " - Parsing Citation CSV",                93: " - Merging Citation data set",
+    45: " - Reading Interaction file",            96: " - Merging Interaction data set",
+    50: " - Parsing Interaction CSV",             98: " - Displaying validation results",
+    55: " - Begin validation",                    99: " - Displaying data grid",        //data grid ending
+    58: " - Validating file set",                100: ""
+  };
+
   document.addEventListener("DOMContentLoaded", onDomLoaded);
-  function onDomLoaded() { document.getElementById("toolbar").addEventListener("click", toolbarClickHandler); }
+  function onDomLoaded() {
+    progBar = document.getElementById("progBar"); //console.log(progBar);
+    overlay = document.getElementById("overlay");
+    popup = document.getElementById("popUpDiv");
+    boundSetProgress = setProgress.bind(null, progBar);
+    boundPopUp = popUp.bind(null, overlay, popup);
+    document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
+    document.getElementById("popupclose").onclick = function() {
+        overlay.style.display = 'none';
+        popup.style.display = 'none';
+    };
+  }
+
+/*---------------------Progress Bar Methods--------------------------------------*/
+  function setProgress(barElem, percent) {     console.log("setProgress to %s\%", percent)
+    var status = percent.toString() + '%' + statusMsgDict[percent];
+    barElem.value = percent;
+    ein.ui.setStatus(status);
+  }
+  function clearProgStatus() {
+    document.getElementById('progBar').className = 'hidden';
+    ein.ui.setStatus("");
+  }
+/*-------------PopUp Methods----------------------------------------------------*/
+  function popUp(overlay, popup, contnt) {        console.log("popUp contnt = ", contnt)
+      overlay.style.display = 'block';
+      popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
+      popup.firstElementChild.innerHTML = contnt;
+  }
 
   /* ============================================================== */
   /* === Toolbar Command functions ================================ */
@@ -64,145 +106,31 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
-/*----------Select entity to parse-------------- */
-  function selectCSVEntityParse() {
-    var entity = document.getElementById('entitySelect').value;
-    var dataSet = entityCsvParseVals[entity][0];
-                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
-
-    function csvToObjForEntity(fSysId, text) {
-      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, dataSet);
-    }
-    function validateEntity(fSysId, recrdsAry) {
-      ein.parse.parseChain(fSysId, recrdsAry, entity);
-    }
-  }
-/*----------Select interaction file to parse-------------- */
-  function intCSVParse() {
-    var entitiesInFile = entityCsvParseVals["intSet"];
-                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
-
-    function csvToObjForEntity(fSysId, text) {
-      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
-    }
-    function validateEntity(fSysId, recrdsAry) {
-      ein.parse.parseChain(fSysId, recrdsAry, "interaction");
-    }
-  }
-/*----------Select Data Set to parse-------------- */
-  function selectCSVDataSetParse() {
-    var curTopEntity, outerDataObj, entitiesInFile;
-    var outerEntity = false;
-    var fSysIdAry = [];
-    var subEntityObjAry = [];
-    var dataSet = document.getElementById('dataSetSelect').value;                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
-    var paramTopEntitiesAry = entityCsvParseVals[dataSet];
-
-    parseEachTopEntity();
-
-    function parseEachTopEntity() {                                                 console.log("parseEachTopEntity called.");
-      outerEntity !== false ? mergeEntitiesIntoDataObj() : processTopEntity();
-    }
-    function processTopEntity() {
-      curTopEntity = paramTopEntitiesAry.pop();                                     console.log("curTopEntity = ", curTopEntity);
-      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
-      outerEntity = paramTopEntitiesAry.length === 0 ? curTopEntity : false;        console.log("outerEntity = ", outerEntity);
-      openEntityFile();
-    }
-    function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
-      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
-    }
-    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
-      fSysIdAry.push(fSysId);                                                       console.log("curTopEntity inside = ", curTopEntity);
-      ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
-    }
-    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile called. arguments = %O", arguments);
-      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
-        ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
-      });
-      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if (outerEntity === recrdsObj.name) {                                       console.log("storeParsedEntityRecords called. isOuterEntity true. recrdsObj = %O", recrdsObj);
-          outerDataObj = recrdsObj;
-        } else {                                                                    console.log("forEachEntityInFile called on subEntity");
-          subEntityObjAry.push(recrdsObj);
-        }
-        if (recrdsObj.name === topEntity) { parseEachTopEntity(); }
-      }
-    } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj() {                                           console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
-      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry);
-    }
-  }/* End selectCSVDataSetParse */
-  /*----------Interaction Data Set parsing-------------- */
-  function csvInteractionDataSetParse() {
-    var curTopEntity, citDataObj, intDataObj, entitiesInFile;
-    var outerEntity = false;
-    var fSysIdAry = [];
-    var subEntityObjAry = [];
-    var dataSet = "interactionSet";                                                 console.log("csvInteractionDataSetParse called.  dataSet = ", dataSet);
-    var paramTopSubEntitiesAry = entityCsvParseVals[dataSet];
-
-    processTopEntities();
-
-    function processTopEntities() {
-      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("Open file for curTopEntity = ", curTopEntity);
-      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
-      openEntityFile();
-    }
-    function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
-      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
-    }
-    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
-      fSysIdAry.push(fSysId);
-      ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
-    }
-    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile first called. arguments = %O", arguments);
-      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile parsing = ", parseEntity);
-        ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
-      });
-      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if ("interaction" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
-          intDataObj = recrdsObj;
-          mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry);
-        } else if ("citation" === recrdsObj.name){                                  console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
-          citDataObj = recrdsObj;
-          mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
-        } else {
-          subEntityObjAry.push(recrdsObj);
-          if (recrdsObj.name === topEntity) { processTopEntities(); }
-        }
-      }/* End storeParsedEntityRecords */
-    } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {    console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
-      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry, callback);
-    }
-    function storeMergedCits(fSysId, mergedCitRecrds) {
-      subEntityObjAry = [];
-      subEntityObjAry.push(mergedCitRecrds);
-      processTopEntities();
-    }
-    function saveJSONresults(fSysId, mergedIntRecrds) {
-      ein.fileSys.fileSaveAs(JSON.stringify(mergedIntRecrds.finalRecords, null, 2));
-    }
-  }/* End csvInteractionDataSetParse */
-  /*----------Interaction File Set parsing-------------- */
+/*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
+  /**
+   * User selects folder with exactly 3 csv files (with author, citation and interaction in their file names). These files are turned into
+   * record objects representing each entity and their valid data from the files. In 'valid mode' a report is generated deescribing any
+   * errors in the validation process. If there were no errors, or not in 'valid mode', valid data is loaded into a data grid in the editor.
+   */
   function csvFileSetParse() {// console.log("csvFileSetParse called");
+    var curProg = 20;
     var fileNameStrngs = ["interaction", "citation", "author"];
     var fileObjs = {
       author: {},
       citation: {},
       interaction: {}
-    };                       /* params,           idHandler,                 objHandler,          fileTxtHandler */
-    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, grabCsvFiles);
+    };
+    document.getElementById('progBar').className = 'fade-in';                      /* params,           idHandler,                 objHandler,          fileTxtHandler */
+    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, getCsvFiles);
+    boundSetProgress(2);
 
-    function grabCsvFiles(pathStr, folderMap) { // console.log("grabCsvFiles called. folderMap = %O", folderMap); //Grab files with .csv extensions
-      var fileSetIds = grabCsvFileIds(folderMap);
+    function getCsvFiles(pathStr, folderMap) {                                //Grab files with .csv extensions
+      var fileSetIds = getCsvFileIds(folderMap);
+      boundSetProgress(16);
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
-        else { console.log("There are more or less than 3 .csv files in this folder."); }
+        else { boundPopUp("<h3>There are more or less than 3 .csv files in this folder.</h3>"); }
     }
-    function grabCsvFileIds(folderMap) { // console.log("grabCsvFileIds called. folderMap.files = %O", folderMap.files);
+    function getCsvFileIds(folderMap) { // console.log("getCsvFileIds called. folderMap.files = %O", folderMap.files);
       var fileKeys = Object.keys(folderMap.files);
       var fileIds = fileKeys.map(function(fileKey) { return folderMap.files[fileKey].id; });
       return fileIds;
@@ -225,13 +153,18 @@
       }
     } /* End ifValidFileName */
     function openFiles() {
-      ein.editorTxtArea.value = 'Parsing and validating files...';
       var curFile = fileNameStrngs.pop();
+      curProg = curProg + 5;
+      boundSetProgress(curProg);
+      // if (ein.dataGrid.gridOpts.api !== undefined) { console.log("ein.dataGrid.gridOpts.api !== undefined");  ein.dataGrid.gridOpts.api.destroy();}
+      ein.editorTxtArea.value = 'Parsing and validating files...';     console.log("openFile %s. curProg = ", curFile, curProg);
       curFile === undefined ?
-        parseAllRecrdObjs() :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
+        parseAllRecrdObjs(curProg) :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
         ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
 
       function objectifyCSV(fSysId, fileText) {
+        curProg = curProg + 5;          console.log("objectifyCSV called. curProg = ", curProg);
+        boundSetProgress(curProg);
         ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
       }
     } /* End openFiles*/
@@ -239,22 +172,28 @@
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
-    function parseAllRecrdObjs() {
+    function parseAllRecrdObjs(curProg) {         console.log("parseAllRecrdObjs curProg= ", curProg);
+      curProg = curProg + 3;            console.log("parseAllRecrdObjs called. curProg = ", curProg);
+      boundSetProgress(curProg);
       var cb = ein.dataGrid.fillData;
       var validMode = isValidOnlyMode();
       if (validMode === true) { cb = displayValidationResults; }
-      ein.parse.parseFileSet(fileObjs, validMode, cb);
+      ein.parse.parseFileSet(fileObjs, validMode, cb, boundSetProgress);
     }
     function isValidOnlyMode() {
       var valChkbxElem = document.getElementById('loadIfValid');
       return valChkbxElem.checked ? true : false;
+      //return true;
     }
   }/* End csvFileSetParse */
-  function displayValidationResults(fSysIdAry, resultData) { // console.log("displayValidationResults called. resultData = %O", resultData);
+  function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
+    boundSetProgress(98);
     var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
     var textRprt = buildRprt(valResults); //console.log("textRprt = %s", textRprt);
+    boundSetProgress(100);
     ein.editorTxtArea.value = textRprt;
-  }
+    setTimeout(clearProgStatus, 3000);  }
+
   function extractValidationResults(resultData) {
     var valData = {};
     for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
@@ -432,7 +371,129 @@ These names have been replaced with shorter ones. The table below shows the colu
       } /* End addFieldsInRecrd */
     } /* End buildRprtStr */
   } /* End buildRprt */
+/*----------Select entity to parse-------------- */
+  function selectCSVEntityParse() {
+    var entity = document.getElementById('entitySelect').value;
+    var dataSet = entityCsvParseVals[entity][0];
+                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
 
+    function csvToObjForEntity(fSysId, text) {
+      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, dataSet);
+    }
+    function validateEntity(fSysId, recrdsAry) {
+      ein.parse.parseChain(fSysId, recrdsAry, entity);
+    }
+  }
+/*----------Select interaction file to parse-------------- */
+  function intCSVParse() {
+    var entitiesInFile = entityCsvParseVals["intSet"];
+                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+
+    function csvToObjForEntity(fSysId, text) {
+      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
+    }
+    function validateEntity(fSysId, recrdsAry) {
+      ein.parse.parseChain(fSysId, recrdsAry, "interaction");
+    }
+  }
+/*----------Select Data Set to parse-------------- */
+  function selectCSVDataSetParse() {
+    var curTopEntity, outerDataObj, entitiesInFile;
+    var outerEntity = false;
+    var fSysIdAry = [];
+    var subEntityObjAry = [];
+    var dataSet = document.getElementById('dataSetSelect').value;                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
+    var paramTopEntitiesAry = entityCsvParseVals[dataSet];
+
+    parseEachTopEntity();
+
+    function parseEachTopEntity() {                                                 console.log("parseEachTopEntity called.");
+      outerEntity !== false ? mergeEntitiesIntoDataObj() : processTopEntity();
+    }
+    function processTopEntity() {
+      curTopEntity = paramTopEntitiesAry.pop();                                     console.log("curTopEntity = ", curTopEntity);
+      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
+      outerEntity = paramTopEntitiesAry.length === 0 ? curTopEntity : false;        console.log("outerEntity = ", outerEntity);
+      openEntityFile();
+    }
+    function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
+      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+    }
+    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
+      fSysIdAry.push(fSysId);                                                       console.log("curTopEntity inside = ", curTopEntity);
+      ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
+    }
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile called. arguments = %O", arguments);
+      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
+        ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
+      });
+      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
+        if (outerEntity === recrdsObj.name) {                                       console.log("storeParsedEntityRecords called. isOuterEntity true. recrdsObj = %O", recrdsObj);
+          outerDataObj = recrdsObj;
+        } else {                                                                    console.log("forEachEntityInFile called on subEntity");
+          subEntityObjAry.push(recrdsObj);
+        }
+        if (recrdsObj.name === topEntity) { parseEachTopEntity(); }
+      }
+    } /* End forEachEntityInFile */
+    function mergeEntitiesIntoDataObj() {                                           console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry);
+    }
+  }/* End selectCSVDataSetParse */
+  /*----------Interaction Data Set parsing-------------- */
+  function csvInteractionDataSetParse() {
+    var curTopEntity, citDataObj, intDataObj, entitiesInFile;
+    var outerEntity = false;
+    var fSysIdAry = [];
+    var subEntityObjAry = [];
+    var dataSet = "interactionSet";                                                 console.log("csvInteractionDataSetParse called.  dataSet = ", dataSet);
+    var paramTopSubEntitiesAry = entityCsvParseVals[dataSet];
+
+    processTopEntities();
+
+    function processTopEntities() {
+      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("Open file for curTopEntity = ", curTopEntity);
+      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
+      openEntityFile();
+    }
+    function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
+      ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
+    }
+    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
+      fSysIdAry.push(fSysId);
+      ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
+    }
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile first called. arguments = %O", arguments);
+      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile parsing = ", parseEntity);
+        ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
+      });
+      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
+        if ("interaction" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
+          intDataObj = recrdsObj;
+          mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry);
+        } else if ("citation" === recrdsObj.name){                                  console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
+          citDataObj = recrdsObj;
+          mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
+        } else {
+          subEntityObjAry.push(recrdsObj);
+          if (recrdsObj.name === topEntity) { processTopEntities(); }
+        }
+      }/* End storeParsedEntityRecords */
+    } /* End forEachEntityInFile */
+    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {    console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+      ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry, callback);
+    }
+    function storeMergedCits(fSysId, mergedCitRecrds) {
+      subEntityObjAry = [];
+      subEntityObjAry.push(mergedCitRecrds);
+      processTopEntities();
+    }
+    function saveJSONresults(fSysId, mergedIntRecrds) {
+      ein.fileSys.fileSaveAs(JSON.stringify(mergedIntRecrds.finalRecords, null, 2));
+    }
+  }/* End csvInteractionDataSetParse */
 /*--------------- Methods For Testing -------------------------- */
   function initTests() {
     var width = 900;
@@ -453,10 +514,6 @@ These names have been replaced with shorter ones. The table below shows the colu
       id: 'spec-win',
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
-
-
-
-
 /* =================== Build Params Packages ======================= */
 
   function openFileParams() {

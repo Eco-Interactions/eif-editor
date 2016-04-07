@@ -3,20 +3,21 @@
   var gridOptions = {
     columnDefs: getNewColDefs(),
     rowData: null,
-  	enableColResize: true
+  	enableColResize: true,
+  	enableSorting: true,
+  	unSortIcon: true,
+  	enableFilter: true,
   // rowSelection: 'multiple',
   // rowsAlreadyGrouped: true,
-  // enableSorting: true,
-  // unSortIcon: true,
   // showToolPanel: true,
   // toolPanelSuppressValues: true,
   // toolPanelSuppressPivot: true,
-  // enableFilter: true,
   // rowHeight: 26,
   // onRowClicked: rowClicked
   };
   ein.dataGrid = {
-  	fillData: buildDataGrid
+  	fillData: buildDataGrid,
+  	gridOpts: gridOptions
   };
 
 /* ================== Grid Methods ================================================= */
@@ -47,8 +48,8 @@
       {headerName: "Pages", field: "pgs", width: 100},
     ];
   }
-function buildDataGrid(fSysIdAry, recrdsMetaData) {
-	var recrdsObj = recrdsMetaData.finalRecords; console.log("recrdsObj = %O", recrdsObj);
+function buildDataGrid(fSysIdAry, recrdsMetaData) {// console.log("buildDataGrid begun @ ", Date.now());
+	var recrdsObj = recrdsMetaData.finalRecords;// console.log("recrdsObj = %O", recrdsObj);
 	gridOptions.rowData = buildRowData(recrdsObj);
   ein.editorTxtArea.className = "hidden";
 
@@ -62,7 +63,7 @@ function buildRowData(recrdsObj) { console.log("buildRowData called.");
 		console.log("data rows about to be returned: %O", dataRows)
 	return dataRows;
 
-	function translateRecrdIntoRow(recrd) {
+	function translateRecrdIntoRow(recrd) { console.log("recrd = %O", recrd)
 		var row =  {
 			id: recrd.tempId,
 			intType: recrd.intType,
@@ -113,7 +114,7 @@ function getIntTags(recrd) {
 	});
 	return intTags;
 }
-function getTaxon(recrd, role) {
+function getTaxon(recrd, role) {  console.log("getTaxon. arguments = %O", arguments)
 	var levels = { 1: "Species", 2: "Genus", 3: "Family", 4: "Order", 5: "Class", 6: "Kingdom" };
 	var taxonLvl = recrd[role].level;
 	var taxonName = taxonLvl === 1 ? recrd[role].parent.name : levels[recrd[role].level];

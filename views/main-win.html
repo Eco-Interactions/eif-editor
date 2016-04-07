@@ -17,7 +17,7 @@
     <title>Eco-Interactions Editor alpha 0.0.1</title>
   </head>
   <body>
-    <div id="toolbar">
+    <div class="toolbar" id="toolbar">
       <button id="openFile">Open File</button>
       <button id="openFolder">Open Folder</button>
       <button id="saveFile">Save File</button>
@@ -49,7 +49,10 @@
       <button id="intSet">Parse IntSet</button>
       <button id="fileSet">Parse FileSet</button>
     </div>
-    <div id="status-bar">status text goes here</div>
+    <div class="toolbar" id="status-bar">
+      <progress id="progBar" class="hidden" max="100" value="0%"></progress>
+      <div id="status-msg">Welcome to your data entry android assistant, Eco-Ed.</div>
+    </div>
     <div id="outer">
         <div id="left-pane" class="col">
           <textarea id="dev-log"></textarea>
@@ -61,6 +64,11 @@
             <textarea id="editor"></textarea>
           </div>
         </div>
+    </div>
+    <div id="overlay"></div>
+    <div id="popUpDiv">
+        <div id="popUpContnt"></div>
+        <div class="popUpBtn"><button id="popupclose">Ok</button></div>
     </div>
   </body>
 </html>
