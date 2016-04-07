@@ -30,6 +30,22 @@ Taylor:
 				left logs in for clues.
 
 
+Flesh out file set validation
+	are there 3 csv files exactly?				
+	does each of the three have a name that maps to a distinct entity?
+		2 identified of 3 expected. Not able to find the file for (entity). Please 
+			use a file name with csv extension and (entity) in the file name. 
+
+	possible errors with files themselves
+		is this file empty?			'the file (entity.csv) is empty'
+		make sure there are at least as many headers as there are cols in dict
+			if some fields, but not all, tell them which ones are missing
+				colCheckList = object.keys(hdrDict)- rmv as found
+					The following cols are missing ^.join n-missing of x-expected
+		probs matching cols-
+			if a col in file is not in dict, leave related col data behind.
+		probs matching any rows-
+			if (missing part of a row) stop and report row number (row x of the data in fileName didn't parse)
 
 
 

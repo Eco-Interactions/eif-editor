@@ -57,7 +57,7 @@
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
 
-  function setProgressStatus(barElem, percent) {     console.log("setProgress to %s\%", percent)
+  function setProgressStatus(barElem, percent) {    // console.log("setProgress to %s\%", percent)
     var status = percent.toString() + '%' + statusMsgDict[percent];
     barElem.value = percent;
     ein.ui.setStatus(status);
@@ -157,13 +157,15 @@
     function openFiles() {
       var curFile = fileNameStrngs.pop();
       curProg = curProg + 5;
-      boundSetProgress(curProg);        console.log("openFile %s. curProg = ", curFile, curProg);
-      curFile === undefined ?
-        parseAllRecrdObjs(curProg) :  /*Id,          entryHandler,         objHandler,          fileTxtHandler */
+      boundSetProgress(curProg);      //  console.log("openFile %s. curProg = ", curFile, curProg);
+      if (curFile === undefined) {
+         // parseAllRecrdObjs(curProg)
+      } else {
         ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
+      }
 
       function objectifyCSV(fSysId, fileText) {
-        curProg = curProg + 5;          console.log("objectifyCSV called. curProg = ", curProg);
+        curProg = curProg + 5;       //   console.log("objectifyCSV called. curProg = ", curProg);
         boundSetProgress(curProg);
         ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
       }
@@ -172,8 +174,8 @@
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
-    function parseAllRecrdObjs(curProg) {         console.log("parseAllRecrdObjs curProg= ", curProg);
-      curProg = curProg + 3;            console.log("parseAllRecrdObjs called. curProg = ", curProg);
+    function parseAllRecrdObjs(curProg) {      //   console.log("parseAllRecrdObjs curProg= ", curProg);
+      curProg = curProg + 3;        //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
       var cb = buildDataGridConfig;
       var validMode = isValidOnlyMode();
@@ -201,7 +203,7 @@
   function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
     boundSetProgress(98);
     var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
-    var textRprt = buildRprt(valResults); console.log("textRprt = %s", textRprt);
+    var textRprt = buildRprt(valResults);// console.log("textRprt = %s", textRprt);
     boundSetProgress(100);
     ein.editorTxtArea.value = textRprt;
     setTimeout(clearProgStatus, 3000);

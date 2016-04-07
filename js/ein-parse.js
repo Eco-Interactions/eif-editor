@@ -755,16 +755,16 @@
 
 	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
 	    	var entityMetaData = Object.assign({}, entityParams[entityName]);// console.log("entityMetaData = %O", entityMetaData);
-			  var csvFileId = fileSetObj[entityName].fileId;
-			  var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
-	    	curProg = curProg + 5;					console.log("parseCsvContent called. curProg = ", curProg);
+			var csvFileId = fileSetObj[entityName].fileId;
+			var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
+	    	curProg = curProg + 5;				//	console.log("parseCsvContent called. curProg = ", curProg);
 	    	setProgress(curProg);
 	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
 
 	    	if ("subEntities" in entityMetaData) { entityMetaData.subEntities.forEach(parseSubEntity) }
 
 	    	function parseSubEntity(subEntityName) { // console.log("parseSubEntity called.");
-		    	curProg = curProg + 7;			console.log("parseSubEntity called. curProg = ", curProg);
+		    	curProg = curProg + 7;		//	console.log("parseSubEntity called. curProg = ", curProg);
 		    	setProgress(curProg);
 	    		resultData[subEntityName] = runParseChain(csvFileId, csvRcrdsAry, subEntityName);
 	    	}
@@ -778,7 +778,7 @@
 	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData);	// var cb = callback || null		//	console.log("resultData = %O", resultData);
 	    		var valData = validMode ? resultData : false;
 	    		storeTaxaResults();
-      		setProgress(96);
+      			setProgress(96);
 	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
 	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
 	    	}
