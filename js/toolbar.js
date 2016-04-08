@@ -122,27 +122,48 @@
       citation: {},
       interaction: {}
     };
-    document.getElementById('progBar').className = 'fade-in';                      /* params,           idHandler,                 objHandler,          fileTxtHandler */
+    document.getElementById('progBar').className = 'fade-in';
+                               /* params,        idHandler,                 objHandler,          fileTxtHandler */
     ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, getCsvFiles);
     boundSetProgress(2);
 
     function getCsvFiles(pathStr, folderMap) {                                //Grab files with .csv extensions
-      var fileSetIds = getCsvFileIds(folderMap);
       boundSetProgress(16);
+      var fileSetIds = getCsvFileIds(folderMap);  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
-        else { boundPopUp("<h3>There are more or less than 3 .csv files in this folder.</h3>"); }
+        else { boundPopUp("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
     }
-    function getCsvFileIds(folderMap) { // console.log("getCsvFileIds called. folderMap.files = %O", folderMap.files);
-      var fileKeys = Object.keys(folderMap.files);
-      var fileIds = fileKeys.map(function(fileKey) { return folderMap.files[fileKey].id; });
-      return fileIds;
+    function getCsvFileIds(folderMap) {  console.log("getCsvFileIds called. folderMap = %O", folderMap);
+      var csvFileIds = [];
+      var fileKeys = Object.keys(folderMap.files);  console.log("fileKeys = %O", fileKeys)
+      fileKeys.forEach(function(fileKey) {
+        var splitFile = folderMap.files[fileKey].id.split('.');
+        var extension = splitFile[splitFile.length - 1];            console.log("extension = ", extension);
+        if (extension === "csv") { csvFileIds.push(folderMap.files[fileKey].id); }
+      });   console.log("csvFileIds  = %O", csvFileIds)
+      return csvFileIds;
     }
-    function validateFileSet(fileSetIds) {
-      var validFileSet = fileSetIds.every(function(fileId) { return ifValidFileName(fileId); });
-      if (validFileSet) { openFiles(); } else { console.log("Not a valid file set."); }
-    }
-    function ifValidFileName(fileId) { // console.log("ifValidFileName called.");
-      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); }); // console.log("fileNameStr = %s, fileId = %s", fileNameStr, fileId);console.log("validFileName = ", validFileName);
+    function validateFileSet(fileSetIds) {         console.log("validateFileSet called = %O", fileSetIds)
+      var invalidFileId, unmatched;
+      var validFileSet = fileSetIds.every(function(fileId) {  console.log("inside every. fileId = ", fileId)
+        return validFileNameCheck(fileId);
+      });                          console.log("validateFileSet is valid =", validFileSet)
+      if (validFileSet) { openFiles();
+      } else {
+        boundPopUp('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
+          'Please use a file name with a csv extension and author, citation, or interaction in the file name.') }
+
+      function validFileNameCheck(fileId) {  console.log("validFileNameCheck called.");
+        if (ifValidFileName(fileId)) { return true;
+        } else {
+          invalidFileId = fileId.split("/");    console.log("invalidFileId = ", invalidFileId)
+          return false;
+        }
+      }
+    } /* End validateFileSet */
+    function ifValidFileName(fileId) {  console.log("ifValidFileName called.");
+      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });
+       console.log("validFileName = ", validFileName);
       return validFileName;
 
       function ifStrInFileName(fileNameStr) {
@@ -159,7 +180,7 @@
       curProg = curProg + 5;
       boundSetProgress(curProg);      //  console.log("openFile %s. curProg = ", curFile, curProg);
       if (curFile === undefined) {
-         // parseAllRecrdObjs(curProg)
+        // parseAllRecrdObjs(curProg)
       } else {
         ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
       }
@@ -170,7 +191,8 @@
         ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
       }
     } /* End openFiles*/
-    function storeCsvObj(fSysId, rcrdAryObjs, topEntity) {
+    function storeCsvObj(fSysId, rcrdAryObjs, topEntity, errors) {
+      if (errors) { boundPopUp(errors); return false; }
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
@@ -545,7 +567,15 @@ These names have been replaced with shorter ones. The table below shows the colu
   function openFolderParams() {
     return {type: 'openDirectory'};
   }
-
+  function openFolderCsvs() {
+    return {
+      type: 'openDirectory',
+      accepts: [{
+        mimeTypes: ['text/*'],
+        extensions: ['csv']
+      }]
+    };
+  }
 
 /*-------------Not in use----------------------------------------------------------------------- */
   // function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);

@@ -148,22 +148,24 @@ progress::-webkit-progress::after {
 }
 #popUpDiv {
 		display: none;
-		flex-direction: column;
-		align-items: stretch;
     position: absolute;
     background: #FFF;
     top: 50%;
     left: 50%;
     width: 500px;
-    height: 200px;
+    height: 250px;
     margin-left: -250px; /*Half the value of width to center div*/
     margin-top: -100px; /*Half the value of height to center div*/
     z-index: 200;
+    border-radius: 5px;
 }
 .popUpBtn {
+		top: 216px;
 	  display: flex;
 	  flex-direction: row;
 	  margin: 5px auto 3px auto;
+	  height: 22px;
+	  position: relative;
 }
 #popupclose {
 		margin: auto;
@@ -171,10 +173,12 @@ progress::-webkit-progress::after {
 	  font-weight: bold;
 }
 #popUpContnt {
-    align-self: flex-start;
-    height: 170px;
+	  position: absolute;
+	  width: 100%;
     text-align: center;
-    padding: 50px;
+    padding: 20px 10px 30px 10px;
+    font-weight: bold;
+    font-size: 14px;
 }
 /*
 #progCntnr {

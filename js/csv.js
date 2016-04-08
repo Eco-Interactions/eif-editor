@@ -1,4 +1,5 @@
 (function(){
+  var errors = false;
   /*
    * Global App Namespace
    * @type {object}
@@ -73,24 +74,39 @@
    * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
   function objectifyCSV(fSysId, s, callback, dataSet) {// console.log("dataSet", dataSet);
-    var csvArray = csvToArray(s);         // The CSV parsed as a two-dimensional array
+    var csvArray = csvToArray(s, dataSet);         // The CSV parsed as a two-dimensional array
+
+    if(errors) { callback(fSysId, null, dataSet, errors); return false; }
+
     var keys = standardizeHeaders(csvArray.shift(), dataSet);     // Seperates first row of headers to be used as keys for field data
+
+    if(errors) { callback(fSysId, null, dataSet, errors); return false; }
+
     /*
      * Converts a two-dimensional CSV array into an Array of Objects with headers as keys
      *
      * @param  {Object} row   An array of field data representing a record
      * @return {Array}        An array of objs with keyed field data representing each record
      */
-    var recrdsAry = csvArray.map(function (row) {
+    var recrdsAry = csvArray.map(function (row, idx) {
       var obj = {};
       var len = keys.length;
+      if (errors) { return null }
       for (var i = 0; i < len; i += 1) {
-        obj[keys[i]] = row[i];
+        if (keys[i] === null) { continue }      //If column header was not found in hdrDict it will have been set to null in standardizeHeaders
+        if (row[i] === undefined) { errors = unexpectedRowEndErr(row, idx); break }
+        obj[keys[i]] = row[i];                      //The null columns and their realted data do not get added into the recrd obj.
       }
       return obj;
     });
+    if(errors) { callback(fSysId, null, dataSet, errors); return false; }
 
     callback(fSysId, recrdsAry, dataSet);
+
+    function unexpectedRowEndErr(row, idx) {
+      var rowNum = idx + 2;
+      return "<h3>Row " + rowNum + " of the data in " + fSysId.split("/")[1] + " didn't parse.</h3>Row: " + row.join(",");
+    }
   }
 
  /**
@@ -101,7 +117,7 @@
   * @param {String} s The string to convert
   * @return {Array}   The CSV parsed as an array
   */
-  function csvToArray(s) {
+  function csvToArray(s, dataSet) { console.log("string length = ", s.length);
     var cur = '';
     var insideQuote = false;
     var fieldQuoted = false;
@@ -109,6 +125,7 @@
     var row = [];
     var out = [];
 
+    if (s.length === 0) { errors = "The " + dataSet + " file is empty."; return false; }
     for (var i = 0; i < s.length; i += 1) {
       cur = s.charAt(i);                    // The character we are currently processing.
       if (isEndOfField()) {
@@ -213,9 +230,20 @@
   };    // End of csvToArray
   function standardizeHeaders(hdrArray, dataSet) {
     var dataSetHdrDict = hdrDict[dataSet];
+    var orgHdrs = Object.keys(dataSetHdrDict);
+    var dictColCnt = orgHdrs.length;
+
     var newHdrs = hdrArray.map(function(hdr){
-      return dataSetHdrDict[hdr];
+      if (dataSetHdrDict[hdr] === undefined) { return null;
+      } else {
+        orgHdrs.splice(orgHdrs.indexOf(hdr), 1);
+        return dataSetHdrDict[hdr];
+      }
     }); // console.log("newHdrs = %O", newHdrs);  console.log("headers = %s", JSON.stringify(newHdrs));
+    if (orgHdrs.length > 0) {     console.log('dictColCnt - orgHdrs.length', dictColCnt - orgHdrs.length);
+      var missingCnt = dictColCnt - (dictColCnt - orgHdrs.length);
+      errors = "<h3>The following "+ dataSet + " columns are missing.<br> " + missingCnt + " missing of " + dictColCnt + " expected <br></h3>" + orgHdrs.join(", ") + ".";
+    }
     return newHdrs;
   }
 
