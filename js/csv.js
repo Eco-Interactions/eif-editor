@@ -117,7 +117,7 @@
   * @param {String} s The string to convert
   * @return {Array}   The CSV parsed as an array
   */
-  function csvToArray(s, dataSet) { console.log("string length = ", s.length);
+  function csvToArray(s, dataSet) {
     var cur = '';
     var insideQuote = false;
     var fieldQuoted = false;
