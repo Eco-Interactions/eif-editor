@@ -14,8 +14,8 @@
         ECO_INT_NAMESPACE.ui.curFileId = fileId;  console.log("show curFileId= ", ECO_INT_NAMESPACE.ui.curFileId);
         editorTxtArea.value = fileText;
       },
-      setStatus: function(statusStr) { console.log("-----------attempting to set status. statusStr = ", statusStr);
-        statusBar.innerText = statusStr;   
+      setStatus: function(statusStr) {// console.log("-----------attempting to set status. statusStr = ", statusStr);
+        statusBar.innerText = statusStr;
       }
     };
     initDragBar();
@@ -23,7 +23,7 @@
 
   function setDomElementVars() {
     editorTxtArea = document.getElementById("editor");
-    statusBar = document.getElementById("status-msg");        console.log("statusBar = %O", statusBar);
+    statusBar = document.getElementById("status-msg");       // console.log("statusBar = %O", statusBar);
     devLogTxtArea = document.getElementById("dev-log");
   }
 /* =================== UI Behaviors (self-contained) ======================= */

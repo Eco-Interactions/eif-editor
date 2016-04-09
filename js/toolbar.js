@@ -129,39 +129,39 @@
 
     function getCsvFiles(pathStr, folderMap) {                                //Grab files with .csv extensions
       boundSetProgress(16);
-      var fileSetIds = getCsvFileIds(folderMap);  console.log("fileSetIds = %O", fileSetIds)
+      var fileSetIds = getCsvFileIds(folderMap); //  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
         else { boundPopUp("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
     }
-    function getCsvFileIds(folderMap) {  console.log("getCsvFileIds called. folderMap = %O", folderMap);
+    function getCsvFileIds(folderMap) {//  console.log("getCsvFileIds called. folderMap = %O", folderMap);
       var csvFileIds = [];
-      var fileKeys = Object.keys(folderMap.files);  console.log("fileKeys = %O", fileKeys)
+      var fileKeys = Object.keys(folderMap.files);
       fileKeys.forEach(function(fileKey) {
         var splitFile = folderMap.files[fileKey].id.split('.');
-        var extension = splitFile[splitFile.length - 1];            console.log("extension = ", extension);
+        var extension = splitFile[splitFile.length - 1];
         if (extension === "csv") { csvFileIds.push(folderMap.files[fileKey].id); }
       });   console.log("csvFileIds  = %O", csvFileIds)
       return csvFileIds;
     }
-    function validateFileSet(fileSetIds) {         console.log("validateFileSet called = %O", fileSetIds)
+    function validateFileSet(fileSetIds) {    //     console.log("validateFileSet called = %O", fileSetIds)
       var invalidFileId, unmatched;
-      var validFileSet = fileSetIds.every(function(fileId) {  console.log("inside every. fileId = ", fileId)
+      var validFileSet = fileSetIds.every(function(fileId) {
         return validFileNameCheck(fileId);
-      });                          console.log("validateFileSet is valid =", validFileSet)
+      });
       if (validFileSet) { openFiles();
       } else {
         boundPopUp('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
           'Please use a file name with a csv extension and author, citation, or interaction in the file name.') }
 
-      function validFileNameCheck(fileId) {  console.log("validFileNameCheck called.");
+      function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
         } else {
-          invalidFileId = fileId.split("/");    console.log("invalidFileId = ", invalidFileId)
+          invalidFileId = fileId.split("/");  //  console.log("invalidFileId = ", invalidFileId)
           return false;
         }
       }
     } /* End validateFileSet */
-    function ifValidFileName(fileId) {  console.log("ifValidFileName called.");
+    function ifValidFileName(fileId) { // console.log("ifValidFileName called.");
       var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });
        console.log("validFileName = ", validFileName);
       return validFileName;
@@ -180,7 +180,7 @@
       curProg = curProg + 5;
       boundSetProgress(curProg);      //  console.log("openFile %s. curProg = ", curFile, curProg);
       if (curFile === undefined) {
-        // parseAllRecrdObjs(curProg)
+        parseAllRecrdObjs(curProg)
       } else {
         ein.fileSys.entryFromId(fileObjs[curFile].fileId, ein.fileSys.getFileObj, ein.fileSys.readFile, objectifyCSV) ;
       }

@@ -916,7 +916,9 @@
 		function replaceTaxaWithStrng(recrd) {
 			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
 			recrd.objTaxon = mergeTaxaFields(recrd, objFields);
-			delteTaxaFields(recrd);
+			if (recrd.objTaxon === "") {console.log("obj saved as empty string. recrd = %O", recrd)}
+				else { delteTaxaFields(recrd); }
+
 			return recrd;
 		}
 		function mergeTaxaFields(recrd, fieldAry) {
@@ -1083,17 +1085,17 @@
 
   function mergeTaxaIntoInteractions(recrdsObj) {
   	var batTaxa = entityObj.taxon.batTaxa; //console.log("batTaxa = %O", batTaxa)
-  	var objTaxa = entityObj.taxon.objTaxa;
+  	var objTaxa = entityObj.taxon.objTaxa;	console.log("objTaxa = %O", objTaxa);
 
   	for (var key in recrdsObj) { replaceTaxaStrWithObjIds(recrdsObj[key][0]); }
 
   	mergeTaxaTreeObjsIntoInteractions(recrdsObj);
 
   	function replaceTaxaStrWithObjIds(recrd) {
-  		var subjTaxonStr = recrd.subjTaxon; // console.log("subjTaxonStr = %s in batTaxa = %O", subjTaxonStr, batTaxa[subjTaxonStr]);
+  		var subjTaxonStr = recrd.subjTaxon;
   		var objTaxonStr = recrd.objTaxon;
   		recrd.subjTaxon = batTaxa[subjTaxonStr] !== undefined ? batTaxa[subjTaxonStr].tempId : console.log("subjTaxon not found. recrd = %O, subjTaxonStr = %s", recrd, subjTaxonStr);
-  		recrd.objTaxon = objTaxa[objTaxonStr] !== undefined ? objTaxa[objTaxonStr].tempId : console.log("objTaxon not found.");
+  		recrd.objTaxon = objTaxa[objTaxonStr] !== undefined ? objTaxa[objTaxonStr].tempId : console.log("objTaxon not found. recrd = %O, objTaxonStr = %s", recrd, objTaxonStr);
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
