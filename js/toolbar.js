@@ -225,7 +225,7 @@
   function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
     boundSetProgress(98);
     var valResults = extractValidationResults(resultData);// console.log("Validation results = %O", valResults);
-    var textRprt = createRprt(valResults);// console.log("textRprt = %s", textRprt);
+    var textRprt = generateRprt(valResults);// console.log("textRprt = %s", textRprt);
     boundSetProgress(100);
     ein.editorTxtArea.value = textRprt;
     setTimeout(clearProgStatus, 3000);
@@ -262,7 +262,7 @@
       }
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
-  function createRprt(valData) { console.log("buildRprt called. valData = %O", valData);
+  function generateRprt(valData) { console.log("buildRprt called. valData = %O", valData);
     var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
@@ -301,16 +301,19 @@ These names have been replaced with shorter ones. The table below shows the colu
 +-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
 ===================================================================================================
                                 Data Validation Errors
-===================================================================================================\n`;
+===================================================================================================`;
     }
     function buildRprt() {
+      var rcrdsRmvdWithNullRefs = {};
       var conflictsStrAry = [];
       var nullRefStrAry = [];
       var invalidNullsStrAry = [];      // join with '\n';
       for (var key in valData) {
         if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
       }
-      invalidNullsStr+= invalidNullsStrAry.join('\n');
+      invalidNullsStr += invalidNullsStrAry.join('\n');
+      conflictsStr += conflictsStrAry.join('\n');
+      nullRefStr += nullRefStrAry.join('\n');
 
       function buildRprtStrngs(valErrs, entityName) {
         if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
@@ -322,7 +325,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         }
         function addInvalidNulls(invldNullRprt, entityName) {
           var tempNullStrAry = [];
-          invalidNullsStr = '\nRecords with no data in a required field:\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          invalidNullsStr = divider + '\nRecords with no data in a required field:\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
           invldNullRprt.recrds.forEach(function(recrd){  //console.log("recrd = %O", recrd)
             tempNullStrAry.push(addFieldsInRecrd(recrd));
@@ -331,38 +334,38 @@ These names have been replaced with shorter ones. The table below shows the colu
                                      invldNullRprt.unqKey + ' field empty:\n', tempNullStrAry.join('\n') );
         }
         function addConflicts(conflictObj, entityName) { //console.log("conflictObj = ", conflictObj);
-          conflictsStr = '\nRecords that share unique key values and have conflicting data in other fields:\n';
-          conflictsStr += '-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address: \n'
+          var tempConflictsStrAry = [];
+          conflictsStr = '\n' + divider + '\nRecords that share unique key values and have conflicting data in other fields:\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address:');
           for (var unqKey in conflictObj.recrds) {
-            conflictsStr += '\n' + conflictObj.unqKey + ': ' + unqKey + ' \n';
+            tempConflictsStrAry.push('\n' + conflictObj.unqKey + ': ' + unqKey);
             conflictObj.recrds[unqKey].forEach(function(recrd) {
-              conflictsStr += addFieldsInRecrd(recrd, conflictObj.unqKey) + '\n';
+              tempConflictsStrAry.push(addFieldsInRecrd(recrd, conflictObj.unqKey));
             });
           }
-          conflictsStr += '\n';
+          conflictsStrAry.push(tempConflictsStrAry.join('\n'));
         }
-        function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
-          var rcrdsRmvdWithNullRefs = {};
-          nullRefStr = '\nRecords with references to non-existent, required entity records:\n';
+        function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. arguments = %O", arguments)
+          var tempNullRefStrAry = [];
+          nullRefStr = '\n' + divider + '\nRecords with references to non-existent, required entity records:\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          entityName === "taxon" && processTaxonNulLRefs(nullRefResults);
           for (var entity in nullRefResults) {
-            if (entity === "author") {
-              nullRefStr += processAuthorNullRefs(nullRefResults[entity]);
-              continue
-            } else if (entity === "citation") { nullRefStr += processCitNullRefs(nullRefResults, nullRefResults[entity]); continue } //console.log("nullRefStr = ", nullRefStr)
-            nullRefStr += '-- ' + 'Not able to match ' + Object.keys(nullRefResults[entity]).length + ' ' + entity + ' record references with valid records.\n\n';
+              entity === "author" && processAuthorNullRefs(nullRefResults[entity]);
+              entity === "citation" && processCitNullRefs(nullRefResults, nullRefResults[entity]);
           }
+          nullRefStrAry.push(tempNullRefStrAry.join('\n'));
 
           function processCitNullRefs(nullRefResults, citNullRefs) { //console.log("nullRefResults = %O", nullRefResults);
-            var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation || false;                 //console.log("citRcrdsRmvdWithNullRefs = %O", citRcrdsRmvdWithNullRefs);
+            var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation || false;          //       console.log("citRcrdsRmvdWithNullRefs @@ rcrdsRmvdWithNullRefs = %O", rcrdsRmvdWithNullRefs);
             var citRefsToRmvdRcrds = 0;
-            var returnStr = '\n--Missing Citation ID references in Interaction records:\n\n';
+            var returnStrAry = [];
             var citRefs = {};
             for (var key in citNullRefs) {
               if(citNullRefs[key][0] !== undefined) { processCitRef(); }
             }
-            if (citRcrdsRmvdWithNullRefs) {returnStr += 'There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors that must be cleared before they can be merged into the Interaction records.\n\n';}
-            returnStr += buildCitRefRprtStr(citRefs);
-            return returnStr;
+            if (citRcrdsRmvdWithNullRefs) {returnStrAry.push('--There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors.\n');}
+            returnStrAry.push(buildCitRefRprtStr(citRefs));
+            tempNullRefStrAry.push(returnStrAry.join('\n'));
 
             function processCitRef() {
               if (citRcrdsRmvdWithNullRefs && citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
@@ -371,26 +374,27 @@ These names have been replaced with shorter ones. The table below shows the colu
                 citRefs[citNullRefs[key][0].citId].push(key);
               }
             }
-          }
-          function buildCitRefRprtStr(citRefs) {
-            var str = '';
+          } /* End processCitNullRefs */
+          function buildCitRefRprtStr(citRefs) { console.log("buildCitRefRprtStr arguments = %O", arguments)
+            var strAry = [];
             for ( var citId in citRefs ) {
-              str += 'There are ' + citRefs[citId].length + ' Interaction records referencing missing Citation ' + citId + '.\n';
+              strAry.push('--There are ' + citRefs[citId].length + ' Interaction records referencing missing Citation ' + citId + ': ' + citRefs[citId].join(', ') + '.');
             }
-            return str;
+            return strAry.join('\n');
           }
-          function processAuthorNullRefs(authorNullRefs) {           //     console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
+          function processAuthorNullRefs(authorNullRefs) {        //        console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
             var tempAuthRefObj = {};
             var str = '';
+            var authStrAry = [];
             rcrdsRmvdWithNullRefs.citation = [];
             for(var key in authorNullRefs) {
               if (authorNullRefs[key][0] !== undefined) {
-                rcrdsRmvdWithNullRefs.citation.push(parseInt(key));
+                rcrdsRmvdWithNullRefs.citation.push(parseInt(key));  // console.log("rcrdsRmvdWithNullRefs.citation pushing now");
                 processAuth();
               }
             }
-            str += buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length);
-            return str;
+            authStrAry.push(buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length), '\n');
+            tempNullRefStrAry.push(authStrAry.join('\n'));
 
             function processAuth() {
               if (typeof authorNullRefs[key][0] === "object") {
@@ -399,13 +403,22 @@ These names have been replaced with shorter ones. The table below shows the colu
               }
             }
             function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {           //    console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
-              var str = '\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n\n';
+              var strAry = ['\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n'];
               for (var auth in tempAuthRefObj) {
-                str += auth + ' -referenced in Citation record: ' + tempAuthRefObj[auth].join(', ') + '.\n';
+                strAry.push(auth + ' -referenced in Citation record: ' + tempAuthRefObj[auth].join(', ') + '.');
               }
-              return str;
+              return strAry.join('\n');
             }
           } /* End processAuthorNullRefs */
+          function processTaxonNulLRefs(taxonNullRefs) { //console.log("processTaxonNulLRefs called. taxonNullRefs = %O", taxonNullRefs)
+            var taxonStrAry = [];
+            for (var role in taxonNullRefs) {
+                var recrdCnt = taxonNullRefs[role].length;
+                var intIds = taxonNullRefs[role].map(function(recrd){ return recrd.tempId });
+                taxonStrAry.push('\n--There are ' + recrdCnt + ' interaction records missing ' + role + 'ect taxon: ' + intIds.join(', ') + '.')
+            }
+            tempNullRefStrAry.push(taxonStrAry.join('\n'));
+          }
         } /* End addNullRefs */
         function addFieldsInRecrd(recrd, unqKey, skipKeyAry) {// console.log("addFieldsInRecrd. arguments = %O", arguments);
           var skipKeyAry = skipKeyAry || [];
@@ -420,7 +433,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         } /* End addFieldsInRecrd */
       } /* End buildRprtStr */
     } /* End buildRprt */
-  } /* End createRprt */
+  } /* End generateRprt */
 /*----------Select entity to parse-------------- */
   function selectCSVEntityParse() {
     var entity = document.getElementById('entitySelect').value;

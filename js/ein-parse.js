@@ -121,7 +121,12 @@
 			finalRecords: recrdsObj,
 			valRpt : entityObj.validationResults
 		};
-		if ("taxaObjs" in entityObj) { entityObj.valResults.taxaObjs = entityObj.taxaObjs; } // console.log("entityObj.valResults = %O", entityObj.valResults);
+		if ("taxaObjs" in entityObj) {
+			entityObj.valResults.taxon = {
+				taxaObjs: entityObj.taxaObjs,
+				valRpt: entityObj.taxon.valRpt
+			};  console.log("entityObj.valResults = %O", entityObj.valResults);
+		}
 	}
 	/**
 	 * Takes an array of record objects and extracts specified columns/keys and values.
@@ -778,16 +783,17 @@
 	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData);	// var cb = callback || null		//	console.log("resultData = %O", resultData);
 	    		var valData = validMode ? resultData : false;
 	    		storeTaxaResults();
-      			setProgress(96);
+      	  setProgress(96);
 	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
 	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
 	    	}
 	    } /* End mergeParsedRecords */
 	    function storeTaxaResults() {
     		resultData.taxon = {
-    			finalRecords: resultData.interaction.taxaObjs,
+    			finalRecords: resultData.interaction.taxon.taxaObjs,
+    			valRpt: resultData.interaction.taxon.valRpt,
     			name: "taxon"
-    		}
+    		};
 	    }
 	} /* End parseFileSetRecrds */
 	function runParseChain(csvFileId, csvRcrdsAry, curEntity) {
@@ -887,6 +893,7 @@
 		var taxaRcrds = [];
 		var intRefIdx = [];
 		entityObj.taxon = {};
+		entityObj.taxon.valRpt = { nullRefResults: {} };
 
 		forEachRecrd();		//	console.log("taxaRcrds = %O", taxaRcrds);
 		storeTaxaData(taxaRcrds);
@@ -916,8 +923,9 @@
 		function replaceTaxaWithStrng(recrd) {
 			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
 			recrd.objTaxon = mergeTaxaFields(recrd, objFields);
-			if (recrd.objTaxon === "") {console.log("obj saved as empty string. recrd = %O", recrd)}
-				else { delteTaxaFields(recrd); }
+			rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd);
+
+			delteTaxaFields(recrd);
 
 			return recrd;
 		}
@@ -930,6 +938,16 @@
 		}
 		function delteTaxaFields(recrd) {
 			taxaFields.forEach(function(field) { delete recrd[field]; });
+		}
+		function rprtNullTaxa(subjTaxon, objTaxon, recrd) {
+			if (objTaxon === "") {
+				if (entityObj.taxon.valRpt.nullRefResults.obj === undefined) {entityObj.taxon.valRpt.nullRefResults.obj = [];}
+					entityObj.taxon.valRpt.nullRefResults.obj.push(recrd);
+			}
+			if (subjTaxon === "") {
+				if (entityObj.taxon.valRpt.nullRefResults.subj === undefined) {entityObj.taxon.valRpt.nullRefResults.subj = [];}
+					entityObj.taxon.valRpt.nullRefResults.subj.push(recrd);
+			}
 		}
 		function storeTaxaData(taxaRcrds) {
 			entityObj.taxaRcrdObjsAry = taxaRcrds;
@@ -1085,7 +1103,7 @@
 
   function mergeTaxaIntoInteractions(recrdsObj) {
   	var batTaxa = entityObj.taxon.batTaxa; //console.log("batTaxa = %O", batTaxa)
-  	var objTaxa = entityObj.taxon.objTaxa;	console.log("objTaxa = %O", objTaxa);
+  	var objTaxa = entityObj.taxon.objTaxa;	//console.log("objTaxa = %O", objTaxa);
 
   	for (var key in recrdsObj) { replaceTaxaStrWithObjIds(recrdsObj[key][0]); }
 
@@ -1094,8 +1112,8 @@
   	function replaceTaxaStrWithObjIds(recrd) {
   		var subjTaxonStr = recrd.subjTaxon;
   		var objTaxonStr = recrd.objTaxon;
-  		recrd.subjTaxon = batTaxa[subjTaxonStr] !== undefined ? batTaxa[subjTaxonStr].tempId : console.log("subjTaxon not found. recrd = %O, subjTaxonStr = %s", recrd, subjTaxonStr);
-  		recrd.objTaxon = objTaxa[objTaxonStr] !== undefined ? objTaxa[objTaxonStr].tempId : console.log("objTaxon not found. recrd = %O, objTaxonStr = %s", recrd, objTaxonStr);
+  		recrd.subjTaxon = batTaxa[subjTaxonStr] !== undefined ? batTaxa[subjTaxonStr].tempId : console.log("subjTaxon not found. recrd = %O, subjTaxonStr = '%s'", recrd, subjTaxonStr);
+  		recrd.objTaxon = objTaxa[objTaxonStr] !== undefined ? objTaxa[objTaxonStr].tempId : console.log("objTaxon not found. recrd = %O, objTaxonStr = '%s'", recrd, objTaxonStr);
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
@@ -1140,7 +1158,7 @@
 	 * @return {array} A new collection of record objects with a tempId property
 	 */
 	function attachTempIds(recrdsAry) {  //	console.log("attachTempIds");
-		var id = 1;
+		var id = 2;
 		var newRecrds = recrdsAry.map(function(recrd){
 			recrd.tempId = id++;
 			return recrd;
