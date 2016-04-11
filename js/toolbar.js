@@ -307,7 +307,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       var rcrdsRmvdWithNullRefs = {};
       var conflictsStrAry = [];
       var nullRefStrAry = [];
-      var invalidNullsStrAry = [];      // join with '\n';
+      var invalidNullsStrAry = [];
       for (var key in valData) {
         if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
       }
@@ -327,9 +327,8 @@ These names have been replaced with shorter ones. The table below shows the colu
           var tempNullStrAry = [];
           invalidNullsStr = divider + '\nRecords with no data in a required field:\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
-          invldNullRprt.recrds.forEach(function(recrd){  //console.log("recrd = %O", recrd)
-            tempNullStrAry.push(addFieldsInRecrd(recrd));
-          });
+          invldNullRprt.recrds.forEach(function(recrd){  tempNullStrAry.push(addFieldsInRecrd(recrd)); });
+
           invalidNullsStrAry.push('-- There are ' + invldNullRprt.recordCnt + ' ' + entityName + ' records with data and with ' +     //For each entity with invalid nulls
                                      invldNullRprt.unqKey + ' field empty:\n', tempNullStrAry.join('\n') );
         }
@@ -345,7 +344,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           }
           conflictsStrAry.push(tempConflictsStrAry.join('\n'));
         }
-        function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. arguments = %O", arguments)
+        function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
           var tempNullRefStrAry = [];
           nullRefStr = '\n' + divider + '\nRecords with references to non-existent, required entity records:\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
           entityName === "taxon" && processTaxonNulLRefs(nullRefResults);
@@ -375,7 +374,7 @@ These names have been replaced with shorter ones. The table below shows the colu
               }
             }
           } /* End processCitNullRefs */
-          function buildCitRefRprtStr(citRefs) { console.log("buildCitRefRprtStr arguments = %O", arguments)
+          function buildCitRefRprtStr(citRefs) { //console.log("buildCitRefRprtStr arguments = %O", arguments)
             var strAry = [];
             for ( var citId in citRefs ) {
               strAry.push('--There are ' + citRefs[citId].length + ' Interaction records referencing missing Citation ' + citId + ': ' + citRefs[citId].join(', ') + '.');
