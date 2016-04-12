@@ -901,11 +901,16 @@
 		callback(recrdsObj, entity);
 
 		function forEachRecrd() {
-			for (var key in recrdsObj) { recrdsObj[key] = [extrctAndReplaceTaxaFields(recrdsObj[key][0])]; }
+			for (var key in recrdsObj) {
+				var newRcrd = extrctAndReplaceTaxaFields(recrdsObj[key][0], key);
+				if (newRcrd !== false) { recrdsObj[key] = [newRcrd]; }
+			}
 		}
-		function extrctAndReplaceTaxaFields(recrd) {
-			taxaRcrds.push(buildTaxaRcrd(recrd));
-			return replaceTaxaWithStrng(recrd);
+		function extrctAndReplaceTaxaFields(recrd, key) {
+			var taxaRcrd = buildTaxaRcrd(recrd);
+			var result = replaceTaxaWithStrng(recrd, key);
+			if (result !== false) {taxaRcrds.push(taxaRcrd)};
+			return result;
 		}
 
 		function buildTaxaRcrd(recrd) {
@@ -915,38 +920,39 @@
 			return taxonRcrd;
 
 			function extrctTaxaFields(recrd) {
-				taxaFields.forEach(function(field) {
-					taxonRcrd[field] = recrd[field];
-				});
+				taxaFields.forEach(function(field) { taxonRcrd[field] = recrd[field]; });
 			}
 		} /* End buildTaxaRcrd */
-		function replaceTaxaWithStrng(recrd) {
+		function replaceTaxaWithStrng(recrd, key) {
 			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
-			recrd.objTaxon = mergeTaxaFields(recrd, objFields);
-			rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd);
-
+			recrd.objTaxon = mergeTaxaFields(recrd, objFields);  if (recrd.objTaxon === undefined) {console.log("obj saved as undefined. recrd = %O", recrd)}
+			var nulls = rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd, key);
+			if (nulls === true) {console.log("nulls found"); return false; }
 			delteTaxaFields(recrd);
 
 			return recrd;
 		}
 		function mergeTaxaFields(recrd, fieldAry) {
 			var taxaNameStr = "";
-			fieldAry.forEach(function(field) {
-				if (recrd[field] !== null) { taxaNameStr += recrd[field]; }
-			});
+			fieldAry.forEach(function(field) { if (recrd[field] !== null) { taxaNameStr += recrd[field]; } });
+
 			return taxaNameStr;
 		}
 		function delteTaxaFields(recrd) {
 			taxaFields.forEach(function(field) { delete recrd[field]; });
 		}
-		function rprtNullTaxa(subjTaxon, objTaxon, recrd) {
+		function rprtNullTaxa(subjTaxon, objTaxon, recrd, key) {
 			if (objTaxon === "") {
 				if (entityObj.taxon.valRpt.nullRefResults.obj === undefined) {entityObj.taxon.valRpt.nullRefResults.obj = [];}
-					entityObj.taxon.valRpt.nullRefResults.obj.push(recrd);
+				entityObj.taxon.valRpt.nullRefResults.obj.push(recrd);  console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
+				delete recrdsObj[key];				console.log("recrdsObj[key] = %O", recrdsObj[key]);
+				return true;
 			}
 			if (subjTaxon === "") {
 				if (entityObj.taxon.valRpt.nullRefResults.subj === undefined) {entityObj.taxon.valRpt.nullRefResults.subj = [];}
-					entityObj.taxon.valRpt.nullRefResults.subj.push(recrd);
+				entityObj.taxon.valRpt.nullRefResults.subj.push(recrd);
+				delete recrdsObj[key];
+				return true;
 			}
 		}
 		function storeTaxaData(taxaRcrds) {
@@ -961,7 +967,7 @@
 	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { //console.log("buildAndMergeTaxonObjs. arguments = %O, entityObj = %O", arguments, entityObj)
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
-		var curTempId = taxonRecrdObjsAry.length;					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
+		var curTempId = taxonRecrdObjsAry.length;							//	console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
 
 		buildAllTaxonObjs(taxonRecrdObjsAry);
 		mergeTaxaIntoInteractions(recrdsObj);
@@ -1015,7 +1021,7 @@
 			}
 			return taxonNameStr;
 		}
-		function grabSpecies(genusSpeciesStr) {
+		function getSpecies(genusSpeciesStr) {		//		console.log("getSpecies called. arguments = %O", arguments)
 			var nameAry = genusSpeciesStr.split(" ");
 			return nameAry[1];
 		}
@@ -1024,7 +1030,7 @@
 		}
 		function buildBatTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildBatTaxaRefObj called.")
 			var level = lvlAry[idx];
-			var taxonName = (field === "subjSpecies") ? grabSpecies(recrd[field]) : recrd[field];
+			var taxonName = (field === "subjSpecies") ? getSpecies(recrd[field]) : recrd[field];
 			batTaxaRefObjAry[taxonNameKeyStr] = {
 				parent: linkParentTaxon(recrd, field, idx),
 				name: taxonName,
@@ -1082,7 +1088,7 @@
 			}
 			return taxonNameStr;
 		}
-		function grabSpecies(genusSpeciesStr) { //console.log("grabSpecies. arguments= %O", arguments);
+		function getSpecies(genusSpeciesStr) { //console.log("getSpecies. arguments= %O", arguments);
 			var nameAry = genusSpeciesStr.split(" ");
 			return nameAry[1];
 		}
@@ -1091,7 +1097,7 @@
 		}
 		function buildObjTaxaRefObj(taxonNameKeyStr, recrd, field, idx) {// console.log("buildObjTaxaRefObj called. arguments = %O", arguments);
 			var level = lvlAry[idx];
-			var taxonName = (field === "objSpecies") ? grabSpecies(recrd[field]) : recrd[field];
+			var taxonName = (field === "objSpecies") ? getSpecies(recrd[field]) : recrd[field];
 			objTaxaRefObjAry[taxonNameKeyStr] = {
 				parent: linkParentTaxon(recrd, field, idx),
 				name: taxonName,
@@ -1199,7 +1205,7 @@
 		 * @param  {str} key  Top key for array of records sharing unqKey field
 		 * @return {ary}      New record obj array
 		 */
-		function splitFields(key) {
+		function splitFields(key) {			//	console.log("splitFields called. recrdsObj[key] = %O", recrdsObj[key])
 			var newRecrds = recrdsObj[key].map(function(recrd) {
 				recrd[splitField] = recrd[splitField] === null ? [] : splitAndTrimField(recrd);
 				return recrd;

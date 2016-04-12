@@ -88,6 +88,8 @@ button {
 }
 #grid-cntnr {
 	overflow: scroll;
+  height: 95vh;
+  width: 100vw;
 }
 #entitySelect {
 	margin-left: 12em;

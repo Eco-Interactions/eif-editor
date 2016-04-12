@@ -104,26 +104,26 @@ function buildRowData(recrdsObj) {// console.log("buildRowData called.");
 	}
 } /* End buildRowData */
 function getIntTags(recrd) {
-	var intTags = '';
+	var intTags = [];
 	recrd.intTag.forEach(function(tag){
-		intTags += tag + ', ';
+		intTags.push(tag);
 	});
-	return intTags;
+	return intTags.join(', ');
 }
-function getTaxon(recrd, role) {
-	var levels = { 1: "Species", 2: "Genus", 3: "Family", 4: "Order", 5: "Class", 6: "Kingdom" };
+function getTaxon(recrd, role) {	//			console.log("getTaxon arguments = %O", arguments);
+	var levels = { 1: "Kingdom", 2: "Class", 3: "Order", 4: "Family", 5: "Genus", 6: "Species" };
 	var taxonLvl = recrd[role].level;
-	var taxonName = taxonLvl === 1 ? recrd[role].parent.name : levels[recrd[role].level];
+	var taxonName = taxonLvl === 6 ? recrd[role].parent.name : levels[recrd[role].level];
 	taxonName += ' ' + recrd[role].name;
 	return taxonName;
 }
 function getAuthors(recrd) {
 	if (recrd.citation.author !== undefined && recrd.citation.author !== null) {
-		var authors = '';
+		var authors = [];
 		recrd.citation.author.forEach(function(authorObj){ //console.log("authorObj = %O", authorObj);
-			authors += authorObj.shortName + ', ';
+			authors.push(authorObj.shortName);
 		});
-		return authors;
+		return authors.join(', ');
 	} else { return ''; }
 }
 
