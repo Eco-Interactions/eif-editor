@@ -81,7 +81,7 @@
 
   function toolbarClickHandler(clickEvent) {
     var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
-    ein.ui.setStatus('Button Clicked. btnId= ' + btnId);
+    // ein.ui.setStatus('Button Clicked. btnId= ' + btnId);
     if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
   }
 
@@ -224,13 +224,17 @@
   }
   function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
     boundSetProgress(98);
-    var valResults = extractValidationResults(resultData);// console.log("Validation results = %O", valResults);
+    var valResults = extractValidationResults(resultData); console.log("Validation results = %O", valResults);
     var textRprt = generateRprt(valResults);// console.log("textRprt = %s", textRprt);
-    boundSetProgress(100);
-    ein.editorTxtArea.value = textRprt;
-    setTimeout(clearProgStatus, 3000);
-  }
 
+    if (textRprt === false) {
+      buildDataGridConfig(fSysIdAry, resultData.interaction.finalRecords)
+    } else {
+      boundSetProgress(100);
+      ein.editorTxtArea.value = textRprt;
+      setTimeout(clearProgStatus, 3000);
+    }
+  }
   function extractValidationResults(resultData) {
     var valData = {};
     for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
@@ -266,11 +270,14 @@
     var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
+    var rcrdsRmvdWithNullRefs = {};
+    var conflictsStrAry = [];
+    var nullRefStrAry = [];
+    var invalidNullsStrAry = [];
 
-    buildRprt();
+    return buildRprt();
     // rprtStr += introStrng + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
-    rprtStr = [introStr, invalidNullsStr, conflictsStr, nullRefStr].join('\n');
-    return rprtStr;
+
 
     function getIntroStr() {
       return `                                 Reference Table
@@ -304,16 +311,19 @@ These names have been replaced with shorter ones. The table below shows the colu
 ===================================================================================================`;
     }
     function buildRprt() {
-      var rcrdsRmvdWithNullRefs = {};
-      var conflictsStrAry = [];
-      var nullRefStrAry = [];
-      var invalidNullsStrAry = [];
+      var errors = false;
+
       for (var key in valData) {
         if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
       }
+      if (!errors) { return false; }
+
       invalidNullsStr += invalidNullsStrAry.join('\n');
       conflictsStr += conflictsStrAry.join('\n');
       nullRefStr += nullRefStrAry.join('\n');
+      rprtStr = [introStr, invalidNullsStr, conflictsStr, nullRefStr].join('\n');
+
+      return rprtStr;
 
       function buildRprtStrngs(valErrs, entityName) {
         if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
@@ -325,6 +335,7 @@ These names have been replaced with shorter ones. The table below shows the colu
         }
         function addInvalidNulls(invldNullRprt, entityName) {
           var tempNullStrAry = [];
+          errors = true;
           invalidNullsStr = divider + '\nRecords with no data in a required field:\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
           invldNullRprt.recrds.forEach(function(recrd){  tempNullStrAry.push(addFieldsInRecrd(recrd)); });
@@ -333,6 +344,7 @@ These names have been replaced with shorter ones. The table below shows the colu
                                      invldNullRprt.unqKey + ' field empty:\n', tempNullStrAry.join('\n') );
         }
         function addConflicts(conflictObj, entityName) { //console.log("conflictObj = ", conflictObj);
+          errors = true;
           var tempConflictsStrAry = [];
           conflictsStr = '\n' + divider + '\nRecords that share unique key values and have conflicting data in other fields:\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
           conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address:');
@@ -345,6 +357,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           conflictsStrAry.push(tempConflictsStrAry.join('\n'));
         }
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
+          errors = true;
           var tempNullRefStrAry = [];
           nullRefStr = '\n' + divider + '\nRecords with references to non-existent, required entity records:\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
           entityName === "taxon" && processTaxonNulLRefs(nullRefResults);
