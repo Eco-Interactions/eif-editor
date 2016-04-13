@@ -125,7 +125,7 @@
 			entityObj.valResults.taxon = {
 				taxaObjs: entityObj.taxaObjs,
 				valRpt: entityObj.taxon.valRpt
-			};  console.log("entityObj.valResults = %O", entityObj.valResults);
+			}; // console.log("entityObj.valResults = %O", entityObj.valResults);
 		}
 	}
 	/**
@@ -750,7 +750,7 @@
 	 * @param  {func}  setProgress			bound func that updates progress bar and status message
 	 * @return {[type]}                  [description]
 	 */
-	function parseFileSetRecrds(fileSetObj, validationMode, callback, setProgress) {   console.log("parseFileSetRecrds called. arguments = %O", arguments);
+	function parseFileSetRecrds(fileSetObj, validationMode, callback, setProgress) { //  console.log("parseFileSetRecrds called. arguments = %O", arguments);
 	    var csvRowEntities = ["author", "citation", "interaction"]; // console.log("parseFileSetRecrds. entityParams = %O", JSON.parse(JSON.stringify(entityParams)));
 	    var resultData = {};
 	    var curProg = 58;
@@ -968,7 +968,7 @@
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		attachTempIds(taxonRecrdObjsAry);
 		// var curTempId = taxonRecrdObjsAry.length;
-		buildTaxaTree(recrdsObj, entity, callback);								console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
+		buildTaxaTree(recrdsObj, entity, callback);					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
 		mergeTaxaIntoInteractions(recrdsObj);
 
 		callback(recrdsObj, entity);
@@ -1044,8 +1044,11 @@
 			}
 			function buildTaxaObj(taxonNameKeyStr, field, idx, tP) {
 				var level = lvlAry[idx];
+				var kingdom = tP.
+				role === "subject" ? "Animalia" : tP.recrd.objKingdom;
 				var taxonName = (field === "objSpecies" || field === "subjSpecies") ? getSpecies(tP.recrd[field]) : tP.recrd[field];
 				tP.taxaObjs[taxonNameKeyStr] = {
+					kingdom: kingdom,
 					parent: linkParentTaxon(tP, idx, taxonNameKeyStr),
 					name: taxonName,
 					level: level,				// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
@@ -1076,12 +1079,14 @@
 		function initTopTaxa() {
 		  batTaxaRefObjAry = {
 				Animalia: {
+					kingdom: "Animalia",
 					parent: null,
 					name: "Animalia",
 					level: 1,					// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
 					tempId:	curTempId++
 				},
 				Chiroptera: {
+					kingdom: "Animalia",
 					parent: 1,				// 1 = animalia
 					name: "Chiroptera",
 					level: 4,
@@ -1090,12 +1095,14 @@
 		  };
 		  objTaxaRefObjAry = {
 				Animalia: {									//Repeated here because it will be collapsed in the merge process and animalia waas added as an ancestor antrhopoda very late in the writting of this code and restructuring didn't seen worth the effort and time.
+					kingdom: "Animalia",
 					parent: null,
 					name: "Animalia",
 					level: 1,					// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
 					tempId:	1
 				},
 				Plantae: {
+					kingdom: "Plantae",
 					parent: null,
 					name: "Plantae",
 					level: 1,					// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
@@ -1127,7 +1134,7 @@
   	}
   } /* End mergeTaxaIntoInteractions */
   function mergeTaxaTreeObjsIntoInteractions(recrdsObj) {
-  	var taxaTree = mergeTaxaTreeObjs(); console.log("taxaTree = %O", taxaTree, entityObj);
+  	var taxaTree = mergeTaxaTreeObjs();// console.log("taxaTree = %O", taxaTree, entityObj);
   	entityObj.taxaObjs = taxaTree;
   	replaceIdWithTaxonObj(recrdsObj);
   }

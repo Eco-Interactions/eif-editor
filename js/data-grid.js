@@ -26,7 +26,9 @@
       {headerName: "Id", field: "id", width: 50,  filter: 'number'},
       {headerName: "Interaction Type", field: "intType", width: 150},
       {headerName: "Int Tags", field: "intTag", width: 100},
+      {headerName: "Subject Kingdom", field: "subjKngdm", width: 150},
       {headerName: "Subject Taxon", field: "subjTaxon", width: 200, filter: 'text'},
+      {headerName: "Object Kingdom", field: "objKngdm", width: 150},
       {headerName: "Object Taxon", field: "objTaxon", width: 200, filter: 'text'},
       {headerName: "Habitat Type", field: "habType", width: 150},
       {headerName: "Region", field: "region", width: 150},
@@ -47,7 +49,7 @@
       {headerName: "Pages", field: "pgs", width: 100, filter: 'number'},
     ];
   }
-function buildDataGrid(recrdsObj, callback) {// console.log("buildDataGrid begun @ ", Date.now());
+function buildDataGrid(recrdsObj, callback) { console.log("buildDataGrid arguments = %O", arguments);
 	gridOptions.rowData = buildRowData(recrdsObj);
 
 	callback(gridOptions);
@@ -59,12 +61,14 @@ function buildRowData(recrdsObj) {// console.log("buildRowData called.");
 	}																																											//console.log("data rows about to be returned: %O", dataRows)
 	return dataRows;
 
-	function translateRecrdIntoRow(recrd) {// console.log("recrd = %O", recrd)
+	function translateRecrdIntoRow(recrd) {//console.log("recrd = %O", recrd)
 		var row =  {
 			id: recrd.tempId,
 			intType: recrd.intType,
 			intTag: getIntTags(recrd),
+			subjKngdm: recrd.subjTaxon.kingdom,
 			subjTaxon: getTaxon(recrd, "subjTaxon"),
+			objKngdm: recrd.objTaxon.kingdom,
 			objTaxon: getTaxon(recrd, "objTaxon"),
 		};
 		return addAllRemainingPresentData(recrd, row);
