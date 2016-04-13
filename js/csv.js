@@ -75,6 +75,7 @@
    * @return {Array}         The CSV parsed as an array of objects with column headers as keys for field data
    */
   function objectifyCSV(fSysId, s, callback, dataSet) {// console.log("dataSet", dataSet);
+    errors = false;
     var csvArray = csvToArray(s, dataSet);         // The CSV parsed as a two-dimensional array
 
     if(errors) { callback(fSysId, null, dataSet, errors); return false; }
@@ -126,7 +127,7 @@
     var row = [];
     var out = [];
 
-    if (s.length === 0) { errors = "The " + dataSet + " file is empty."; return false; }
+    if (s.length === 0) { errors = "<h3>The " + dataSet + " file is empty.</h3>"; return false; }
     for (var i = 0; i < s.length; i += 1) {
       cur = s.charAt(i);                    // The character we are currently processing.
       if (isEndOfField()) {
