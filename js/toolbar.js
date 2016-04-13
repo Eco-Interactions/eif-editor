@@ -53,6 +53,7 @@
     document.getElementById("popupclose").onclick = function() {
         overlay.style.display = 'none';
         popup.style.display = 'none';
+        clearProgStatus();
     };
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
@@ -65,7 +66,7 @@
   function clearProgStatus() {
     document.getElementById('progBar').className = 'fade-out';
     ein.ui.setStatus("");
-    setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 500);
+    setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
 
 /*-------------PopUp Methods----------------------------------------------------*/
