@@ -18,20 +18,21 @@
   </head>
   <body>
     <div class="toolbar" id="toolbar">
+      <label>
+      <button id="fileSet">Parse FileSet</button>
+        <input type="checkbox" name="loadIfValid" id="loadIfValid">
+        Load only if valid
+      </label>
       <button id="openFile">Open File</button>
       <button id="openFolder">Open Folder</button>
       <button id="saveFile">Save File</button>
       <button id="fileSaveAs">Save File As</button>
       <button id="reload">Reload Editor</button>
-      <label>
-        <input type="checkbox" name="loadIfValid" id="loadIfValid" checked>
-        Load only if valid
-      </label>
       <!-- <button id="createFile">Create File</button>
       <button id="createFolder">Create Folder</button>
       <button id="setUpTests">Set up Test Env</button>
       <button id="runTests">Run Tests</button> -->
-      <select id="entitySelect">
+<!--       <select id="entitySelect">
         <option value="author">Authors</option>
         <option value="citation">Citations</option>
         <option value="interaction" selected>Interactions</option>
@@ -46,12 +47,11 @@
         <option value="interactionSet">Interactions</option>
       </select>
       <button id="csvSet">Parse DataSet</button>
-      <button id="intSet">Parse IntSet</button>
-      <button id="fileSet">Parse FileSet</button>
+      <button id="intSet">Parse IntSet</button> -->
     </div>
     <div class="toolbar" id="status-bar">
       <progress id="progBar" class="hidden" max="100" value="0%"></progress>
-      <div id="status-msg">Welcome to your data entry android assistant, Eco-Ed.</div>
+      <div id="status-msg"></div>
     </div>
     <div id="outer">
         <div id="left-pane" class="col">
