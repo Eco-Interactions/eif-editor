@@ -13,7 +13,7 @@ chrome.app.runtime.onLaunched.addListener(function() {
 	var height = 300;
 	var left = (screen.width/2)-(width/2);
 	var top = (screen.height/2)-(height/2);
-	chrome.app.window.create('views/main-win.html', {
+	chrome.app.window.create('views/validate.html', {
 		id: 'main-win',
     	outerBounds: { top: top, left: left, width: width, height: height }});
 });

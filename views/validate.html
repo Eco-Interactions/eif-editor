@@ -1,0 +1,40 @@
+<html><!-- webview.html is the default view file loaded by app-win.html
+            in a webview element that holds most of enso's UI  -->
+  <head>
+    <script src="../js/app-init.js"></script>
+    <script src="../grid/ag-grid.js"></script>
+    <script src="../js/file-sys.js"></script>
+    <script src="../js/csv.js"></script>
+    <script src="../js/ein-parse.js"></script>
+    <script src="../js/toolbar.js"></script>
+    <script src="../js/data-grid.js"></script>
+    <script src="../js/main-win.js"></script>
+    <link rel="stylesheet" type="text/css" href="../grid/theme-fresh.css">
+    <link rel="stylesheet" type="text/css" href="../grid/ag-grid.css">
+    <link rel="stylesheet" type="text/css" href="../css/main-win.css">
+
+    <title>Eco-Interactions Validation alpha 0.0.1</title>
+  </head>
+  <body>
+    <div class="toolbar" id="toolbar">
+      <label>
+      <button id="fileSet">Parse FileSet</button>
+    </div>
+    <div class="toolbar" id="status-bar">
+      <progress id="progBar" class="hidden" max="100" value="0%"></progress>
+      <div id="status-msg"></div>
+    </div>
+    <div id="outer">
+        <div id="right-pane" class="col">
+          <div id="grid-cntnr" class="ag-fresh">
+            <textarea id="editor"></textarea>
+          </div>
+        </div>
+    </div>
+    <div id="overlay"></div>
+    <div id="popUpDiv">
+        <div id="popUpContnt"></div>
+        <div class="popUpBtn"><button id="popupclose">Ok</button></div>
+    </div>
+  </body>
+</html>
