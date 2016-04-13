@@ -29,7 +29,8 @@
       "Bat Family": "subjFam",           //add level dict that links level to field (family, order, etc)
       "Bat Genus": "subjGenus",
       "Bat Species": "subjSpecies",        //
-      "Plant/Arthropod": "objKingdom",
+      "Object Kingdom": "objKingdom",
+      "Object Phylum": "objPhylum",
       "Object Class": "objClass",
       "Object Order": "objOrder",
       "Object Family": "objFam",

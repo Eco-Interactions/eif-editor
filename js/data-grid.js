@@ -111,9 +111,9 @@ function getIntTags(recrd) {
 	return intTags.join(', ');
 }
 function getTaxon(recrd, role) {	//			console.log("getTaxon arguments = %O", arguments);
-	var levels = { 1: "Kingdom", 2: "Class", 3: "Order", 4: "Family", 5: "Genus", 6: "Species" };
+	var levels = { 1: "Kingdom", 2: "Phylum", 3: "Class", 4: "Order", 5: "Family", 6: "Genus", 7: "Species" };
 	var taxonLvl = recrd[role].level;
-	var taxonName = taxonLvl === 6 ? recrd[role].parent.name : levels[recrd[role].level];
+	var taxonName = taxonLvl === 7 ? recrd[role].parent.name : levels[recrd[role].level];
 	taxonName += ' ' + recrd[role].name;
 	return taxonName;
 }
