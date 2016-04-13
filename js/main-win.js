@@ -18,7 +18,7 @@
         statusBar.innerText = statusStr;
       }
     };
-    initDragBar();
+    // initDragBar();
   }
 
   function setDomElementVars() {

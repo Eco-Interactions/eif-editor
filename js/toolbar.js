@@ -81,7 +81,6 @@
 
   function toolbarClickHandler(clickEvent) {
     var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
-    // ein.ui.setStatus('Button Clicked. btnId= ' + btnId);
     if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
   }
 
@@ -205,9 +204,9 @@
       ein.parse.parseFileSet(fileObjs, validMode, cb, boundSetProgress);
     }
     function isValidOnlyMode() {
-      var valChkbxElem = document.getElementById('loadIfValid');
-      return valChkbxElem.checked ? true : false;
-      //return true;
+      // var valChkbxElem = document.getElementById('loadIfValid');
+      // return valChkbxElem.checked ? true : false;
+      return true;
     }
   }/* End csvFileSetParse */
   function buildDataGridConfig(fSysIdAry, recrdsMetaData) {
