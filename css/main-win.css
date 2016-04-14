@@ -87,7 +87,7 @@ button {
 	padding-bottom: 3em;
 }
 #grid-cntnr {
-	overflow: scroll;
+	overflow: hidden;
   height: 95vh;
   width: 100vw;
 }
