@@ -334,17 +334,57 @@ These names have been replaced with shorter ones. The table below shows the colu
         function nonNullErrType(errType) {
           return valErrs[errType] !== null && valErrs[errType] !== undefined;
         }
-        function addInvalidNulls(invldNullRprt, entityName) {
+        function addInvalidNulls(invldNullRprt, entityName) {  console.log("invldNullRprt = %O", invldNullRprt);
+          var intLocRefObj = {};
           var tempNullStrAry = [];
           errors = true;
-          invalidNullsStr = divider + '\n  Fields required but left blank:\n' + divider + '\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          invalidNullsStr = divider + '\n  Fields required but left blank:\n' + divider + '\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          entityName === "location" && getIntIds();
+          invldNullRprt.recrds.forEach(function(recrd){ tempNullStrAry.push(mergeLocDataWithIntIds(recrd) + addFieldsInRecrd(recrd)); });
 
-          invldNullRprt.recrds.forEach(function(recrd){  tempNullStrAry.push(addFieldsInRecrd(recrd)); });
+          invalidNullsStrAry.push(tempNullStrAry.join('\n'));
 
-          invalidNullsStrAry.push('-- There are ' + invldNullRprt.recordCnt + ' ' + entityName + ' records with ' + unqKeyDict[invldNullRprt.unqKey] +     //For each entity with invalid nulls
-                                    ' field empty and data in other fields.\n' + 'Rows: ', tempNullStrAry.join('\n') );
-        }
-        function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+          function mergeLocDataWithIntIds(recrd) {
+            var concatLocData = concatLocFields(recrd);
+            var str = '\n-There are ' +  intLocRefObj[concatLocData].length + ' interactions that have this data set and no location description. Rows: '
+            return str + groupIntIds(intLocRefObj[concatLocData]) + '\n ';
+          }
+          function getIntIds() {
+            invldNullRprt.concatLocFields = concatLocFields();
+            invldNullRprt.intIds = invldNullRprt.concatLocFields.map(getIntIds);
+          }
+          function concatLocFields() {
+            return invldNullRprt.recrds.map(function(recrd){
+              var str = '';
+              for (var key in recrd) { if (recrd[key] !== null) { str += recrd[key] }}
+              return str;
+            });
+          }
+          function getIntIds() {
+            resultData.interaction.orgRcrdAry.forEach(getIntsForInvalidLocs);
+          }
+          function getIntsForInvalidLocs(intRcrd) {
+            intRcrd.locDesc === null && nonCollapsableData(intRcrd) && concatLocData(intRcrd);
+          }
+          function nonCollapsableData(intRcrd) {
+            var locFieldsNull = ['elev', 'elevRangeMax', 'lat', 'long'].every(function(field) { return intRcrd[field] === null; });
+
+            return !locFieldsNull;
+          }
+          function concatLocData(intRcrd) { console.log("concatLocData called")
+            var concatLocData = concatLocFields(intRcrd);
+            if (!(concatLocData in intLocRefObj)) { intLocRefObj[concatLocData] = []; }
+            intLocRefObj[concatLocData].push(intRcrd.tempId);
+          }
+          function concatLocFields(rcrd) {
+            var concatLocFields = '';
+            var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
+            locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});
+
+            return concatLocFields;
+          }
+        } /* End addInvalidNulls */
+        function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
           errors = true;
           conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
@@ -358,7 +398,10 @@ These names have been replaced with shorter ones. The table below shows the colu
             conflictObj.recrds[sharedKey].forEach(function(recrd) {
               tempConflictsStrAry.push(addFieldsInRecrd(recrd, conflictObj.unqKey));
             });
-            if ("intIds" in conflictObj) { tempConflictsStrAry.push(groupIntIds(conflictObj.intIds[sharedKey]))}
+            if ("intIds" in conflictObj) {
+              var intConflictIntro = '\n Found in ' + conflictObj.intIds[sharedKey].length + ' Interaction records at rows: ';
+              tempConflictsStrAry.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey]) + '\n');
+            }
           }
           conflictsStrAry.push(tempConflictsStrAry.join('\n'));
 
@@ -377,31 +420,34 @@ These names have been replaced with shorter ones. The table below shows the colu
               return false;
             }
           } /* End getIntIdsForRcrds */
-          function groupIntIds(intIdAry) {
-            var procSeq, lastSeqId;
-            var introStr = ' Found in ' + intIdAry.length + ' Interaction records at rows: ';
-            var idSeqAry = [];
-            intIdAry.forEach(function(id, i){
-              if (i === 0) { procSeq = lastSeqId = id; return; }
-              if (i === intIdAry.length-1) { finalSeq(id)
-              } else if (id !== intIdAry[--i] + 1) { resetSeq(id);
-              } else { lastSeqId = id; }
-            });
-            return '\n' + introStr + idSeqAry.join(', ') + '.\n';
-
-            function resetSeq(id) {
-              if (lastSeqId != procSeq) { procSeq = ++procSeq + '-' + ++lastSeqId;
-              } else { procSeq = procSeq + 1; }
-              idSeqAry.push(procSeq);
-              procSeq = lastSeqId = id;
-            }
-            function finalSeq(id) {
-              if (id != procSeq) { procSeq = ++procSeq + '-' + ++id;
-              } else { procSeq = procSeq + 1; }
-              idSeqAry.push(procSeq);
-            }
-          } /* End groupIntIds */
         } /* End addConflicts */
+        function groupIntIds(intIdAry) { //console.log("intIdAry = %O", intIdAry);
+          var procSeq, lastSeqId;
+          var idSeqAry = [];
+          intIdAry.forEach(function(id, i){    //   console.log("id = %s, i=%s", id, i)
+            if (i === 0) {
+              procSeq = lastSeqId = id;
+              if (intIdAry.length === 1) { finalSeq(id) }
+              return;
+            }
+            if (i === intIdAry.length-1) { finalSeq(id)
+            } else if (id !== intIdAry[--i] + 1) { resetSeq(id);
+            } else { lastSeqId = id; }
+          });
+          return idSeqAry.join(', ') + '.';
+
+          function resetSeq(id) {       //    console.log("resetSeq. id=%s", id)
+            if (lastSeqId != procSeq) { procSeq = ++procSeq + '-' + ++lastSeqId;
+            } else { procSeq = procSeq + 1; }
+            idSeqAry.push(procSeq);
+            procSeq = lastSeqId = id;
+          }
+          function finalSeq(id) {     //  console.log("finalSeq. id = %s, procSeq = %s", id, procSeq);
+            if (id !== procSeq) { procSeq = ++procSeq + '-' + ++id;
+            } else { procSeq = procSeq + 1; }
+            idSeqAry.push(procSeq);
+          }
+        } /* End groupIntIds */
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
           errors = true;
           var tempNullRefStrAry = [];
