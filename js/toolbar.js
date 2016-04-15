@@ -224,7 +224,7 @@
   function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
     boundSetProgress(98);
     var valResults = extractValidationResults(resultData); console.log("Validation results = %O", valResults);
-    var textRprt = generateRprt(valResults);// console.log("textRprt = %s", textRprt);
+    var textRprt = generateRprt(valResults, resultData);// console.log("textRprt = %s", textRprt);
 
     if (textRprt === false) {
       buildDataGridConfig(fSysIdAry, resultData.interaction.finalRecords)
@@ -265,7 +265,7 @@
       }
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
-  function generateRprt(valData) { console.log("buildRprt called. valData = %O", valData);
+  function generateRprt(valData, resultData) { console.log("buildRprt called. valData = %O, resultData = %O", valData, resultData);
     var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
@@ -283,28 +283,28 @@
 ---------------------------------------------------------------------------------------------------
 Some column headers in the spreadsheets are long, have spaces, or otherwise make this report more difficult to format in a way that is easy to read.
 These names have been replaced with shorter ones. The table below shows the column headers from the spreadsheets with their shortened equivalents.
-+-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
-|                                             Interaction                                             |                 Citation                 |         Author         |
-+-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
-| ----Interaction id explanation----                                                                  | Citation ID: citId                       | Short Name: shortName  |
-| Primary or Secondary interaction: (Merged with intTag)                                              | Citation Short Description: citShortDesc | Last: last             |
-| Citation Number: citId                                                                              | Full Text: fullText                      | First: first           |
-| Citation Short Description: citShortDesc                                                            | Authors: author                          | Middle: middle         |
-| Region: region                                                                                      | Year: year                               | Suffix: suffix         |
-| Location Description: locDesc                                                                       | Publication Title: pubTitle              |                        |
-| Country: country                                                                                    | Publication Type: pubType                |                        |
-| Habitat Type: habType                                                                               | Publisher: publisher                     |                        |
-| Lat.: lat                                                                                           | Issue: issue                             |                        |
-| Long.: long                                                                                         | Pages: pgs                               |                        |
-| Elev. (or Range Min): elev                                                                          |                                          |                        |
-| Elev. Range Max: elevRangeMax                                                                       |                                          |                        |
-| Interaction Type: intType                                                                           |                                          |                        |
-| Interaction Tags: intTag                                                                            |                                          |                        |
-| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon*                                       |                                          |                        |
-| Plant/Arthropod, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon* |                                          |                        |
-|                                                                                                     |                                          |                        |
-| *Only the most specific taxon for subject and object is shown.                                      |                                          |                        |
-+-----------------------------------------------------------------------------------------------------+------------------------------------------+------------------------+
++-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+|                                                    Interaction                                                    |                 Citation                 |        Author         |
++-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
+| ----Interaction id explanation----                                                                                | Citation ID: citId                       | Short Name: shortName |
+| Primary or Secondary interaction: (Merged with intTag)                                                            | Citation Short Description: citShortDesc | Last: last            |
+| Citation Number: citId                                                                                            | Full Text: fullText                      | First: first          |
+| Citation Short Description: citShortDesc                                                                          | Authors: author                          | Middle: middle        |
+| Region: region                                                                                                    | Year: year                               | Suffix: suffix        |
+| Location Description: locDesc                                                                                     | Publication Title: pubTitle              |                       |
+| Country: country                                                                                                  | Publication Type: pubType                |                       |
+| Habitat Type: habType                                                                                             | Publisher: publisher                     |                       |
+| Lat.: lat                                                                                                         | Issue: issue                             |                       |
+| Long.: long                                                                                                       | Pages: pgs                               |                       |
+| Elev. (or Range Min): elev                                                                                        |                                          |                       |
+| Elev. Range Max: elevRangeMax                                                                                     |                                          |                       |
+| Interaction Type: intType                                                                                         |                                          |                       |
+| Interaction Tags: intTag                                                                                          |                                          |                       |
+| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon*                                                     |                                          |                       |
+| Object Kingdom, Object Phylum, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon* |                                          |                       |
+|                                                                                                                   |                                          |                       |
+| *Only the most specific taxon for subject and object is shown.                                                    |                                          |                       |
++-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
 ===================================================================================================
                                 Data Validation Errors
 ===================================================================================================`;
@@ -320,11 +320,12 @@ These names have been replaced with shorter ones. The table below shows the colu
       invalidNullsStr += invalidNullsStrAry.join('\n');
       conflictsStr += conflictsStrAry.join('\n');
       nullRefStr += nullRefStrAry.join('\n');
-      rprtStr = [introStr, invalidNullsStr, conflictsStr, nullRefStr].join('\n');
+      rprtStr = [introStr, nullRefStr, invalidNullsStr, conflictsStr].join('\n');
 
       return rprtStr;
 
       function buildRprtStrngs(valErrs, entityName) {
+        var unqKeyDict = { shortName: "Short Name", locDesc: "Location Description" };
         if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
         if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
         if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
@@ -335,30 +336,75 @@ These names have been replaced with shorter ones. The table below shows the colu
         function addInvalidNulls(invldNullRprt, entityName) {
           var tempNullStrAry = [];
           errors = true;
-          invalidNullsStr = divider + '\nRecords with no data in a required field:\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          invalidNullsStr = divider + '\n  Fields required but left blank:\n' + divider + '\n\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
           invldNullRprt.recrds.forEach(function(recrd){  tempNullStrAry.push(addFieldsInRecrd(recrd)); });
 
-          invalidNullsStrAry.push('-- There are ' + invldNullRprt.recordCnt + ' ' + entityName + ' records with data and with ' +     //For each entity with invalid nulls
-                                     invldNullRprt.unqKey + ' field empty:\n', tempNullStrAry.join('\n') );
+          invalidNullsStrAry.push('-- There are ' + invldNullRprt.recordCnt + ' ' + entityName + ' records with ' + unqKeyDict[invldNullRprt.unqKey] +     //For each entity with invalid nulls
+                                    ' field empty and data in other fields.\n' + 'Rows: ', tempNullStrAry.join('\n') );
         }
-        function addConflicts(conflictObj, entityName) { //console.log("conflictObj = ", conflictObj);
-          errors = true;
+        function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
-          conflictsStr = '\n' + divider + '\nRecords that share unique key values and have conflicting data in other fields:\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records to address:');
-          for (var unqKey in conflictObj.recrds) {
-            tempConflictsStrAry.push('\n' + conflictObj.unqKey + ': ' + unqKey);
-            conflictObj.recrds[unqKey].forEach(function(recrd) {
+          errors = true;
+          conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+
+          entityName === "location" && getIntIdsForRcrds();
+
+          conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.');
+
+          for (var sharedKey in conflictObj.recrds) {
+            tempConflictsStrAry.push('\n-' + sharedKey + '\n');
+            conflictObj.recrds[sharedKey].forEach(function(recrd) {
               tempConflictsStrAry.push(addFieldsInRecrd(recrd, conflictObj.unqKey));
             });
+            if ("intIds" in conflictObj) { tempConflictsStrAry.push(groupIntIds(conflictObj.intIds[sharedKey]))}
           }
           conflictsStrAry.push(tempConflictsStrAry.join('\n'));
-        }
+
+          function getIntIdsForRcrds() {
+            conflictObj.intIds = {};
+            for (var unqKey in conflictObj.recrds) {
+              conflictObj.intIds[unqKey] = [];
+              for (var rcrdKey in valData.interaction.cleanRecrds) {
+                var keyInRcrd = getIntIds(unqKey, valData.interaction.cleanRecrds[rcrdKey][0])
+                if (keyInRcrd) { conflictObj.intIds[unqKey].push(keyInRcrd); }
+              }
+            }
+
+            function getIntIds(unqKey, rcrd) { //console.log("rcrd = %O", rcrd)
+              if (rcrd.location !== null && unqKey === rcrd.location.locDesc) { return rcrd.tempId; }
+              return false;
+            }
+          } /* End getIntIdsForRcrds */
+          function groupIntIds(intIdAry) {
+            var procSeq, lastSeqId;
+            var introStr = ' Found in ' + intIdAry.length + ' Interaction records at rows: ';
+            var idSeqAry = [];
+            intIdAry.forEach(function(id, i){
+              if (i === 0) { procSeq = lastSeqId = id; return; }
+              if (i === intIdAry.length-1) { finalSeq(id)
+              } else if (id !== intIdAry[--i] + 1) { resetSeq(id);
+              } else { lastSeqId = id; }
+            });
+            return '\n' + introStr + idSeqAry.join(', ') + '.\n';
+
+            function resetSeq(id) {
+              if (lastSeqId != procSeq) { procSeq = ++procSeq + '-' + ++lastSeqId;
+              } else { procSeq = procSeq + 1; }
+              idSeqAry.push(procSeq);
+              procSeq = lastSeqId = id;
+            }
+            function finalSeq(id) {
+              if (id != procSeq) { procSeq = ++procSeq + '-' + ++id;
+              } else { procSeq = procSeq + 1; }
+              idSeqAry.push(procSeq);
+            }
+          } /* End groupIntIds */
+        } /* End addConflicts */
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. arguments = %O", arguments)
           errors = true;
           var tempNullRefStrAry = [];
-          nullRefStr = '\n' + divider + '\nRecords with references to non-existent, required entity records:\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
           entityName === "taxon" && processTaxonNulLRefs(nullRefResults);
           for (var entity in nullRefResults) {
               entity === "author" && processAuthorNullRefs(nullRefResults[entity]);
@@ -389,7 +435,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           function buildCitRefRprtStr(citRefs) { //console.log("buildCitRefRprtStr arguments = %O", arguments)
             var strAry = [];
             for ( var citId in citRefs ) {
-              strAry.push('--There are ' + citRefs[citId].length + ' Interaction records referencing missing Citation ' + citId + ': ' + citRefs[citId].join(', ') + '.');
+              strAry.push('--Citation ' + citId + ' does not exist in the imported citation data and is referenced by ' + citRefs[citId].length + ' Interaction records on rows ' + citRefs[citId].join(', ') + '.');
             }
             return strAry.join('\n');
           }
@@ -414,9 +460,12 @@ These names have been replaced with shorter ones. The table below shows the colu
               }
             }
             function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {           //    console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
-              var strAry = ['\n--Missing Author short name references in ' + citRecCnt + ' Citation records:\n'];
+              var strAry = ['\n--There are ' + citRecCnt + ' Citation records which reference Author short names not found in the Author data.\n',
+                            '  Short Name             |  Citation IDs ', '---------------------------------------------'];
+              var padding = '                       '; //23
+
               for (var auth in tempAuthRefObj) {
-                strAry.push(auth + ' -referenced in Citation record: ' + tempAuthRefObj[auth].join(', ') + '.');
+                strAry.push('  ' + pad(padding, auth) + '|  ' + pad (padding, tempAuthRefObj[auth].join(', ')));
               }
               return strAry.join('\n');
             }
@@ -587,6 +636,14 @@ These names have been replaced with shorter ones. The table below shows the colu
     chrome.app.window.create('jasmine/SpecRunner.html', {
       id: 'spec-win',
       outerBounds: { top: top, left: left, width: width, height: height }});
+  }
+/*-----------------------Misc Helpers---------------------------------*/
+  function pad (pad, str, padLeft) {
+    if (padLeft) {
+      return (pad + str).slice(-pad.length);
+    } else {
+      return (str + pad).substring(0, pad.length);
+    }
   }
 /* =================== Build Params Packages ======================= */
 
