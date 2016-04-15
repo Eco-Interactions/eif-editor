@@ -85,9 +85,9 @@
 	 */
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback, validMode) { // console.log("entityParams[entity] = %O", entityParams[entity]);
 		entityObj = JSON.parse(JSON.stringify(entityParams[entity]));
-		// entityObj = Object.assign({}, entityParams[entity]);  //console.log("entity = %s, entityObj = %O", entity, entityObj);
 		entityObj.parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
 		entityObj.fSyId = fSysId;			//	console.log("entity = %s, entityObj = %O", entity, entityObj);
+		entityObj.orgRcrdAryObjs = recrdsAry;
 		parseChain = entityObj.parseMethods;
 
 		recurParseMethods(recrdsAry, entity);
@@ -115,11 +115,12 @@
 			cleanUpReturnResults(recrds);
 		}
 	}
-	function cleanUpReturnResults(recrdsObj) {
+	function cleanUpReturnResults(recrdsObj) {   //console.log("entityObj = %O", entityObj)
 		entityObj.valResults = {
 			name: entityObj.name,
 			finalRecords: recrdsObj,
-			valRpt : entityObj.validationResults
+			valRpt : entityObj.validationResults,
+			orgRcrdAry: entityObj.orgRcrdAryObjs
 		};
 		if ("taxaObjs" in entityObj) {
 			entityObj.valResults.taxon = {
@@ -691,7 +692,9 @@
 				ifKeyValueIsNotNullFindKey(parentKey);
 
 				function ifKeyValueIsNotNullFindKey(parentKey) {
-					if (unqKeyValToReplace === null) { parentEntityRecrd[childName] = null;
+					if (unqKeyValToReplace === null) {
+						parentEntityRecrd[childName] = null;
+						delete parentEntityRecrd[refKey];
 					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey, refKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
 				}
 			} /* End processSingleChildEntity */
