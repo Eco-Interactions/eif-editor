@@ -47,25 +47,28 @@ Flesh out file set validation
 
 
 TODO:
-	build location ref array with all loc fields concat together as keys with all int recrds in array inside 
-		only rows with no loc desc and other data (more than can auto generate desc)
+	popup box shadow
+	There are 170 Interaction records with references to the above 19 Citation records.
 
-	update reference table
-
-	make data set exercising all types of validation error reporting
-
-	"Citation 24 does not exist in the imported citation data and is referenced by 2 interaction records on rows #, #."
+	-There are 10 interactions that have this location data and no location description. Rows: 4326-4329, 4400-4405.
 
 
-	"Rows referenced but not found" (move null refs to top of report)
-		There are # citation records which reference author short names not found in the author data 
-			shortname  | id
-	"Fields required but left blank"
-		~There are ## interaction records with locdesc field empty amd data in other loc fields 
-		## 17 interactions have this data set and no loc desc || if only affects single record add row in front
-	"Conflicting data"
-		There are 2 author records with the same short name and conflicting data in other fields.
-		"" locdesc:
+
+
+
+locDesc: Parque Nacional Santa Rosa
+              elev: 0,  elevRangeMax: 319,  lat: 10.857584,  long: -85.735352,  country: Costa Rica,  habType: Forest
+              elev: 0,  elevRangeMax: 319,  lat: 10.8379308,  long: -85.7051116,  region: Central America,  country: Costa Rica,  habType: Forest
+
+Found in 221 Interaction records at rows: 116-141, 1234-1362, 1366, 1368, 1370-1372, 1376-1380, 1388-1422, 2825-2840, 3145-3147, 3151-3178.
+-----------------------------------------
+
+
+
+
+
+
+
 
 	--Just before giving tulen their copy--
 		With fresh data, double check each row is the row it should be from the spreadsheets,
