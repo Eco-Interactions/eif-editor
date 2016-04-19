@@ -9,7 +9,7 @@
 			name: 'author',
 			subEntityCollection: true,
 			unqKey: ['shortName'],
-			parseMethods: [deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			parseMethods: [fillInIds, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
 			validationResults: {}
 		},
 		citation: {
@@ -18,6 +18,7 @@
 			subEntities: ['publication'],
 			unqKey: ['citId'],
 			splitField: 'author',
+			reqRef: 'author', //required reference
 			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
 			parseMethods: [extractCols, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationResults: {},
@@ -30,7 +31,7 @@
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objPhylum', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [autoFillLocDesc, fillIntIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, buildAndMergeTaxonObjs],
+			parseMethods: [autoFillLocDesc, fillInIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, checkCitId, buildAndMergeTaxonObjs],
 			validationResults: {},
 			taxaRcrdObjsAry: {}
 		},
@@ -360,8 +361,8 @@
 		 */
 		function addNullRecsMetaData() {
 			isEmpty(rcrdsWithNullUnqField) ?
-				entityObj.validationResults.rcrdsWithNullUnqKeyField = null :
-				entityObj.validationResults.rcrdsWithNullUnqKeyField = {
+				entityObj.validationResults.rcrdsWithNullReqFields = null :
+				entityObj.validationResults.rcrdsWithNullReqFields = {
 					recordCnt: rcrdsWithNullUnqField.length,
 					recrds: rcrdsWithNullUnqField,
 					unqKey: entityObj.unqKey
@@ -520,10 +521,10 @@
 	 * @param  {string}  entity   The entity currently being parsed
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
-	function hasConflicts(recrdsObj, entity, callback) { 																   // console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
+	function hasConflicts(recrdsObj, entity, callback) { 						//console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
 		var processed, conflictedAry;
 		var conflicted = false;
-		var conflictedRecrds = checkEachRcrdAry();					//	console.log("conflicts = %O", conflictedRecrds);
+		var conflictedRecrds = checkEachRcrdAry();				//console.log("%s conflicts = %O", entity, conflictedRecrds);
 		addConflictMetaData();
 
 		callback(recrdsObj, entity);
@@ -668,13 +669,13 @@
 
 			processParentEntity();
 
-			function processParentEntity() { //console.log("parentRcrds = %O", parentRcrds);
+			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
 				for (var key in  parentRcrds) {
 					parentEntityRecrd = parentRcrds[key][0];
 					processMethod(parentEntityRecrd, key); }
 			}
 			function processChildCollection(parentEntityRecrd, parentKey) { 													// console.log("isCollection")
-				var childrenToReplace = parentEntityRecrd[childName]; 									//	 console.log("childrenToReplace= %O ",childrenToReplace);
+				var childrenToReplace = parentEntityRecrd[childName]; 										// console.log("childrenToReplace= %O ",childrenToReplace);
 				rcrdsAry = [];
 				forEachChildInCollection(parentKey);
 				replaceWithPointer(rcrdsAry, parentKey);
@@ -858,7 +859,7 @@
 		}
 	}/* End autoFillLocDesc */
 /* -----Interaction Helpers--------------------------------------------------------------- */
-  function fillIntIds(recrdsAry, entity, callback) {
+  function fillInIds(recrdsAry, entity, callback) {
 		var newRcrdAry = attachTempIds(recrdsAry);
 		callback(newRcrdAry, entity);
 	}
@@ -896,7 +897,7 @@
 		var taxaRcrds = [];
 		var intRefIdx = [];
 		entityObj.taxon = {};
-		entityObj.taxon.valRpt = { nullRefResults: {} };
+		entityObj.taxon.valRpt = { rcrdsWithNullReqFields: {} };
 
 		forEachRecrd();		//	console.log("taxaRcrds = %O", taxaRcrds);
 		storeTaxaData(taxaRcrds);
@@ -946,14 +947,14 @@
 		}
 		function rprtNullTaxa(subjTaxon, objTaxon, recrd, key) {
 			if (objTaxon === "") {
-				if (entityObj.taxon.valRpt.nullRefResults.obj === undefined) {entityObj.taxon.valRpt.nullRefResults.obj = [];}
-				entityObj.taxon.valRpt.nullRefResults.obj.push(recrd); // console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
+				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj = [];}
+				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd); // console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
 				delete recrdsObj[key];	//			console.log("recrdsObj[key] = %O", recrdsObj[key]);
 				return true;
 			}
 			if (subjTaxon === "") {
-				if (entityObj.taxon.valRpt.nullRefResults.subj === undefined) {entityObj.taxon.valRpt.nullRefResults.subj = [];}
-				entityObj.taxon.valRpt.nullRefResults.subj.push(recrd);
+				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj = [];}
+				entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj.push(recrd);
 				delete recrdsObj[key];
 				return true;
 			}
@@ -1170,7 +1171,21 @@
 			recrdsObj[key][0].objTaxon = taxaTree[recrdsObj[key][0].objTaxon];
 		}
 	}
+	function checkCitId(recrdsObj, entity, callback) { //console.log("checkCitId called. arguments = %O", arguments);
+		var nullCitRcrds = [];
+		for (var key in recrdsObj) {
+			if (recrdsObj[key][0].citId === null) { nullCitRcrds.push(recrdsObj[key][0]); }
+		}
+		nullCitRcrds.forEach(function(rcrd){ delete recrdsObj[rcrd.tempId] });
+		// if (entityObj.validationResults.rcrdsWithNullReqFields !== undefined) {  }
+		entityObj.validationResults.rcrdsWithNullReqFields = {
+			recordCnt: nullCitRcrds.length,
+			recrds: nullCitRcrds,
+			unqKey: ["citId"]
+		};
 
+		callback(recrdsObj, entity)
+	}
 /*--------------General Helper Methods---------------------------------------------------- */
 	/**
 	 * Attach temporary Ids incrementally to record objects so extracted data can be linked to the original record.
@@ -1193,9 +1208,13 @@
 	 * @callback     Recieves an array of record objects with any exact duplicates removed.
 	 */
 	function splitFieldIntoAry(recrdsObj, entity, callback) {
+		var nullRefAry = [];
 		var splitField = entityObj.splitField;
 		var newRecrdObj = {};
-		forEachRecAry(); // console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
+		forEachRecAry();  console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
+
+		if (nullRefAry.length > 0) { addNullReqRefs(); }
+
 		callback(newRecrdObj, entity);
 		/**
 		 * Loops through each top key in the record object and calls {@link splitFields }
@@ -1213,7 +1232,7 @@
 		 */
 		function splitFields(key) {			//	console.log("splitFields called. recrdsObj[key] = %O", recrdsObj[key])
 			var newRecrds = recrdsObj[key].map(function(recrd) {
-				recrd[splitField] = recrd[splitField] === null ? [] : splitAndTrimField(recrd);
+				recrd[splitField] = recrd[splitField] === null ? procNullField(recrd, key) : splitAndTrimField(recrd);
 				return recrd;
 			});
 			return newRecrds;
@@ -1224,6 +1243,22 @@
 				return valueStr.trim();
 			});
 			return trimmedAry;
+		}
+		function procNullField(recrd, key) {
+			if (entityObj.reqRef !== undefined) {
+				nullRefAry.push(recrd);
+				return null;
+			} else {
+				return [];
+			}
+		}
+		function addNullReqRefs() { //console.log("addNullReqRefs. nullRefAry = %O", nullRefAry);
+			nullRefAry.forEach(function(rcrd) { delete newRecrdObj[rcrd.citId] });
+			entityObj.validationResults.rcrdsWithNullReqFields = {
+				recordCnt: nullRefAry.length,
+				recrds: nullRefAry,
+				unqKey: entityObj.reqRef
+			}
 		}
 	} /* End splitFieldIntoAry */
 	/**

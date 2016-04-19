@@ -1,23 +1,30 @@
+	make data set exercising all types of validation error reporting
+			--Null Refs:
+				citation:
+					--authors
+				interaction:
+					--citation
 
-YEAHHHHHH!!!get restart fixed
+			Conflicts:
+				--Author:
 
-add generic pop up
-		bind for csv file errors
+				--Citation:
+					++Format cit information
+						Show truncated full text (25char + ...) with cit id
+							Include the data and phrase the formatting for other conflicting records
 
+				--Location:
 
-add col sort
-    add filters- on some
-
-
-validation focused alpha branch
-	pull out splitter, xtra buttons, chkbx
-
-After files selected
-	change cursor to wait cursor
-Progress Bar
-	with
-	func(elem, #) that updates progress bar (0-100) % in center
-			bound alias @ toolbar funcBind				progressCallback
+			invalid nulls:
+				location:
+					--locDesc
+				author:
+					shortname
+							++Now holding onto aturhor row numbers through adding tempIds.
+				interaction:
+					citation
+				Citation:
+					author
 
 
 tweak filters for each column
@@ -25,7 +32,7 @@ tweak filters for each column
 
 
 Taylor:
-	
+
 
 Flesh out file set validation
 	--are there 3 csv files exactly?
@@ -48,7 +55,7 @@ Flesh out file set validation
 
 TODO:
 	popup box shadow
-	There are 170 Interaction records with references to the above 19 Citation records.
+	++There are 170 Interaction records with references to the above 19 Citation records.
 
 	-There are 10 interactions that have this location data and no location description. Rows: 4326-4329, 4400-4405.
 
@@ -73,7 +80,7 @@ Found in 221 Interaction records at rows: 116-141, 1234-1362, 1366, 1368, 1370-1
 	--Just before giving tulen their copy--
 		With fresh data, double check each row is the row it should be from the spreadsheets,
 		delete those rows from csv files.
-			they should then, with all validation errors deleted, load into grid. 
+			they should then, with all validation errors deleted, load into grid.
 				Check to make sure every row that is now in csv is also in the final grid.
 
 

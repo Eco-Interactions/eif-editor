@@ -239,7 +239,7 @@
     for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
     return valData;
 
-    function getEntityResultData(entityResultData) {//console.log("getEntityResultData metaData: %O", entityResultData);
+    function getEntityResultData(entityResultData) {    //console.log("getEntityResultData metaData: %O", entityResultData);
       var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
       valData[curEntity] = { cleanRecrds: entityResultData.finalRecords };
       if (entityResultData.valRpt !== undefined) {
@@ -248,7 +248,7 @@
       }
 
       function getValErrs() { // console.log("valErrors = ")
-        var errFields = ['rcrdsWithNullUnqKeyField', 'nullRefResults', 'shareUnqKeyWithConflictedData', 'nullTaxa'];
+        var errFields = ['rcrdsWithNullReqFields', 'nullRefResults', 'shareUnqKeyWithConflictedData'];
         var errs = {};
         errFields.forEach(function(field){
           if (entityResultData.valRpt[field] !== undefined) { errs[field] = entityResultData.valRpt[field]; }
@@ -269,6 +269,7 @@
     var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
+    var smlDivider = '-----------------------------------------';
     var rcrdsRmvdWithNullRefs = {};
     var conflictsStrAry = [];
     var nullRefStrAry = [];
@@ -325,65 +326,102 @@ These names have been replaced with shorter ones. The table below shows the colu
       return rprtStr;
 
       function buildRprtStrngs(valErrs, entityName) {
-        var unqKeyDict = { shortName: "Short Name", locDesc: "Location Description" };
-        if (nonNullErrType("rcrdsWithNullUnqKeyField")) { addInvalidNulls(valErrs.rcrdsWithNullUnqKeyField, entityName) }
+        var unqKeyDict = { shortName: "Short Name", locDesc: "Location Description" , citId: "Citation Id" };
+        if (nonNullErrType("rcrdsWithNullReqFields")) { addInvalidNulls(valErrs.rcrdsWithNullReqFields, entityName) }
         if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
         if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
 
         function nonNullErrType(errType) {
           return valErrs[errType] !== null && valErrs[errType] !== undefined;
         }
-        function addInvalidNulls(invldNullRprt, entityName) {  console.log("invldNullRprt = %O", invldNullRprt);
-          var intLocRefObj = {};
+        function addInvalidNulls(invldNullRprt, entityName) {  console.log("%s invldNullRprt = %O",entityName, invldNullRprt);
           var tempNullStrAry = [];
           errors = true;
           invalidNullsStr = divider + '\n  Fields required but left blank:\n' + divider + '\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          entityName === "location" && getIntIds();
-          invldNullRprt.recrds.forEach(function(recrd){ tempNullStrAry.push(mergeLocDataWithIntIds(recrd) + addFieldsInRecrd(recrd)); });
+          entityName === "location" && getLocNullRprt();
+          entityName === "author" && getAuthNullRprt();
+          entityName === "interaction" && getIntNullRprt();
+          entityName === "citation" && getCitNullRprt();
+          entityName === "taxon" && processTaxonNulLRprt();
 
           invalidNullsStrAry.push(tempNullStrAry.join('\n'));
 
-          function mergeLocDataWithIntIds(recrd) {
-            var concatLocData = concatLocFields(recrd);
-            var str = '\n-There are ' +  intLocRefObj[concatLocData].length + ' interactions that have this data set and no location description. Rows: '
-            return str + groupIntIds(intLocRefObj[concatLocData]) + '\n ';
+          function getCitNullRprt() {
+            var tempIdAry = [];
+            invldNullRprt.recrds.forEach(function(recrd){ tempIdAry.push(recrd.citId); });
+
+            tempNullStrAry.push('\n--Author missing for citations on rows: ' + tempIdAry.join(', ') + '.\n\n' + smlDivider);
           }
-          function getIntIds() {
-            invldNullRprt.concatLocFields = concatLocFields();
-            invldNullRprt.intIds = invldNullRprt.concatLocFields.map(getIntIds);
+          function processTaxonNulLRprt() { //console.log("processTaxonNulLRprt called. invldNullRprt = %O", taxonNullRefs)
+            var taxonStrAry = [];
+            for (var role in invldNullRprt) {
+                var recrdCnt = invldNullRprt[role].length;
+                var intIds = invldNullRprt[role].map(function(recrd){ return recrd.tempId });
+                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + role + 'ect taxon: ' + intIds.join(', ') + '.')
+            }
+            tempNullStrAry.push('\n' + smlDivider + '\n\n' + taxonStrAry.join('\n'));
           }
-          function concatLocFields() {
-            return invldNullRprt.recrds.map(function(recrd){
-              var str = '';
-              for (var key in recrd) { if (recrd[key] !== null) { str += recrd[key] }}
-              return str;
+          function getAuthNullRprt() {
+            tempNullStrAry.push('\n--Author Short Name missing for the following records: \n');
+            invldNullRprt.recrds.forEach(function(recrd){
+              tempNullStrAry.push('  On row ' + recrd.tempId + ': ' + addFieldsInRecrd(recrd, "tempId"));
             });
+            tempNullStrAry.push('\n' + smlDivider);
           }
-          function getIntIds() {
-            resultData.interaction.orgRcrdAry.forEach(getIntsForInvalidLocs);
+          function getIntNullRprt() {
+            var nullIds = [];
+            invldNullRprt.recrds.forEach(function(recrd){ nullIds.push(recrd.tempId); });
+            tempNullStrAry.push('\n--Citation ID missing for interaction records on rows: ' + nullIds.join(', ') + '.\n\n' + smlDivider);
           }
-          function getIntsForInvalidLocs(intRcrd) {
-            intRcrd.locDesc === null && nonCollapsableData(intRcrd) && concatLocData(intRcrd);
-          }
-          function nonCollapsableData(intRcrd) {
-            var locFieldsNull = ['elev', 'elevRangeMax', 'lat', 'long'].every(function(field) { return intRcrd[field] === null; });
+          function getLocNullRprt() {
+            var intLocRefObj = {};
+            getIntIds();
+            invldNullRprt.recrds.forEach(function(recrd){
+              tempNullStrAry.push(mergeLocDataWithIntIds(recrd) + addFieldsInRecrd(recrd));
+            });
 
-            return !locFieldsNull;
-          }
-          function concatLocData(intRcrd) { console.log("concatLocData called")
-            var concatLocData = concatLocFields(intRcrd);
-            if (!(concatLocData in intLocRefObj)) { intLocRefObj[concatLocData] = []; }
-            intLocRefObj[concatLocData].push(intRcrd.tempId);
-          }
-          function concatLocFields(rcrd) {
-            var concatLocFields = '';
-            var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
-            locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});
+          function mergeLocDataWithIntIds(recrd) {
+              var concatLocData = concatLocFields(recrd);
+              var str = '\n-There are ' +  intLocRefObj[concatLocData].length + ' interactions that have this location data and no location description. Rows: '
+              return str + groupIntIds(intLocRefObj[concatLocData]) + '\n ';
+            }
+            function getIntIds() {
+              invldNullRprt.concatLocFields = concatLocFields();
+              invldNullRprt.intIds = invldNullRprt.concatLocFields.map(getIntIds);
+            }
+            function concatLocFields() {
+              return invldNullRprt.recrds.map(function(recrd){
+                var str = '';
+                for (var key in recrd) { if (recrd[key] !== null) { str += recrd[key] }}
+                return str;
+              });
+            }
+            function getIntIds() {
+              resultData.interaction.orgRcrdAry.forEach(getIntsForInvalidLocs);
+            }
+            function getIntsForInvalidLocs(intRcrd) {
+              intRcrd.locDesc === null && nonCollapsableData(intRcrd) && concatLocData(intRcrd);
+            }
+            function nonCollapsableData(intRcrd) {
+              var locFieldsNull = ['elev', 'elevRangeMax', 'lat', 'long'].every(function(field) { return intRcrd[field] === null; });
 
-            return concatLocFields;
-          }
+              return !locFieldsNull;
+            }
+            function concatLocData(intRcrd) { console.log("concatLocData called")
+              var concatLocData = concatLocFields(intRcrd);
+              if (!(concatLocData in intLocRefObj)) { intLocRefObj[concatLocData] = []; }
+              intLocRefObj[concatLocData].push(intRcrd.tempId);
+            }
+            function concatLocFields(rcrd) {
+              var concatLocFields = '';
+              var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
+              locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});
+
+              return concatLocFields;
+            }
+          } /* End getLocNullRprt */
         } /* End addInvalidNulls */
-        function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+        function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
           errors = true;
           conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
@@ -393,16 +431,19 @@ These names have been replaced with shorter ones. The table below shows the colu
           conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.');
 
           for (var sharedKey in conflictObj.recrds) {
-            tempConflictsStrAry.push('\n-' + sharedKey + '\n');
+            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey);
             conflictObj.recrds[sharedKey].forEach(function(recrd) {
-              tempConflictsStrAry.push(addFieldsInRecrd(recrd, conflictObj.unqKey));
+              entityName === "location" && tempConflictsStrAry.push('             ' + addFieldsInRecrd(recrd, conflictObj.unqKey));
+              entityName === "citation" && tempConflictsStrAry.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey));
+              entityName === "author" && tempConflictsStrAry.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey));
             });
             if ("intIds" in conflictObj) {
               var intConflictIntro = '\n Found in ' + conflictObj.intIds[sharedKey].length + ' Interaction records at rows: ';
-              tempConflictsStrAry.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey]) + '\n');
+              tempConflictsStrAry.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey]));
             }
+            tempConflictsStrAry.push(smlDivider);
           }
-          conflictsStrAry.push(tempConflictsStrAry.join('\n'));
+          conflictsStrAry.push(tempConflictsStrAry.join('\n') + divider );
 
           function getIntIdsForRcrds() {
             conflictObj.intIds = {};
@@ -451,7 +492,6 @@ These names have been replaced with shorter ones. The table below shows the colu
           errors = true;
           var tempNullRefStrAry = [];
           nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          entityName === "taxon" && processTaxonNulLRefs(nullRefResults);
           for (var entity in nullRefResults) {
               entity === "author" && processAuthorNullRefs(nullRefResults[entity]);
               entity === "citation" && processCitNullRefs(nullRefResults, nullRefResults[entity]);
@@ -466,7 +506,7 @@ These names have been replaced with shorter ones. The table below shows the colu
             for (var key in citNullRefs) {
               if(citNullRefs[key][0] !== undefined) { processCitRef(); }
             }
-            if (citRcrdsRmvdWithNullRefs) {returnStrAry.push('--There are ' + citRefsToRmvdRcrds + ' Interaction records with references to ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors.\n');}
+            if (citRcrdsRmvdWithNullRefs) {returnStrAry.push('  There are ' + citRefsToRmvdRcrds + ' Interaction records with references to the above ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors.\n');}
             returnStrAry.push(buildCitRefRprtStr(citRefs));
             tempNullRefStrAry.push(returnStrAry.join('\n'));
 
@@ -483,7 +523,7 @@ These names have been replaced with shorter ones. The table below shows the colu
             for ( var citId in citRefs ) {
               strAry.push('--Citation ' + citId + ' does not exist in the imported citation data and is referenced by ' + citRefs[citId].length + ' Interaction records on rows ' + citRefs[citId].join(', ') + '.');
             }
-            return strAry.join('\n');
+            return '\n' + strAry.join('\n') + '\n';
           }
           function processAuthorNullRefs(authorNullRefs) {        //        console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
             var tempAuthRefObj = {};
@@ -496,7 +536,7 @@ These names have been replaced with shorter ones. The table below shows the colu
                 processAuth();
               }
             }
-            authStrAry.push(buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length), '\n');
+            authStrAry.push(buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length) + '\n');
             tempNullRefStrAry.push(authStrAry.join('\n'));
 
             function processAuth() {
@@ -516,23 +556,24 @@ These names have been replaced with shorter ones. The table below shows the colu
               return strAry.join('\n');
             }
           } /* End processAuthorNullRefs */
-          function processTaxonNulLRefs(taxonNullRefs) { //console.log("processTaxonNulLRefs called. taxonNullRefs = %O", taxonNullRefs)
-            var taxonStrAry = [];
-            for (var role in taxonNullRefs) {
-                var recrdCnt = taxonNullRefs[role].length;
-                var intIds = taxonNullRefs[role].map(function(recrd){ return recrd.tempId });
-                taxonStrAry.push('\n--There are ' + recrdCnt + ' interaction records missing ' + role + 'ect taxon: ' + intIds.join(', ') + '.')
-            }
-            tempNullRefStrAry.push(taxonStrAry.join('\n'));
-          }
         } /* End addNullRefs */
-        function addFieldsInRecrd(recrd, unqKey, skipKeyAry) {// console.log("addFieldsInRecrd. arguments = %O", arguments);
+        function processAuthFields(authRcrdsAry) { console.log("processAuthFields. arguments = %O", arguments);
+          var authStr = '';
+          authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
+            authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
+          });                                                                   //console.log("authStr = ", authStr);
+          return authStr;
+        }
+        function addFieldsInRecrd(recrd, unqKey, skipKeyAry) { //console.log("addFieldsInRecrd. arguments = %O", arguments);
           var skipKeyAry = skipKeyAry || [];
           var tempStrAry = [];
           for (var field in recrd) {// console.log("field = %s, recrd = %O", field, recrd)
             if (skipKeyAry.indexOf(field) > -1) { continue } //console.log("field = ", field);
             if (field === unqKey || recrd[field] === null || recrd[field] === undefined) { continue }
-            if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {  tempStrAry.push(' ' + field + ': ' + recrd[field]);
+            if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {
+              if (field === "fullText") { tempStrAry.push(' ' + field + ': ' + recrd[field].slice(0, 25) + '...'); continue; }
+              tempStrAry.push(' ' + field + ': ' + recrd[field]);
+            } else if (field === "author") { tempStrAry.push('Author (shortName): ' + recrd[field][0]);
             } else { tempStrAry.push(addFieldsInRecrd(recrd[field])); }
           }
           return tempStrAry.join(', ');
