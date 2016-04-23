@@ -76,7 +76,6 @@
       popup.firstElementChild.innerHTML = contnt;
       clearProgStatus();
   }
-
   /* ============================================================== */
   /* === Toolbar Command functions ================================ */
   /* ============================================================== */
@@ -108,6 +107,12 @@
 
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
+  }
+/*--------------------Helper Methods--------------------------------------------------------*/
+  function isValidOnlyMode() {
+    var valChkbxElem = document.getElementById('loadIfValid');
+    return valChkbxElem.checked ? true : false;
+    // return true;
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -198,17 +203,13 @@
       openFiles();
     }
     function parseAllRecrdObjs(curProg) {      //   console.log("parseAllRecrdObjs curProg= ", curProg);
+      var validMode = isValidOnlyMode();
+      var cb = validMode === true ? displayValidationResults : buildDataGridConfig;
+
       curProg = curProg + 3;        //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
-      var cb = buildDataGridConfig;
-      var validMode = isValidOnlyMode();
-      if (validMode === true) { cb = displayValidationResults; }
+
       ein.parse.parseFileSet(fileObjs, validMode, cb, boundSetProgress);
-    }
-    function isValidOnlyMode() {
-      var valChkbxElem = document.getElementById('loadIfValid');
-      return valChkbxElem.checked ? true : false;
-      // return true;
     }
   }/* End csvFileSetParse */
   function buildDataGridConfig(fSysIdAry, recrdsMetaData) {
@@ -223,7 +224,7 @@
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
   }
-  function displayValidationResults(fSysIdAry, resultData) {  // console.log("displayValidationResults called. resultData = %O", resultData);
+  function displayValidationResults(fSysIdAry, resultData) {   console.log("displayValidationResults called. arguemnts = %O", arguments);
     boundSetProgress(98);
     var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
     var textRprt = generateRprt(valResults, resultData);// console.log("textRprt = %s", textRprt);
@@ -608,6 +609,15 @@ These names have been replaced with shorter ones. The table below shows the colu
       } /* End buildRprtStr */
     } /* End buildRprt */
   } /* End generateRprt */
+  /*---------- Used by many ----------------*/
+  function singleEntityValDisplay(fSysIdAry, resultData) {//  console.log("entityFileValDisplay called. arguments = %O", arguments)
+    var displayObj = {};
+    displayObj[resultData.name] = resultData;
+    displayValidationResults(fSysIdAry, displayObj);
+  }
+  function entityFileValDisplay(fSysIdAry, resultData) { console.log("entityFileValDisplay called. arguments = %O", arguments)
+    entityCsvParseVals[resultData.name];
+  }
 /*----------Select entity to parse-------------- */
   function selectCSVEntityParse() {
     var entity = document.getElementById('entitySelect').value;
@@ -619,12 +629,13 @@ These names have been replaced with shorter ones. The table below shows the colu
       ein.csvHlpr.csvToObject(fSysId, text, validateEntity, dataSet);
     }
     function validateEntity(fSysId, recrdsAry) {
-      ein.parse.parseChain(fSysId, recrdsAry, entity);
+      var cb = isValidOnlyMode() ? singleEntityValDisplay : ein.ui.show;
+      ein.parse.parseChain(fSysId, recrdsAry, entity, cb);
     }
   }
 /*----------Select interaction file to parse-------------- */
   function intCSVParse() {
-    var entitiesInFile = entityCsvParseVals["intSet"];
+    var entitiesInFile = entityCsvParseVals["interaction"];
                                    /* params,      idHandler,            objHandler,          fileTxtHandler */
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
 
@@ -632,7 +643,9 @@ These names have been replaced with shorter ones. The table below shows the colu
       ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
     }
     function validateEntity(fSysId, recrdsAry) {
-      ein.parse.parseChain(fSysId, recrdsAry, "interaction");
+      var validMode = isValidOnlyMode();
+      var cb = isValidOnlyMode() ? entitySetValDisplay : ein.ui.show;
+      ein.parse.parseChain(fSysId, recrdsAry, "interaction", cb, validMode);
     }
   }
 /*----------Select Data Set to parse-------------- */
