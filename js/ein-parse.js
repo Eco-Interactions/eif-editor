@@ -123,10 +123,10 @@
 			valRpt : entityObj.validationResults,
 			orgRcrdAry: entityObj.orgRcrdAryObjs
 		};
-		if ("taxaObjs" in entityObj) {
+		if ("taxaObjs" in entityObj) {  console.log("taxa data being stored = %O", entityObj.taxon.valRpt)
 			entityObj.valResults.taxon = {
 				taxaObjs: entityObj.taxaObjs,
-				valRpt: entityObj.taxon.valRpt
+				valRpt: entityObj.taxon.valRpt			//isEmpty(entityObj.taxon.valRpt) ? null :
 			}; // console.log("entityObj.valResults = %O", entityObj.valResults);
 		}
 	}
@@ -521,7 +521,7 @@
 	 * @param  {string}  entity   The entity currently being parsed
 	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
 	 */
-	function hasConflicts(recrdsObj, entity, callback) { 						//console.log("hasConflicts called. recrdsObj = %O",recrdsObj);
+	function hasConflicts(recrdsObj, entity, callback) { 					//	console.log("hasConflicts returned recrdsObj = %O",recrdsObj);
 		var processed, conflictedAry;
 		var conflicted = false;
 		var conflictedRecrds = checkEachRcrdAry();				//console.log("%s conflicts = %O", entity, conflictedRecrds);
@@ -538,7 +538,7 @@
 			for (var unqFieldAryKey in recrdsObj) { // console.log("conflictedAry = %O", conflictedAry);
 				processed = [], conflictedAry = [];
 				var hasConflicts = hasConflictedRcrds(recrdsObj[unqFieldAryKey], unqFieldAryKey);
-				recrdsObj[unqFieldAryKey] = removeConflictedRecrds(unqFieldAryKey);
+				hasConflicts && removeConflictedRecrds(unqFieldAryKey);
 			}
 			return isEmpty(conflictedRecrdsObj) ? null : conflictedRecrdsObj;
 			/**
@@ -546,16 +546,17 @@
 			 * with the records passed during first round processing.
 			 */
 			function removeConflictedRecrds(unqFieldAryKey) {
-				if (hasConflicts){ conflictedRecrdsObj[unqFieldAryKey] = grabConflictedRecrds(conflictedAry, recrdsObj[unqFieldAryKey]); }
-				return grabNonConflicted(recrdsObj[unqFieldAryKey]);
+				conflictedRecrdsObj[unqFieldAryKey] = getConflictedRcrds(conflictedAry, recrdsObj[unqFieldAryKey]);
+				delete recrdsObj[unqFieldAryKey];
+				// return grabNonConflicted(recrdsObj[unqFieldAryKey]);
 			}
-			function grabNonConflicted(recrdsAry) {
-				return recrdsObj[unqFieldAryKey].filter(function(recrd){
-					return conflictedAry.indexOf(recrd) === -1;
-				});
-			}
+			// function grabNonConflicted(recrdsAry) {
+			// 	return recrdsObj[unqFieldAryKey].filter(function(recrd){
+			// 		return conflictedAry.indexOf(recrd) === -1;
+			// 	});
+			// }
 		} /* End checkEachRcrdAry */
-		function grabConflictedRecrds(conflictedAry, recrdsAry) { //console.log("grabConflictedRecrds called. arguments = %O", arguments);
+		function getConflictedRcrds(conflictedAry, recrdsAry) {//console.log("getConflictedRcrds called. arguments = %O", arguments);
 			return conflictedAry.map(function(rcrdIdx){ //console.log("conflicted recrd in conflictedAry. recrd in orgAry = %O", recrdsAry[rcrdIdx])
 				return recrdsAry[rcrdIdx];
 			});
@@ -584,7 +585,7 @@
 		function findConflicts(recrd, unqField, recrdIdx) {
 			processed.some(function(procesd){															// Loop through each record already processed
 				conflicted = checkForConflicts(recrd, procesd.recrd, conflicted); // console.log("conflicted = ", conflicted);
-				ifConflictedGrabTheseRcrds(procesd.idx, recrdIdx);
+				ifConflictedGrabTheseRcrds(procesd.idx, recrdIdx, unqField);
 				return conflicted;
 			});
 			if (conflicted) {
@@ -593,13 +594,13 @@
 			/**
 			 * If a conflict was found with this pair of records, add the previously processed record to its conflict collection.
 			 */
-			function ifConflictedGrabTheseRcrds(procesdIdx, recrdIdx) {
+			function ifConflictedGrabTheseRcrds(procesdIdx, recrdIdx, unqField) {
 				if (conflicted) {
 					conflictedAry.push(recrdIdx);
 				  if (conflictedAry.indexOf(procesdIdx) === -1) { conflictedAry.push(procesdIdx); }
 				}
 			}
-		}
+		} /* End findConflicts */
 		/**
 		 * Adds data related to any conflicts found to the validation results.
 		 */
@@ -705,13 +706,13 @@
 				if (!matched) { extractNullRefRecrd(parentKey, unqKeyStrToReplace) }
 
 				function ifKeyValuesMatch(childKey, refVal, refKey) {
-					if (childKey == refVal) { 																								// console.log("subEntity record match found. = %O.", childRecrds[key]);
+					if (childKey == refVal) { 								//	if (childName === "location") {console.log("subEntity record match found. = %O.", childRecrds[childKey]);}
 						matched = true;
 						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0], refKey); //console.log("foundMatchingSubEntityObj");}
 					}
 				}
 			} /* End matchRefInChildRecrds */
-			function extractNullRefRecrd(parentKey, unqKeyStrVal) { //console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
+			function extractNullRefRecrd(parentKey, unqKeyStrVal) {				//console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
 				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
 				if (parentValRpt.nullRefResults[childName] === undefined) {
 					parentValRpt.nullRefResults[childName] = {};
@@ -719,7 +720,6 @@
 				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);  //console.log("nullRefResults = %O", nullRefResults);
 				if (parentValRpt.nullRefResults[childName][parentKey].nullRefKeys === undefined) {parentValRpt.nullRefResults[childName][parentKey].nullRefKeys = []; }  //console.log("nullRefResults = %O", nullRefResults);
 				parentValRpt.nullRefResults[childName][parentKey].nullRefKeys.push(unqKeyStrVal);  //console.log("nullRefResults = %O", nullRefResults);
-
 			}
 			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
 				parentEntityRecrd[childName] = matchedRecrd;
@@ -739,7 +739,7 @@
 				}
 			}
 		}
-	} /* End mergeEntites */
+	} /* End mergeEntities */
 /*--------------Parse File Set Records--------------------------------------------------- */
 	/**
 	 * Recieves record objs from each of three entity csv files opened (author, citation, and interaction) and, from these,
@@ -834,7 +834,7 @@
 		callback(recrdsAry, entity);
 
 		function checkCountryAndHabType(recrd) {
-			if (recrd.country !== null || recrd.habType !== null) { checkAllLocData(recrd); }
+			if (recrd.country !== null || recrd.habType !== null || recrd.region !== null) { checkAllLocData(recrd); }  //region-unspecified
 		}
 		function checkAllLocData(recrd) {
 			if (noOtherLocData(recrd)) { autofillDesc(recrd); }
@@ -850,11 +850,16 @@
 			if (recrd.country !== null) {
 				var countryStr = recrd.country + ' ';
 				checkForHabType(recrd, countryStr);
+			} else if (recrd.region !== null) {
+				var regionStr = recrd.region + ' ';
+				checkForHabType(recrd, regionStr)
 			} else { checkForHabType(recrd); }
 		}
-		function checkForHabType(recrd, countryName) {	//	console.log("checkForHabType called. arguments = %O", arguments);
-			var newLocDesc = countryName || '';
-			if (recrd.habType !== null) { newLocDesc += recrd.habType }
+		function checkForHabType(recrd, desc) {	//	console.log("checkForHabType called. arguments = %O", arguments);
+			var newLocDesc = desc || '';
+			if (recrd.habType !== null) {
+				newLocDesc += recrd.habType
+			} else { newLocDesc = newLocDesc.trim() + "-Unspecified" }
 			recrd.locDesc = newLocDesc.trim();   //console.log("newLocDesc= %s", newLocDesc);
 		}
 	}/* End autoFillLocDesc */
@@ -897,7 +902,7 @@
 		var taxaRcrds = [];
 		var intRefIdx = [];
 		entityObj.taxon = {};
-		entityObj.taxon.valRpt = { rcrdsWithNullReqFields: {} };
+		entityObj.taxon.valRpt = {}
 
 		forEachRecrd();		//	console.log("taxaRcrds = %O", taxaRcrds);
 		storeTaxaData(taxaRcrds);
@@ -931,7 +936,7 @@
 			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
 			recrd.objTaxon = mergeTaxaFields(recrd, objFields);  if (recrd.objTaxon === undefined) {console.log("obj saved as undefined. recrd = %O", recrd)}
 			var nulls = rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd, key);
-			if (nulls === true) {return false; }
+			if (nulls === true) { console.log("rprtNullTaxa."); return false; }
 			delteTaxaFields(recrd);
 
 			return recrd;
@@ -946,18 +951,21 @@
 			taxaFields.forEach(function(field) { delete recrd[field]; });
 		}
 		function rprtNullTaxa(subjTaxon, objTaxon, recrd, key) {
+			var nulls = false;
 			if (objTaxon === "") {
+				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
 				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj = [];}
-				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd); // console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
-				delete recrdsObj[key];	//			console.log("recrdsObj[key] = %O", recrdsObj[key]);
-				return true;
+				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd);  console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
+				nulls = true;
 			}
 			if (subjTaxon === "") {
+				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
 				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj = [];}
 				entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj.push(recrd);
-				delete recrdsObj[key];
-				return true;
+				nulls = true;
 			}
+			if (nulls === true) { delete recrdsObj[key]; }
+			return nulls;
 		}
 		function storeTaxaData(taxaRcrds) {
 			entityObj.taxaRcrdObjsAry = taxaRcrds;
@@ -1178,12 +1186,13 @@
 		}
 		nullCitRcrds.forEach(function(rcrd){ delete recrdsObj[rcrd.tempId] });
 		// if (entityObj.validationResults.rcrdsWithNullReqFields !== undefined) {  }
-		entityObj.validationResults.rcrdsWithNullReqFields = {
-			recordCnt: nullCitRcrds.length,
-			recrds: nullCitRcrds,
-			unqKey: ["citId"]
-		};
-
+		if (nullCitRcrds.length > 0) {
+			entityObj.validationResults.rcrdsWithNullReqFields = {
+				recordCnt: nullCitRcrds.length,
+				recrds: nullCitRcrds,
+				unqKey: ["citId"]
+			};
+		}
 		callback(recrdsObj, entity)
 	}
 /*--------------General Helper Methods---------------------------------------------------- */
@@ -1211,7 +1220,7 @@
 		var nullRefAry = [];
 		var splitField = entityObj.splitField;
 		var newRecrdObj = {};
-		forEachRecAry();  console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
+		forEachRecAry();  //console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
 
 		if (nullRefAry.length > 0) { addNullReqRefs(); }
 
