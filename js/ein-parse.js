@@ -851,7 +851,6 @@
  * Extracts taxa data from each record, concatonates subjTaxon and objTaxon fields with data, and
  * adds these strings to each record as references to later rematch the records and their completed
  * subject and object taxa records.
- * @return {[type]} [description]
  */
 	function extractTaxaCols() {
 		var subjFields = JSON.parse(JSON.stringify(entityParams.taxon.subjCols));
@@ -869,8 +868,6 @@
 		}	//	console.log("taxaRcrds = %O", taxaRcrds);
 
 		storeTaxaData(taxaRcrds);
-
-		callback(recrdsObj, entity);
 
 		function extrctAndReplaceTaxaFields(recrd, key) {
 			var taxaRcrd = buildTaxaRcrd(recrd);
@@ -1167,34 +1164,22 @@
 		return newRecrds;
 	}
 	/**
-	 * Builds a new recordObj with a specified field in each record split into an array
-	 *
-	 * @param  {obj} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
-	 * @param  {str}  entity    The entity currently being parsed
-	 * @callback     Recieves an array of record objects with any exact duplicates removed.
+	 * Builds a new recordObj with a specified field of each record split into an array
 	 */
-	function splitFieldIntoAry(recrdsObj, entity, callback) {
+	function splitFieldIntoAry() {
 		var nullRefAry = [];
 		var splitField = entityObj.splitField;
 		var newRecrdObj = {};
-		forEachRecAry();  //console.log("newRecrdObj after forEachRecAry= %O", newRecrdObj);
+		var recrdsObj = entityObj.curRcrds;
+
+		for (var key in recrdsObj) { newRecrdObj[key] = splitFields(key); }
 
 		if (nullRefAry.length > 0) { addNullReqRefs(); }
 
-		callback(newRecrdObj, entity);
+		entityObj.curRcrds = newRecrdObj;
 		/**
-		 * Loops through each top key in the record object and calls {@link splitFields }
-		 */
-		function forEachRecAry() {
-			for (var key in recrdsObj) {
-				newRecrdObj[key] = splitFields(key);
-			}
-		}
-		/**
-		 * Splits a specified field of each record into an array on commas
-		 *
-		 * @param  {str} key  Top key for array of records sharing unqKey field
-		 * @return {ary}      New record obj array
+		 * Splits a specified field of each record into an array on commas.
+		 * @param  {str} key  Top key for an array of records sharing unqKey field
 		 */
 		function splitFields(key) {			//	console.log("splitFields called. recrdsObj[key] = %O", recrdsObj[key])
 			var newRecrds = recrdsObj[key].map(function(recrd) {
