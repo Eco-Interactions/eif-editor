@@ -76,7 +76,8 @@
 
 		// recurParseMethods(recrdsAry, entity);
 		executeParseChain(recrdsAry, entity);
-		cleanUpReturnResults(recrds);
+
+		cleanUpReturnResults(entityObj.curRcrds);
 
 		if (validMode) { validationObj[entity] = entityObj; }
 																			//		console.log("entityParams[entity] = %O", entityParams[entity]);
@@ -107,12 +108,12 @@
 	// }
 	function cleanUpReturnResults(recrdsObj) {   //console.log("entityObj = %O", entityObj)
 		entityObj.valResults = {
-			name: entityObj.name,
 			finalRecords: recrdsObj,
-			valRpt : entityObj.validationResults,
-			orgRcrdAry: entityObj.orgRcrdAryObjs
+			name: entityObj.name,
+			orgRcrdAry: entityObj.orgRcrdAryObjs,
+			valRpt : entityObj.validationResults
 		};
-		if ("taxaObjs" in entityObj) {  console.log("taxa data being stored = %O", entityObj.taxon.valRpt)
+		if ("taxaObjs" in entityObj) { // console.log("taxa data being stored = %O", entityObj.taxon.valRpt)
 			entityObj.valResults.taxon = {
 				taxaObjs: entityObj.taxaObjs,
 				valRpt: entityObj.taxon.valRpt			//isEmpty(entityObj.taxon.valRpt) ? null :
