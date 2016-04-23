@@ -809,15 +809,13 @@
 		});
 		callback(newRcrdsAry, entity);
 	}
-	function autoFillLocDesc(recrdsAry, entity, callback) {//console.log("autoFillLocDesc called. arguments = %O", arguments);
+	function autoFillLocDesc() {  console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
 		var newRecrd = {};
-		var filledRecrds = recrdsAry.map(function(recrd){// console.log("recrd being processed: %O", arguments);
+		entityObj.curRcrds.forEach(function(recrd){// console.log("recrd being processed: %O", arguments);
 			newRecrd = recrd;
 			if (recrd.locDesc === null) { checkCountryAndHabType(recrd); }
 			return newRecrd;
 		});
-
-		callback(recrdsAry, entity);
 
 		function checkCountryAndHabType(recrd) {
 			if (recrd.country !== null || recrd.habType !== null || recrd.region !== null) { checkAllLocData(recrd); }  //region-unspecified
@@ -826,8 +824,7 @@
 			if (noOtherLocData(recrd)) { autofillDesc(recrd); }
 		}
 		function noOtherLocData(recrd) {
-			var remainingLocFields = ['elev', 'elevRangeMax', 'lat', 'long'];
-			var foundNoData = remainingLocFields.every(function(locField) {
+			var foundNoData = ['elev', 'elevRangeMax', 'lat', 'long'].every(function(locField) {
 				return recrd[locField] === null;
 			});
 			return foundNoData;
