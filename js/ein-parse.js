@@ -9,7 +9,7 @@
 			name: 'author',
 			subEntityCollection: true,
 			unqKey: ['shortName'],
-			parseMethods: [fillInIds, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			parseMethods: [fillInIds, deDupIdenticalRcrds, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts],
 			validationResults: {}
 		},
 		citation: {
@@ -20,7 +20,7 @@
 			splitField: 'author',
 			reqRef: 'author', //required reference
 			cols:	['citId', 'citShortDesc', 'fullText', 'author', 'title', 'pubTitle', 'year', 'vol', 'issue', 'pgs'],
-			parseMethods: [extractCols, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
+			parseMethods: [extractCols, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts, splitFieldIntoAry],
 			validationResults: {},
 			extrctdAuths: {}
 		},
@@ -31,7 +31,7 @@
 			unqKey: ['id'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objPhylum', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
-			parseMethods: [autoFillLocDesc, fillInIds, extractCols, restructureIntoRecordObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, checkCitId, buildAndMergeTaxonObjs],
+			parseMethods: [autoFillLocDesc, fillInIds, extractCols, restructureIntoRcrdsObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, checkCitId, buildAndMergeTaxonObjs],
 			validationResults: {},
 			taxaRcrdObjsAry: {}
 		},
@@ -39,14 +39,14 @@
 			name: 'location',
 			unqKey: ['locDesc'],
 			cols:	['locDesc', 'elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts],
 			validationResults: {}
 		},
 		publication: {
 			name: 'publication',
 			unqKey: ['pubTitle'],
 			cols:	['pubTitle','pubType','publisher'],
-			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRecordObj, autoFillAndCollapseRecords, hasConflicts],
+			parseMethods: [extractCols, deDupIdenticalRcrds, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts],
 			validationResults: {}
 		},
 		taxon: {
@@ -120,23 +120,15 @@
 		}
 	}
 	/**
-	 * Takes an array of record objects and extracts specified columns/keys and values.
-	 *
-	 * @param  {obj} recrdsAry  An array of record objects
-	 * @param  {str}  entity    The entity currently being parsed
-	 * @callback 		 Recieves an array of record objects with only the specified data and an object with result data.
+	 * Takes an array of record objects and extracts the specified columns/keys and values.
 	 */
-	function extractCols(recrdsAry, entityType) {
+	function extractCols() {
 		var recrdsAry = entityObj.orgRcrdAryObjs;
 		var entityType = entityObj.name;
 		var columns = entityObj.cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
 
 	  entityObj.curRcrds =  recrdsAry.map(function(recrd){ return extract(columns, recrd); });	//	console.log("Extracted object = %O", extrctdObjs);
 
-		/**
-		 * [buildExtrctResultObj description]
-		 * @return {[type]} [description]
-		 */
 		function buildExtrctResultObj() {
 			entityObj.validationResults.extractCols = {
 				unqField: entityCols[entityType].unqKey,
@@ -149,7 +141,6 @@
 	 *
 	 * @param  {array} columns  Array of columns/keys to copy to new object.
 	 * @param  {object}  recrd  Record to copy values from.
-	 * @return {object}         New record with only the keys specified and their values.
 	 */
 	function extract(columns, recrd) {
 		var newRcrd = {};
@@ -157,12 +148,9 @@
 		return newRcrd;
 	}
 	/**
-	 * Takes an array of record objects and returns a copy of the object with any exact duplicates removed.
-	 * @param  {obj} recrdsAry  An array of record objects
-	 * @param  {str}  entity    The entity currently being parsed
-	 * @callback     Recieves an array of record objects with any exact duplicates removed.
+	 * Takes an array of record objects and removes any exact duplicates.
 	 */
-	function deDupIdenticalRcrds() {  //============================================================================
+	function deDupIdenticalRcrds() {
 		var recrdsAry = entityObj.curRcrds;
 
 		entityObj.curRcrds = findUnqRecords(entityObj.curRcrds);
@@ -256,22 +244,28 @@
 		}
 	} /* End isDuplicate */
 	/**
-	 * Head of method chain that seperates records into an object of arrays grouped under their unique key field.
-	 * @param  {array} recrdsAry 	An array of record objects
-	 * @param  {string}  entity   The entity currently being parsed
-	 * @return {object}           An object of arrays grouped under their unique key field.
+	 * Seperates the array of records into an object of arrays grouped under their unique key field.
 	 */
-	function restructureIntoRecordObj(recrdsAry, entity, callback) {
+	function restructureIntoRcrdsObj() {			//	console.log("restructureIntoRcrdsObj entityObj= %O", entityObj);
 		var unqField, rcrdsWithNullUnqField = [], recrdObjsByUnqKey = {};
+		var recrdsAry = entityObj.curRcrds;
 		var unqFieldAry = entityObj.unqKey;
+
 		findUnqField();
 		sortRecords(recrdsAry);
-		addNullRecsMetaData();			//	console.log("restructureIntoRecordObj entityObj= %O", entityObj);
-		callback(recrdObjsByUnqKey, entity);
+		addNullRecsMetaData();
 
+		entityObj.curRcrds = recrdObjsByUnqKey;
+		/**
+		 * Check if the entityObj's unqKey is present in the entity. If not, attach and use tempIds.
+		 * (This is only useful currently in the case of interactions where an id from the database may be included).
+		 */
 		function findUnqField() {
 			unqFieldAry.some(function(unqKey){ return ifKeyInRcrds(unqKey); });
-			ifKeyNotFound();
+			if (unqField === undefined) {
+				recrdsAry = attachTempIds(recrdsAry);
+				unqField = "tempId";
+			}
 		}
 		function ifKeyInRcrds(unqKey) {
 			for (var key in recrdsAry[0]) {
@@ -281,27 +275,21 @@
 				}
 			}
 		}
-		function ifKeyNotFound() {
-			if (unqField === undefined) {
-				recrdsAry = attachTempIds(recrdsAry);																				//--------------Another way to easly get this new array to the rest without overwritting this?
-				unqField = "tempId";
-			}
-		}
 		/**
-		 * For each of the records, checks {@link ifHasUnqFieldValue }
+		 * For each of the records, checks {@link sortOnUnqField }
 	   * @param  {array} recrdsAry 	An array of record objects
 		 */
 		function sortRecords(recrdsAry) {
 			recrdsAry.forEach(function(recrd){
-				ifHasUnqFieldValue(recrd, unqField);
-			});  						//	console.log("restructureIntoRecordObj = %O", recrdObjsByUnqKey);        console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
+				sortOnUnqField(recrd, unqField);
+			});  						//	console.log("restructureIntoRcrdsObj = %O", recrdObjsByUnqKey);        console.log("rcrdsWithNullUnqField = %O", rcrdsWithNullUnqField);
 		}
 		/**
 		 * Check if {@link recrdWithNullUnqFld } and, if unqField has a value, adds this record to that key's array.
 		 * @param  {object}  recrd   Record currently being sorted
 	 	 * @param  {string} unqField  A field that should, ultimately, be unique for each record
 		 */
-		function ifHasUnqFieldValue(recrd, unqField) {
+		function sortOnUnqField(recrd, unqField) {
 			if (!recrdWithNullUnqFld(recrd, unqField)){
 				sortIntoKeyedArrays(recrd, unqField);
 			}
@@ -354,7 +342,7 @@
 					unqKey: entityObj.unqKey
 				};
 		}
-	} /* End restructureIntoRecordObj */
+	} /* End restructureIntoRcrdsObj */
 	/**
 	 * Head of method chain resulting in records that share unqKey values, and also have no conflicting data,==============================================
 	 * being bi-directionally filled and any thus duplicate records removed.
