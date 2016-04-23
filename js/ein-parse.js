@@ -71,10 +71,7 @@
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback, validMode) { // console.log("entityParams[entity] = %O", entityParams[entity]);
 		entityObj = JSON.parse(JSON.stringify(entityParams[entity]));
 		entityObj.orgRcrdAryObjs = recrdsAry;				//	console.log("entity = %s, entityObj = %O", entity, entityObj);
-		// parseChain = entityObj.parseMethods;
-		// entityObj.parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
-
-		// recurParseMethods(recrdsAry, entity);
+		entityObj.curRcrds = recrdsAry;
 		executeParseChain(recrdsAry, entity);
 
 		cleanUpReturnResults(entityObj.curRcrds);
@@ -781,11 +778,12 @@
 	}
 	function autoFillLocDesc() { // console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
 		var newRecrd = {};
-		entityObj.curRcrds.forEach(function(recrd){// console.log("recrd being processed: %O", arguments);
+		var filledRcrds = entityObj.curRcrds.map(function(recrd){// console.log("recrd being processed: %O", arguments);
 			newRecrd = recrd;
 			if (recrd.locDesc === null) { checkCountryAndHabType(recrd); }
 			return newRecrd;
 		});
+		entityObj.curRcrds = filledRcrds;
 
 		function checkCountryAndHabType(recrd) {
 			if (recrd.country !== null || recrd.habType !== null || recrd.region !== null) { checkAllLocData(recrd); }  //region-unspecified
@@ -817,9 +815,10 @@
 		}
 	}/* End autoFillLocDesc */
 /* -----Interaction Helpers--------------------------------------------------------------- */
-  function fillInIds(recrdsAry, entity, callback) {
-		var newRcrdAry = attachTempIds(recrdsAry);
-		callback(newRcrdAry, entity);
+
+  function fillInIds() {
+		var newRcrdAry = attachTempIds(entityObj.curRcrds);
+		entityObj.curRcrds = newRcrdAry;
 	}
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
@@ -1154,9 +1153,9 @@
 	 * @param  {array} recrdsAry Colletion of record objects.
 	 * @return {array} A new collection of record objects with a tempId property
 	 */
-	function attachTempIds(recrdsAry) {  //	console.log("attachTempIds");
+	function attachTempIds() {  //	console.log("attachTempIds");
 		var id = 2;
-		var newRecrds = recrdsAry.map(function(recrd){
+		var newRecrds = entityObj.curRcrds.map(function(recrd){
 			recrd.tempId = id++;
 			return recrd;
 		});
