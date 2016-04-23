@@ -822,14 +822,14 @@
 	}
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
-	 * @return {ary}  		An array of objects with the tag field as an array
 	 */
-	function mergeSecondaryTags(recrdsObj, entity, callback) {
+	function mergeSecondaryTags() {
 		var newRecrdObj = {};
+		var recrdsObj = entityObj.curRcrds;
 		for (var key in recrdsObj) {
 			newRecrdObj[key] = checkDirectness(recrdsObj[key]);
 	  }
-		callback(newRecrdObj, entity);
+		entityObj.curRcrds = newRecrdObj;
 	}
 	function checkDirectness(recrdsAry) {
 		var newRecrds = recrdsAry.map(function(recrd) {
