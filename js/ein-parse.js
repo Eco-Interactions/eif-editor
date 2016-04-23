@@ -70,21 +70,26 @@
 	 */
 	function recieveCSVAryReturn(fSysId, recrdsAry, entity, callback, validMode) { // console.log("entityParams[entity] = %O", entityParams[entity]);
 		entityObj = JSON.parse(JSON.stringify(entityParams[entity]));
-		entityObj.parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
-		entityObj.fSyId = fSysId;			//	console.log("entity = %s, entityObj = %O", entity, entityObj);
-		entityObj.orgRcrdAryObjs = recrdsAry;
-		parseChain = entityObj.parseMethods;
+		entityObj.orgRcrdAryObjs = recrdsAry;				//	console.log("entity = %s, entityObj = %O", entity, entityObj);
+		// parseChain = entityObj.parseMethods;
+		// entityObj.parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
 
-		recurParseMethods(recrdsAry, entity);
+		// recurParseMethods(recrdsAry, entity);
+		executeParseChain(recrdsAry, entity);
+		cleanUpReturnResults(recrds);
 
 		if (validMode) { validationObj[entity] = entityObj; }
 																			//		console.log("entityParams[entity] = %O", entityParams[entity]);
-		callback ?
-			callback(fSysId, entityObj.valResults) :
-			ein.ui.show(entityObj.fSyId, JSON.stringify(entityObj,null,2)) ;  //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationResults);
+		callback(fSysId, entityObj.valResults); //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationResults);
 	}
 	function copyParseChain(parseMethodChain) {
 		return parseMethodChain.map(function(method){ return method });
+	}
+	function executeParseChain(recrdsAry, entity) {
+		var parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
+		parseMethods.forEach(function(curMethod){
+			curMethod();														//recrds, entity, recurParseMethods
+		});
 	}
 	/**
 	 * Executes the specified entity's parse method chain and sends the results and final records to the screen.
@@ -92,14 +97,14 @@
 	 * @param  {obj||ary} recrds  Record objects in either array or object form
 	 * @param  {str}  entity    The entity currently being parsed
 	 */
-	function recurParseMethods(recrds, entity) {  // console.log("recurParseMethods called. recrds = %O, entity = %s", recrds, entity);
-		var curMethod = parseChain.shift();
-		if (curMethod !== undefined) {
-			curMethod(recrds, entity, recurParseMethods)
-		} else {
-			cleanUpReturnResults(recrds);
-		}
-	}
+	// function recurParseMethods(recrds, entity) {  // console.log("recurParseMethods called. recrds = %O, entity = %s", recrds, entity);
+	// 	var curMethod = parseChain.shift();
+	// 	if (curMethod !== undefined) {
+	// 		curMethod(recrds, entity, recurParseMethods)
+	// 	} else {
+	//
+	// 	}
+	// }
 	function cleanUpReturnResults(recrdsObj) {   //console.log("entityObj = %O", entityObj)
 		entityObj.valResults = {
 			name: entityObj.name,
@@ -121,11 +126,13 @@
 	 * @param  {str}  entity    The entity currently being parsed
 	 * @callback 		 Recieves an array of record objects with only the specified data and an object with result data.
 	 */
-	function extractCols(recrdsAry, entityType, callback) {
+	function extractCols(recrdsAry, entityType) {
+		var recrdsAry = entityObj.orgRcrdAryObjs;
+		var entityType = entityObj.name;
 		var columns = entityObj.cols;																								//	console.log("extractCols called. recrdsAry = %O", recrdsAry);
-	  var extrctdObjs = recrdsAry.map(function(recrd){ return extract(columns, recrd); });	//	console.log("Extracted object = %O", extrctdObjs);
 
-		callback(extrctdObjs, entityType);
+	  entityObj.curRcrds =  recrdsAry.map(function(recrd){ return extract(columns, recrd); });	//	console.log("Extracted object = %O", extrctdObjs);
+
 		/**
 		 * [buildExtrctResultObj description]
 		 * @return {[type]} [description]
@@ -155,16 +162,11 @@
 	 * @param  {str}  entity    The entity currently being parsed
 	 * @callback     Recieves an array of record objects with any exact duplicates removed.
 	 */
-	function deDupIdenticalRcrds(recrdsAry, entity, callback) {  //============================================================================
-		var unqRecords = findUnqRecords(recrdsAry);
-		addDeDupMetaData();
-		callback(unqRecords, entity);
-		/**
-		 * Adds data related to the duplication removal to the validation results.
-		 */
-		function addDeDupMetaData() {
-			entityObj.validationResults.dupCnt = recrdsAry.length - unqRecords.length;
-		}
+	function deDupIdenticalRcrds() {  //============================================================================
+		var recrdsAry = entityObj.curRcrds;
+
+		entityObj.curRcrds = findUnqRecords(entityObj.curRcrds);
+		entityObj.validationResults.dupCnt = recrdsAry.length - entityObj.curRcrds.length;
 	} /* End deDupIdenticalRcrds */
 	/**
 	 * Takes an array of record objects and returns a copy of the object with any exact duplicates removed.
