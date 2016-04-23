@@ -56,26 +56,10 @@
 	};
 	/* Parse API member on global namespace */
 	ein.parse = {
-		validationChain: validModeCSVReturn,
 		parseChain: recieveCSVAryReturn,
 		mergeDataSet: mergeEntities,
-		parseFileSet: parseFileSetRecrds/*
-		  * New button on toolbar
-		  * select folder
-		  * find all csv files in folder, if more than three- fail validation and return (filter- isFile and .csv for collection)
-		  * for each file, look for known entity file substr in filenames (interaction, citation, author)
-		  * objectify each file and pass all into parse at once {entity: recrds}
-		  * if validates successfully- flag and return results
-		  * else return meaningful information about any issues in process
-		  * add fullSet to dictionary
-		  *
-		  * Taxa
-		 */
+		parseFileSet: parseFileSetRecrds
 	};
-	function validModeCSVReturn(fSysId, recrdsAry, entity, callback, validMode) {
-		var cb = validMode ? returnValMetaObj : callback;
-		recieveCSVAryReturn(fSysId, recrdsAry, entity, cb, validMode);
-	}
 	/**
 	 * Recieves output from the CSVtoObject conversion and calls {@link recurParseMethods} to execute <<<<<<<<<<<<<<<<<<<<<<<
 	 * the specified entity's parse method chain.
