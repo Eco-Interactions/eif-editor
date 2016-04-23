@@ -847,26 +847,31 @@
 		delete recrd.directness;
 	}
 /* ------------------------Taxon Parse Methods------------------------------------------------ */
-	function extractTaxaCols(recrdsObj, entity, callback) {
+/**
+ * Extracts taxa data from each record, concatonates subjTaxon and objTaxon fields with data, and
+ * adds these strings to each record as references to later rematch the records and their completed
+ * subject and object taxa records.
+ * @return {[type]} [description]
+ */
+	function extractTaxaCols() {
 		var subjFields = JSON.parse(JSON.stringify(entityParams.taxon.subjCols));
 		var objFields = JSON.parse(JSON.stringify(entityParams.taxon.objCols));							//console.log("objFields = %O", objFields)
 		var taxaFields = subjFields.concat(objFields);						//console.log("taxaFields = %O", taxaFields)
+		var recrdsObj = entityObj.curRcrds;
 		var taxaRcrds = [];
 		var intRefIdx = [];
 		entityObj.taxon = {};
-		entityObj.taxon.valRpt = {}
+		entityObj.taxon.valRpt = {};
 
-		forEachRecrd();		//	console.log("taxaRcrds = %O", taxaRcrds);
+		for (var key in recrdsObj) {
+			var newRcrd = extrctAndReplaceTaxaFields(recrdsObj[key][0], key);
+			if (newRcrd !== false) { recrdsObj[key] = [newRcrd]; }
+		}	//	console.log("taxaRcrds = %O", taxaRcrds);
+
 		storeTaxaData(taxaRcrds);
 
 		callback(recrdsObj, entity);
 
-		function forEachRecrd() {
-			for (var key in recrdsObj) {
-				var newRcrd = extrctAndReplaceTaxaFields(recrdsObj[key][0], key);
-				if (newRcrd !== false) { recrdsObj[key] = [newRcrd]; }
-			}
-		}
 		function extrctAndReplaceTaxaFields(recrd, key) {
 			var taxaRcrd = buildTaxaRcrd(recrd);
 			var result = replaceTaxaWithStrng(recrd, key);
