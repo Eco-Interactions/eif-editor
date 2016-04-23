@@ -344,20 +344,19 @@
 		}
 	} /* End restructureIntoRcrdsObj */
 	/**
-	 * Head of method chain resulting in records that share unqKey values, and also have no conflicting data,==============================================
-	 * being bi-directionally filled and any thus duplicate records removed.
-	 *
-	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
-	 * @param  {string}  entity   The entity currently being parsed
-	 * @return {object}           An object with any records applicable filled and collapsed
+	 * Records that share unqKey values, and no otherwise conflicting data, are bi-directionally filled
+	 * and any resulting duplicate records removed.
 	 */
-	function autoFillAndCollapseRecords(recrdsObj, entity, callback) {
+	function autoFillAndCollapseRecords() {
 		var collapsedCnt, filledRecsCnt;
 		var processedRcrds = {};
+		var recrdsObj = entityObj.curRcrds;
 		var recordsRecieved = countRecrdsInObj(recrdsObj);  											//	console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
 		fillCandidatesIfAble(isolateCandidatesToFill(recrdsObj));
     addAutoFillAndCollapseMetaData();
-		callback(processedRcrds, entity);
+
+    entityObj.curRcrds = processedRcrds;
+		// callback(processedRcrds, entity);
 
 		/**
 		 * Adds data related to autoFill and collapse to the validation results.
@@ -450,9 +449,7 @@
 				}
 				/**
 				 * Calls {@link fillNulls } on both records and checks to ensure records are identical after fill.
-				 *
-			   * @param  {object}  rcrdOne  Record identified as identical, excepting nulls, from recordTwo.
-			   * @param  {object}  rcrdTwo  Record identified as identical, excepting nulls, from recordOne.
+			   * @param  {object}  rcrdOne && rcrdTwo  Records identified as identical, excepting nulls.
 				 */
 				function fillNullFields(rcrdOne, rcrdTwo) {
 					fillNulls(rcrdOne, rcrdTwo);
@@ -478,9 +475,7 @@
 	} /* End autoFillAndCollapseRecords */
 	/**
 	 * Copies valid data from srcRcrd to any field in trgtRcrd with null as its value.
-	 *
-   * @param  {object}  trgtRcrd  Record identified as identical, excepting nulls, to srcRcrd.
-   * @param  {object}  srcRcrd   Record identified as identical, excepting nulls, to trgtRcrd.
+   * @param  {object}  trgtRcrd && srcRcrd  Records identified as identical, excepting nulls.
 	 */
 	function fillNulls(trgtRcrd, srcRcrd) {
 		for (var key in trgtRcrd) {
@@ -488,26 +483,18 @@
 		}
 	}
 	/**
-	 * Checks for records with identical unique fields and conflicting data in other fields.
-	 * Returns an object representing these conflicting records.
-	 *
-	 * @param  {object} recrdsObj An object with each record sorted into arrays under keys of their unique field values.
-	 * @param  {string}  entity   The entity currently being parsed
-	 * @return {object}  					Returns an object with shared unqFields as top keys for conflicting record object arrays.
+	 * Records that share unique field values are checked for conflicting data. Conflicted records identified are removed,
+	 * as well as all recods that share that unqKey - as the records without conflicts can not be merged until all records
+	 * share an unconflicted unqKey reference.
 	 */
-	function hasConflicts(recrdsObj, entity, callback) { 					//	console.log("hasConflicts returned recrdsObj = %O",recrdsObj);
+	function hasConflicts() { 					//	console.log("hasConflicts returned recrdsObj = %O",recrdsObj);
 		var processed, conflictedAry;
 		var conflicted = false;
-		var conflictedRecrds = checkEachRcrdAry();				//console.log("%s conflicts = %O", entity, conflictedRecrds);
+		var rcrdsRecieved = countRecrdsInObj(entityObj.curRcrds);
+		var conflictedRecrds = checkEachRcrdForConflicts(entityObj.curRcrds);				//console.log("%s conflicts = %O", entity, conflictedRecrds);
 		addConflictMetaData();
 
-		callback(recrdsObj, entity);
-		/**
-		 * For each record array, calls {@link hasConflictedRcrds } then {@link joinConflicted }
-		 *
-		 * @return {object}       Returns an object with shared unqFields as top keys for conflicting record object arrays.
-		 */
-		function checkEachRcrdAry() {
+		function checkEachRcrdForConflicts(recrdsObj) {
 			var conflictedRecrdsObj = {};
 			for (var unqFieldAryKey in recrdsObj) { // console.log("conflictedAry = %O", conflictedAry);
 				processed = [], conflictedAry = [];
@@ -516,20 +503,13 @@
 			}
 			return isEmpty(conflictedRecrdsObj) ? null : conflictedRecrdsObj;
 			/**
-			 * If there are conflicted records, join the collected conflict records
-			 * with the records passed during first round processing.
+			 * If there are conflicted records, join the collected conflict records with the records passed during first round processing.
 			 */
 			function removeConflictedRecrds(unqFieldAryKey) {
 				conflictedRecrdsObj[unqFieldAryKey] = getConflictedRcrds(conflictedAry, recrdsObj[unqFieldAryKey]);
 				delete recrdsObj[unqFieldAryKey];
-				// return grabNonConflicted(recrdsObj[unqFieldAryKey]);
 			}
-			// function grabNonConflicted(recrdsAry) {
-			// 	return recrdsObj[unqFieldAryKey].filter(function(recrd){
-			// 		return conflictedAry.indexOf(recrd) === -1;
-			// 	});
-			// }
-		} /* End checkEachRcrdAry */
+		} /* End checkEachRcrdForConflicts */
 		function getConflictedRcrds(conflictedAry, recrdsAry) {//console.log("getConflictedRcrds called. arguments = %O", arguments);
 			return conflictedAry.map(function(rcrdIdx){ //console.log("conflicted recrd in conflictedAry. recrd in orgAry = %O", recrdsAry[rcrdIdx])
 				return recrdsAry[rcrdIdx];
@@ -579,13 +559,14 @@
 		 * Adds data related to any conflicts found to the validation results.
 		 */
 		function addConflictMetaData() {
-			countRecrdsInObj(conflictedRecrds) === 0 ?
+			var conflictedCnt = countRecrdsInObj(conflictedRecrds);
+			conflictedCnt === 0 ?
 				entityObj.validationResults.shareUnqKeyWithConflictedData = null :
 				entityObj.validationResults.shareUnqKeyWithConflictedData = {
-					received: countRecrdsInObj(recrdsObj),
-					cleanRecrdsCnt: calculateDiff(recrdsObj, conflictedRecrds),
+					received: rcrdsRecieved,
+					cleanRecrdsCnt: rcrdsRecieved - conflictedCnt,
 					unqKey: entityObj.unqKey[0],
-					conCnt: countRecrdsInObj(conflictedRecrds),
+					conCnt: conflictedCnt,
 					recrds: conflictedRecrds
 				};
 		}
@@ -797,7 +778,7 @@
 		});
 		callback(newRcrdsAry, entity);
 	}
-	function autoFillLocDesc() {  console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
+	function autoFillLocDesc() { // console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
 		var newRecrd = {};
 		entityObj.curRcrds.forEach(function(recrd){// console.log("recrd being processed: %O", arguments);
 			newRecrd = recrd;
