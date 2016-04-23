@@ -151,6 +151,7 @@ progress::-webkit-progress::after {
 		display: none;
     position: absolute;
     background: #FFF;
+    box-shadow: 3px 3px 20px 1px rgba(0,0,0,0.75);
     top: 50%;
     left: 50%;
     width: 500px;

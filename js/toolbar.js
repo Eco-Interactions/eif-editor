@@ -73,6 +73,7 @@
       overlay.style.display = 'block';
       popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
       popup.firstElementChild.innerHTML = contnt;
+      clearProgStatus();
   }
 
   /* ============================================================== */
@@ -594,7 +595,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           var skipKeyAry = skipKeyAry || [];
           var tempStrAry = [];
           for (var field in recrd) {// console.log("field = %s, recrd = %O", field, recrd)
-            skipKeyAry.indexOf(field) > -1 && continue //} //console.log("field = ", field);
+            if (skipKeyAry.indexOf(field) > -1) { continue } //console.log("field = ", field);
             if (field === unqKey || recrd[field] === null || recrd[field] === undefined) { continue }
             if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {
               tempStrAry.push(' ' + field + ': ' + recrd[field]);
