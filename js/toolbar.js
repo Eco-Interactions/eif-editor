@@ -217,7 +217,7 @@
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
   }
-  function displayValidationResults(fSysIdAry, resultData) {   console.log("displayValidationResults called. arguemnts = %O", arguments);
+  function displayValidationResults(fSysIds, resultData) {   console.log("displayValidationResults called. arguemnts = %O", arguments);
     boundSetProgress(98);
     var results = {};
     if (resultData.name !== undefined) { results[resultData.name] = resultData; }
@@ -226,11 +226,15 @@
     var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
 
     if (textRprt === false && resultData.interaction) {
-      buildDataGridConfig(fSysIdAry, resultData.interaction)
+      buildDataGridConfig(fSysIds, resultData.interaction)
+    } else if (textRprt === false) {
+      boundSetProgress(100);
+      setTimeout(clearProgStatus, 3000);
+      boundPopUp('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
     } else {
       boundSetProgress(100);
-      ein.editorTxtArea.value = textRprt;
       setTimeout(clearProgStatus, 3000);
+      ein.editorTxtArea.value = textRprt;
     }
     // ein.fileSys.fileSaveAs(textRprt);
   }
