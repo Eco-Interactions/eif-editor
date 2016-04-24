@@ -19,10 +19,16 @@
   <body>
     <div class="toolbar" id="toolbar">
       <label>
-      <button id="fileSet">Parse FileSet</button>
-        <input type="checkbox" name="loadIfValid" id="loadIfValid">
+      <button id="allFileSet">Parse FileSet</button>
+        <input type="checkbox" name="loadIfValid" id="loadIfValid" checked>
         Load only if valid
       </label>
+      <select id="entitySelect">
+        <option value="author">Authors</option>
+        <option value="citation">Citations</option>
+        <option value="interaction" selected>Interactions</option>
+      </select>
+      <button id="fileParse">Parse Entity File</button>
       <button id="openFile">Open File</button>
       <button id="openFolder">Open Folder</button>
       <button id="saveFile">Save File</button>
@@ -31,23 +37,13 @@
       <!-- <button id="createFile">Create File</button>
       <button id="createFolder">Create Folder</button>
       <button id="setUpTests">Set up Test Env</button>
-      <button id="runTests">Run Tests</button> -->
-      <select id="entitySelect">
-        <option value="author">Authors</option>
-        <option value="citation">Citations</option>
-        <option value="interaction" selected>Interactions</option>
-        <option value="location">Locations</option>
-        <option value="taxon">Taxon</option>
-        <option value="publication">Publications</option>
-      </select>
-      <button id="csvEntity">Parse Entity</button>
-<!--       <select id="dataSetSelect">
+      <button id="runTests">Run Tests</button>
+      <select id="dataSetSelect">
         <option value="authorSet">Authors</option>
         <option value="citationSet">Citations</option>
         <option value="interactionSet">Interactions</option>
       </select>
-      <button id="csvSet">Parse DataSet</button>
-      <button id="intSet">Parse IntSet</button> -->
+      <button id="csvSet">Parse DataSet</button>   -->
     </div>
     <div class="toolbar" id="status-bar">
       <progress id="progBar" class="hidden" max="100" value="0%"></progress>
