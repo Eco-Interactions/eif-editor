@@ -28,7 +28,7 @@
 			name: 'interaction',
 			childEntites: ['location', 'citation'],
 			subEntities: ['location'],
-			unqKey: ['id'],
+			unqKey: ['id', 'tempId'],
 			splitField: 'intTag',
 			cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objPhylum', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
 			parseMethods: [autoFillLocDesc, fillInIds, extractCols, restructureIntoRcrdsObj, extractTaxaCols, splitFieldIntoAry, mergeSecondaryTags, checkCitId, buildAndMergeTaxonObjs],
@@ -342,20 +342,18 @@
 		}
 	} /* End restructureIntoRcrdsObj */
 	/**
-	 * Records that share unqKey values, and no otherwise conflicting data, are bi-directionally filled
-	 * and any resulting duplicate records removed.
+	 * Records that share unqKey values, and no otherwise conflicting data, are bi-directionally filled and any resulting duplicate records removed.
 	 */
 	function autoFillAndCollapseRecords() {
 		var collapsedCnt, filledRecsCnt;
 		var processedRcrds = {};
 		var recrdsObj = entityObj.curRcrds;
 		var recordsRecieved = countRecrdsInObj(recrdsObj);  											//	console.log("autoFillAndCollapseRecords recds recieved ", recordsRecieved);
+
 		fillCandidatesIfAble(isolateCandidatesToFill(recrdsObj));
     addAutoFillAndCollapseMetaData();
 
     entityObj.curRcrds = processedRcrds;
-		// callback(processedRcrds, entity);
-
 		/**
 		 * Adds data related to autoFill and collapse to the validation results.
 		 */
@@ -761,21 +759,7 @@
 
 
 /*--------------Entity Specific Methods--------------------------------------------------- */
-	/* --------------------Citation Helpers----------------------------------------------------*/
-	// function extractAuthors(recrdsAry, entity, callback) {
-	// 	// entityObj.validationResults["extrctdAuths"] = runParseChain(null, recrdsAry, entity);
-	// 	callback(recrdsAry, entity)
-	// }
-
-	/* --------------------Location Helpers----------------------------------------------------*/
-	function getIntIds(recrdsAry, entity, callback) {
-		var row = 1;
-		var newRcrdsAry = recrdsAry.map(function(recrd){
-			recrd.intId = row++;
-			return recrd;
-		});
-		callback(newRcrdsAry, entity);
-	}
+	/* -------------------------------------Location Helpers------------------------------------*/
 	function autoFillLocDesc() { // console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
 		var newRecrd = {};
 		var filledRcrds = entityObj.curRcrds.map(function(recrd){// console.log("recrd being processed: %O", arguments);
