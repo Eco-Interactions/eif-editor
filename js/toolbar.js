@@ -12,22 +12,16 @@
       createFolder: createFolderCmd,
       setUpTests: initTests,
       runTests: launchTests,
-      csvEntity: selectCSVEntityParse,
+      fileParse: selectFileCsvParse,
       csvSet: selectCSVDataSetParse,
-      intSet: intCSVParse,
-      fileSet: csvFileSetParse
+      allFileSet: csvFileSetParse
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     author: ["author"],
     citation: ["citation", "publication"],
-    interaction: ["interaction", "location", "taxon"],
-    location: ["interaction"],
-    publication: ["citation"],
-    taxon: ["interaction"],
+    interaction: ["interaction", "location"],
     interactionSet: ["interaction", "citation", "author"],
     citationSet: ["citation", "author"],
-    authorSet: ["author"],
-    intSet: ["interaction", "taxon"]
   };
   var statusMsgDict = {
      2: " - Load file set",                       63: " - Validating Author entity",
@@ -226,10 +220,13 @@
   }
   function displayValidationResults(fSysIdAry, resultData) {   console.log("displayValidationResults called. arguemnts = %O", arguments);
     boundSetProgress(98);
-    var valResults = extractValidationResults(resultData); //console.log("Validation results = %O", valResults);
-    var textRprt = generateRprt(valResults, resultData);// console.log("textRprt = %s", textRprt);
+    var results = {};
+    if (resultData.name !== undefined) { results[resultData.name] = resultData; }
+    var resultObj = !(isEmpty(results)) ?  results : resultData;
+    var valResults = extractValidationResults(resultObj); //console.log("Validation results = %O", valResults);
+    var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
 
-    if (textRprt === false) {
+    if (textRprt === false && resultData.interaction) {
       buildDataGridConfig(fSysIdAry, resultData.interaction)
     } else {
       boundSetProgress(100);
@@ -317,10 +314,14 @@ These names have been replaced with shorter ones. The table below shows the colu
     function buildRprt() {
       var errors = false;
       var storedRprts = {};
+      var intSkipped = false;
 
-      for (var key in valData) {
-        if (valData[key].valErrs !== undefined && valData[key].valErrs !== null) { buildRprtStrngs(valData[key].valErrs, key); }
-      }
+      valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
+      valData.location && rptErrors("location");
+      valData.author && rptErrors("author");
+      valData.citation && rptErrors("citation");
+      valData.taxon && rptErrors("taxon");
+
       if (!errors) { return false; }
 
       invalidNullsStr += invalidNullsStrAry.join('\n' + smlDivider + '\n');
@@ -330,11 +331,14 @@ These names have been replaced with shorter ones. The table below shows the colu
 
       return rprtStr;
 
+      function rptErrors(entity) {
+        if (valData[entity].valErrs !== undefined && valData[entity].valErrs !== null) { buildRprtStrngs(valData[entity].valErrs, entity); }
+      }
       function buildRprtStrngs(valErrs, entityName) {
         var unqKeyDict = { shortName: "Short Name", locDesc: "Location Description" , citId: "Citation Id" };
+        if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
         if (nonNullErrType("rcrdsWithNullReqFields")) { addInvalidNulls(valErrs.rcrdsWithNullReqFields, entityName) }
         if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
-        if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
 
         function nonNullErrType(errType) {
           return valErrs[errType] !== null && valErrs[errType] !== undefined;
@@ -619,8 +623,9 @@ These names have been replaced with shorter ones. The table below shows the colu
     entityCsvParseVals[resultData.name];
   }
 /*----------Select entity to parse-------------- */
-  function selectCSVEntityParse() {
+  function selectFileCsvParse() {
     var entity = document.getElementById('entitySelect').value;
+    var entitiesInFile = entityCsvParseVals[entity];
     var dataSet = entityCsvParseVals[entity][0];
                                    /* params,      idHandler,            objHandler,          fileTxtHandler */
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
@@ -629,25 +634,33 @@ These names have been replaced with shorter ones. The table below shows the colu
       ein.csvHlpr.csvToObject(fSysId, text, validateEntity, dataSet);
     }
     function validateEntity(fSysId, recrdsAry) {
-      var cb = isValidOnlyMode() ? singleEntityValDisplay : ein.ui.show;
-      ein.parse.parseChain(fSysId, recrdsAry, entity, cb);
-    }
-  }
-/*----------Select interaction file to parse-------------- */
-  function intCSVParse() {
-    var entitiesInFile = entityCsvParseVals["interaction"];
-                                   /* params,      idHandler,            objHandler,          fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
-
-    function csvToObjForEntity(fSysId, text) {
-      ein.csvHlpr.csvToObject(fSysId, text, validateEntity, entitiesInFile[0]);
-    }
-    function validateEntity(fSysId, recrdsAry) {
       var validMode = isValidOnlyMode();
-      var cb = isValidOnlyMode() ? entitySetValDisplay : ein.ui.show;
-      ein.parse.parseChain(fSysId, recrdsAry, "interaction", cb, validMode);
-    }
-  }
+      var childObjs = [];
+      var parentObj = {};
+      var resultData = {};
+
+      entitiesInFile.forEach(function(entity) {
+        ein.parse.parseChain(fSysId, recrdsAry, entity, storeResults, validMode);
+      });
+      mergeEntities();
+
+      function mergeEntities() { console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
+        var cb = validMode ? displayValidationResults : entity === "interaction" ? buildDataGridConfig : ein.ui.show;
+        var valObj = validMode ? mergeEntityResults() : false;
+        ein.parse.mergeDataSet(fSysId, parentObj, childObjs, cb, valObj);
+      }
+      function storeResults(fSysId, resultData) {
+        if (resultData.name === entity) { parentObj = resultData;
+        } else { childObjs.push(resultData); }
+      }
+      function mergeEntityResults() {
+        var obj = {};
+        obj[parentObj.name] = parentObj;
+        childObjs.forEach(function(child) { obj[child.name] = child; });
+        return obj;
+      }
+    } /* End validateEntity */
+  } /* End selectFileCsvParse */
 /*----------Select Data Set to parse-------------- */
   function selectCSVDataSetParse() {
     var curTopEntity, outerDataObj, entitiesInFile;
@@ -772,6 +785,15 @@ These names have been replaced with shorter ones. The table below shows the colu
       return (str + pad).substring(0, pad.length);
     }
   }
+  /**
+   * Checks if an object is empty
+   * @param  {object}  obj
+   * @return {Boolean}     Returns false if key is found.
+   */
+  function isEmpty(obj) {
+    for (var x in obj) { return false; }
+    return true;
+  }
 /* =================== Build Params Packages ======================= */
 
   function openFileParams() {
@@ -784,7 +806,6 @@ These names have been replaced with shorter ones. The table below shows the colu
       // acceptsAllTypes: true
     };
   }
-
   function openFolderParams() {
     return {type: 'openDirectory'};
   }
@@ -797,16 +818,6 @@ These names have been replaced with shorter ones. The table below shows the colu
       }]
     };
   }
-  /**
-   * Checks if an object is empty
-   * @param  {object}  obj
-   * @return {Boolean}     Returns false if key is found.
-   */
-  function isEmpty(obj) {
-    for (var x in obj) { return false; }
-    return true;
-  }
-
 /*-------------Not in use----------------------------------------------------------------------- */
   // function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
   //   var authStr = '';

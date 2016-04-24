@@ -703,7 +703,6 @@
 	 * @param  {bool}  validationMode   if true, validation result data will be returned
 	 * @param  {func}  callback         if in 'validMode', displayValidationresults (toolbar); otherwise, dataGrid.fillData
 	 * @param  {func}  setProgress			bound func that updates progress bar and status message
-	 * @return {[type]}                  [description]
 	 */
 	function parseFileSetRecrds(fileSetObj, validationMode, callback, setProgress) { //  console.log("parseFileSetRecrds called. arguments = %O", arguments);
 	    var csvRowEntities = ["author", "citation", "interaction"]; // console.log("parseFileSetRecrds. entityParams = %O", JSON.parse(JSON.stringify(entityParams)));
@@ -1145,7 +1144,7 @@
 	 * @param  {array} recrdsAry Colletion of record objects.
 	 * @return {array} A new collection of record objects with a tempId property
 	 */
-	function attachTempIds(recrdsAry) {  	console.log("attachTempIds called. entityObj = %O", entityObj);
+	function attachTempIds(recrdsAry) {
 		var id = 2;
 		var orgnlRcrds = recrdsAry || entityObj.curRcrds;
 		var newRecrds = orgnlRcrds.map(function(recrd){
