@@ -909,26 +909,27 @@
 			entityObj.taxaRcrdObjsAry = taxaRcrds;
 		}
 	} /* End extractTaxaCols */
-	function buildTaxaObjs(recrdsAry, entity, callback) {
-		buildBatTaxaObjs(recrdsAry);  console.log("Path not fully written. Pick up here. Thank you.");
-		// buildObjTaxaObjs(recrdsAry);
-		// callback(recrdsObj, entity);
-	}
-	function buildAndMergeTaxonObjs(recrdsObj, entity, callback) { //console.log("buildAndMergeTaxonObjs. arguments = %O, entityObj = %O", arguments, entityObj)
+	/**
+	 * For subj and obj taxa, the previously extracted data (@extractTaxaCols) is used to create taxa records from the the most specific taxa level
+	 * with data in the record. The parent tree is derived from the remaining data in the higher level fields. These records are then linked back
+	 * into the interaction records they came from.
+	 */
+	function buildAndMergeTaxonObjs() { //console.log("buildAndMergeTaxonObjs. arguments = %O, entityObj = %O", arguments, entityObj)
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
-		attachTempIds(taxonRecrdObjsAry);
-		// var curTempId = taxonRecrdObjsAry.length;
-		buildTaxaTree(recrdsObj, entity, callback);					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
-		mergeTaxaIntoInteractions(recrdsObj);
+		var recrdsObj = entityObj.curRcrds;
 
-		callback(recrdsObj, entity);
+		attachTempIds(taxonRecrdObjsAry);
+
+		buildTaxaTree(recrdsObj);					//			console.log("buildAndMergeTaxonObjs called. taxaRecrdObjsAry w ids = %O", taxonRecrdObjsAry);
+
+		mergeTaxaIntoInteractions(recrdsObj);
 	}
 
-	function buildTaxaTree(recrdsObj, entity, callback) {//console.log("buildTaxaTree. arguments = %O, entityObj = %O", arguments, entityObj)
+	function buildTaxaTree(recrdsObj) {//console.log("buildTaxaTree. arguments = %O, entityObj = %O", arguments, entityObj)
 		var batTaxaRefObjAry, objTaxaRefObjAry;
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		var curTempId = 1;
-		attachTempIds(taxonRecrdObjsAry);
+
 
 		initTopTaxa();
 		taxonRecrdObjsAry.forEach(function(recrd) { buildTaxaTree(recrd); });
@@ -1117,13 +1118,19 @@
 			recrdsObj[key][0].objTaxon = taxaTree[recrdsObj[key][0].objTaxon];
 		}
 	}
-	function checkCitId(recrdsObj, entity, callback) { //console.log("checkCitId called. arguments = %O", arguments);
+	/**
+	 * Checks for null citIds and, if found, quarantines those records.
+	 */
+	function checkCitId() { //console.log("checkCitId called. arguments = %O", arguments);
 		var nullCitRcrds = [];
+		var recrdsObj = entityObj.curRcrds;
+
 		for (var key in recrdsObj) {
 			if (recrdsObj[key][0].citId === null) { nullCitRcrds.push(recrdsObj[key][0]); }
 		}
+
 		nullCitRcrds.forEach(function(rcrd){ delete recrdsObj[rcrd.tempId] });
-		// if (entityObj.validationResults.rcrdsWithNullReqFields !== undefined) {  }
+
 		if (nullCitRcrds.length > 0) {
 			entityObj.validationResults.rcrdsWithNullReqFields = {
 				recordCnt: nullCitRcrds.length,
@@ -1131,7 +1138,6 @@
 				unqKey: ["citId"]
 			};
 		}
-		callback(recrdsObj, entity)
 	}
 /*--------------General Helper Methods---------------------------------------------------- */
 	/**
@@ -1139,9 +1145,10 @@
 	 * @param  {array} recrdsAry Colletion of record objects.
 	 * @return {array} A new collection of record objects with a tempId property
 	 */
-	function attachTempIds() {  //	console.log("attachTempIds");
+	function attachTempIds(recrdsAry) {  	console.log("attachTempIds called. entityObj = %O", entityObj);
 		var id = 2;
-		var newRecrds = entityObj.curRcrds.map(function(recrd){
+		var orgnlRcrds = recrdsAry || entityObj.curRcrds;
+		var newRecrds = orgnlRcrds.map(function(recrd){
 			recrd.tempId = id++;
 			return recrd;
 		});
