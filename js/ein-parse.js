@@ -873,7 +873,7 @@
 			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
 			recrd.objTaxon = mergeTaxaFields(recrd, objFields);  if (recrd.objTaxon === undefined) {console.log("obj saved as undefined. recrd = %O", recrd)}
 			var nulls = rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd, key);
-			if (nulls === true) { console.log("rprtNullTaxa."); return false; }
+			if (nulls === true) { return false; }
 			delteTaxaFields(recrd);
 
 			return recrd;
@@ -892,7 +892,7 @@
 			if (objTaxon === "") {
 				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
 				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj = [];}
-				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd);  console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
+				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd); // console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
 				nulls = true;
 			}
 			if (subjTaxon === "") {

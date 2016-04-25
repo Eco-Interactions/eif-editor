@@ -269,8 +269,8 @@
       }
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
-  function generateRprt(valData, resultData) { console.log("buildRprt called. valData = %O, resultData = %O", valData, resultData);
-    var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
+  function generateRprt(valData, resultData) { console.log("generateRprt called. valData = %O, resultData = %O", valData, resultData);
+    var conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
     var smlDivider = '-----------------------------------------';
@@ -280,8 +280,6 @@
     var invalidNullsStrAry = [];
 
     return buildRprt();
-    // rprtStr += introStrng + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
-
 
     function getIntroStr() {
       return `                                 Reference Table
@@ -315,14 +313,15 @@ These names have been replaced with shorter ones. The table below shows the colu
 ===================================================================================================`;
     }
     function buildRprt() {
+      var rprtStrngs;
       var errors = false;
       var storedRprts = {};
       var intSkipped = false;
 
+      valData.citation && rptErrors("citation");
       valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
       valData.location && rptErrors("location");
       valData.author && rptErrors("author");
-      valData.citation && rptErrors("citation");
       valData.taxon && rptErrors("taxon");
 
       if (!errors) { return false; }
@@ -330,9 +329,9 @@ These names have been replaced with shorter ones. The table below shows the colu
       invalidNullsStr += invalidNullsStrAry.join('\n' + smlDivider + '\n');
       conflictsStr += conflictsStrAry.join('\n');
       nullRefStr += nullRefStrAry.join('\n');
-      rprtStr = [introStr, nullRefStr, invalidNullsStr, conflictsStr].join('\n');
+      rprtStrngs = [introStr, nullRefStr, invalidNullsStr, conflictsStr].filter(function(str) { return str.length > 0 && str !== "\n"; });
 
-      return rprtStr;
+      return rprtStrngs.join('\n');
 
       function rptErrors(entity) {
         if (valData[entity].valErrs !== undefined && valData[entity].valErrs !== null) { buildRprtStrngs(valData[entity].valErrs, entity); }
@@ -437,18 +436,15 @@ These names have been replaced with shorter ones. The table below shows the colu
         function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
           errors = true;
-          conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
           if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
             } else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
 
           for (var sharedKey in conflictObj.recrds) {
-            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey);
-            tempConflictsStrAry.push(buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
-
-            tempConflictsStrAry.push(smlDivider);
+            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
           }
-          conflictsStrAry.push(tempConflictsStrAry.join('\n') + divider );
+          conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
           function buildConflictRprts(recrdsAry, sharedKey) {
             var tempRprt = [];
@@ -473,7 +469,7 @@ These names have been replaced with shorter ones. The table below shows the colu
             var nullRefRslts = storedRprts.locNullRefs;
             conflictObj.intIds = {};
 
-            tempConflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields.");
+            conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
 
             for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
               var refObj = conflictObj.intIds[locDescKey] = {};
@@ -514,13 +510,24 @@ These names have been replaced with shorter ones. The table below shows the colu
             idSeqAry.push(procSeq);
           }
         } /* End groupIntIds */
+        /**
+         * [addNullRefs description]
+         * @param {[type]} nullRefResults [description]
+         * @param {[type]} entityName)    {            console.log("addNullRefs called. %s nullRefs [description]
+         */
         function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
-          errors = true;
           var tempNullRefStrAry = [];
-          nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          "location" in nullRefResults && processLocNullRefs(nullRefResults.location);
-          "citation" in nullRefResults && processCitNullRefs(nullRefResults, nullRefResults.citation);
-          "author" in nullRefResults && processAuthorNullRefs(nullRefResults.author);
+          errors = true;
+
+          if ("location" in nullRefResults) { processLocNullRefs(nullRefResults.location); }   //location null refs are reported later in the conflicts report, so these are isolated from the nullRefStr init to keep this section from displaying if locations are the only null refs to report.
+          if ("citation" in nullRefResults) {
+            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+            processCitNullRefs(nullRefResults, nullRefResults.citation);
+          }
+          if ("author" in nullRefResults) {
+            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+            processAuthorNullRefs(nullRefResults.author);
+          }
 
           nullRefStrAry.push(tempNullRefStrAry.join('\n'));
 
@@ -647,7 +654,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       });
       mergeEntities();
 
-      function mergeEntities() { console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
+      function mergeEntities() { //console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
         var cb = validMode ? displayValidationResults : entity === "interaction" ? buildDataGridConfig : ein.ui.show;
         var valObj = validMode ? mergeEntityResults() : false;
         ein.parse.mergeDataSet(fSysId, parentObj, childObjs, cb, valObj);
