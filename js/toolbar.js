@@ -515,17 +515,8 @@ These names have been replaced with shorter ones. The table below shows the colu
             idSeqAry.push(procSeq);
           }
         } /* End groupIntIds */
-<<<<<<< HEAD
-        function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
-=======
-        /**
-         * [addNullRefs description]
-         * @param {[type]} nullRefResults [description]
-         * @param {[type]} entityName)    {            console.log("addNullRefs called. %s nullRefs [description]
-         */
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
           var tempNullRefStrAry = [];
->>>>>>> 7a2d7e1... Final pass clean up of comments and unused code.
           errors = true;
           var tempNullRefStrAry = [];
           nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
