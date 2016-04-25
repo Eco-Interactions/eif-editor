@@ -72,7 +72,7 @@
 		entityObj = JSON.parse(JSON.stringify(entityParams[entity]));
 		entityObj.orgRcrdAryObjs = recrdsAry;				//	console.log("entity = %s, entityObj = %O", entity, entityObj);
 		entityObj.curRcrds = recrdsAry;
-		executeParseChain(recrdsAry, entity);
+		executeParseChain(entity);
 
 		cleanUpReturnResults(entityObj.curRcrds);
 
@@ -83,26 +83,12 @@
 	function copyParseChain(parseMethodChain) {
 		return parseMethodChain.map(function(method){ return method });
 	}
-	function executeParseChain(recrdsAry, entity) {
+	function executeParseChain(entity) {
 		var parseMethods = copyParseChain(entityParams[entity].parseMethods); // console.log("parseChain = %O", parseChain);
 		parseMethods.forEach(function(curMethod){
 			curMethod();														//recrds, entity, recurParseMethods
 		});
 	}
-	/**
-	 * Executes the specified entity's parse method chain and sends the results and final records to the screen.
-	 *
-	 * @param  {obj||ary} recrds  Record objects in either array or object form
-	 * @param  {str}  entity    The entity currently being parsed
-	 */
-	// function recurParseMethods(recrds, entity) {  // console.log("recurParseMethods called. recrds = %O, entity = %s", recrds, entity);
-	// 	var curMethod = parseChain.shift();
-	// 	if (curMethod !== undefined) {
-	// 		curMethod(recrds, entity, recurParseMethods)
-	// 	} else {
-	//
-	// 	}
-	// }
 	function cleanUpReturnResults(recrdsObj) {   //console.log("entityObj = %O", entityObj)
 		entityObj.valResults = {
 			finalRecords: recrdsObj,
@@ -179,12 +165,6 @@
 				isDup ? dupCount++ : processed.push(recrd);
 			});
 		}
-		// function processDup(recrd) {
-		// 	var unqKey = entityObj.unqKey;
-		// 	dupCount++;
-		// 	if (dupIntIdRefs[recrd[unqKey]] === undefined) { dupIntIdRefs[recrd[unqKey]] = []; }
-		// 	dupIntIdRefs[recrd[unqKey]].push(recrd.intId);
-		// }
 		/**
 		 * Checks a record against every previously processed record for an exact duplicate record.
 		 *
@@ -1231,29 +1211,5 @@
 	function isEmpty(obj) {
   	for (var x in obj) { return false; }
   	return true;
-	}
-
-/*----------------------------Not In Use----------------------------------------------------------------------------------*/
-	/**
-	 * Checks that each record has a unique value in the specified unique field. If not, the record is flagged for
-	 * duplicated, and potentially conflicting, data.
-	 *
-	 * @param  {obj}    recrdsAry  An array of record objects
-	 * @param  {string} unqField  A field that should be unique for each record in the object
-	 * @return {array}            An array of record objects with unique field duplications.
-	 */
-	function deDupRecrdsByField(recrdsAry, unqField) {
-		var processed = [];
-		var dupRecrds = recrdsAry.filter(function(recrd){					// Will be set to a collection of individual records identified as potentially conflicting.
-			var isDup = false;
-			processed.forEach(function(procesd) { 									// Loop through each record already processed.
-				if (recrd[unqField] === procesd[unqField]) {						// If the value is not unique,
-					isDup = true;																						// flag as duplicate.
-				}
-			});
-			if (!isDup) {processed.push(recrd);}										// If unique field has a unique value, add record to processed records.
-			return isDup;																						// If this record has been identified as a dupicate, add record to the duplicates collection.
-		});
-		return dupRecrds;																				// Returns the collection of duplicated pairs
 	}
 }());

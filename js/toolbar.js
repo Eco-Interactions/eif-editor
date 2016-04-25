@@ -218,7 +218,7 @@
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
   }
-  function displayValidationResults(fSysIds, resultData) {   console.log("displayValidationResults called. arguemnts = %O", arguments);
+  function displayValidationResults(fSysIds, resultData) { // console.log("displayValidationResults called. arguments = %O", arguments);
     boundSetProgress(98);
     var results = {};
     if (resultData.name !== undefined) { results[resultData.name] = resultData; }
@@ -365,7 +365,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 
             tempNullStrAry.push('\n--Author missing for citations on rows: ' + tempIdAry.join(', ') + '.');
           }
-          function processTaxonNulLRprt() { console.log("processTaxonNulLRprt called. invldNullRprt = %O", invldNullRprt)
+          function processTaxonNulLRprt() { //console.log("processTaxonNulLRprt called. invldNullRprt = %O", invldNullRprt)
             var taxonStrAry = [];
             for (var role in invldNullRprt) {
                 var recrdCnt = invldNullRprt[role].length;
@@ -386,7 +386,7 @@ These names have been replaced with shorter ones. The table below shows the colu
             invldNullRprt.recrds.forEach(function(recrd){ nullIds.push(recrd.tempId); });
             tempNullStrAry.push('\n--Citation ID missing for interaction records on rows: ' + nullIds.join(', ') + '.');
           }
-          function getLocNullRprt() { console.log("location invldNullRprt = %O", invldNullRprt);
+          function getLocNullRprt() { //console.log("location invldNullRprt = %O", invldNullRprt);
             var intLocRefObj = getIntIds();     //       console.log("intLocRefObj = %O", intLocRefObj);
             getIds();
             invldNullRprt.recrds.forEach(function(recrd){
@@ -399,7 +399,7 @@ These names have been replaced with shorter ones. The table below shows the colu
               return str + groupIntIds(intLocRefObj[concatLocData]) + '\n ';
             }
             function getIds() {  //console.log("invldNullRprt.concatLocFields = %O", invldNullRprt.concatLocFields)
-              invldNullRprt.concatLocFields = concatFieldsInLocs();  console.log("invldNullRprt.concatLocFields = %O", invldNullRprt.concatLocFields)
+              invldNullRprt.concatLocFields = concatFieldsInLocs();  //console.log("invldNullRprt.concatLocFields = %O", invldNullRprt.concatLocFields)
               invldNullRprt.intIds = intLocRefObj;
             }
             function concatFieldsInLocs() {
@@ -435,7 +435,7 @@ These names have been replaced with shorter ones. The table below shows the colu
           locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
           return concatLocFields;
         }
-        function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+        function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
           errors = true;
           conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
@@ -470,7 +470,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 
             }
           }
-          function getIntIdsForRcrds() {  console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
+          function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
             var nullRefRslts = storedRprts.locNullRefs;
             conflictObj.intIds = {};
 
@@ -484,7 +484,7 @@ These names have been replaced with shorter ones. The table below shows the colu
                 if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
                 refObj[locFieldsStr].push(intId-1);
               });
-            }console.log("conflictObj.intIds = %O", conflictObj.intIds);
+            }                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
           }
         } /* End addConflicts */
         function groupIntIds(intIdAry) {  //console.log("groupIntIds called. intIdAry = %O", arguments[0]);
@@ -515,7 +515,17 @@ These names have been replaced with shorter ones. The table below shows the colu
             idSeqAry.push(procSeq);
           }
         } /* End groupIntIds */
+<<<<<<< HEAD
         function addNullRefs(nullRefResults, entityName) { console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
+=======
+        /**
+         * [addNullRefs description]
+         * @param {[type]} nullRefResults [description]
+         * @param {[type]} entityName)    {            console.log("addNullRefs called. %s nullRefs [description]
+         */
+        function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
+          var tempNullRefStrAry = [];
+>>>>>>> 7a2d7e1... Final pass clean up of comments and unused code.
           errors = true;
           var tempNullRefStrAry = [];
           nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
@@ -525,7 +535,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 
           nullRefStrAry.push(tempNullRefStrAry.join('\n'));
 
-          function processLocNullRefs(locNullRefs) {    console.log("locNullRefs = %O", locNullRefs);
+          function processLocNullRefs(locNullRefs) {  //  console.log("locNullRefs = %O", locNullRefs);
             var intLocRefs = {};
             for (var intId in locNullRefs) {// console.log("locNullRefs[intId] = %O", locNullRefs[intId]);
               var locNullObj = locNullRefs[intId];
@@ -555,7 +565,7 @@ These names have been replaced with shorter ones. The table below shows the colu
               }
             }
           } /* End processCitNullRefs */
-          function buildCitRefRprtStr(citRefs) { console.log("buildCitRefRprtStr arguments = %O", arguments)
+          function buildCitRefRprtStr(citRefs) { //console.log("buildCitRefRprtStr arguments = %O", arguments)
             var strAry = [];
             for ( var citId in citRefs ) {
               strAry.push('--Citation ' + citId + ' does not exist in the imported citation data and is referenced by ' + citRefs[citId].length + ' Interaction records on rows ' + groupIntIds(citRefs[citId]));
