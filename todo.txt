@@ -25,10 +25,7 @@ tweak filters for each column
 
 
 Taylor:
-		#status-bar styles not being applied
-		setStatus only sometime works and I have no idea why
-				left logs in for clues.
-
+	
 
 Flesh out file set validation
 	--are there 3 csv files exactly?
@@ -50,17 +47,31 @@ Flesh out file set validation
 
 
 TODO:
-	report missing taxon fails
-	refactoring:
-		val report
-		taxon parsing
+	build location ref array with all loc fields concat together as keys with all int recrds in array inside 
+		only rows with no loc desc and other data (more than can auto generate desc)
+
+	update reference table
+
+	make data set exercising all types of validation error reporting
+
+	"Citation 24 does not exist in the imported citation data and is referenced by 2 interaction records on rows #, #."
 
 
+	"Rows referenced but not found" (move null refs to top of report)
+		There are # citation records which reference author short names not found in the author data 
+			shortname  | id
+	"Fields required but left blank"
+		~There are ## interaction records with locdesc field empty amd data in other loc fields 
+		## 17 interactions have this data set and no loc desc || if only affects single record add row in front
+	"Conflicting data"
+		There are 2 author records with the same short name and conflicting data in other fields.
+		"" locdesc:
 
-
-
-
-
+	--Just before giving tulen their copy--
+		With fresh data, double check each row is the row it should be from the spreadsheets,
+		delete those rows from csv files.
+			they should then, with all validation errors deleted, load into grid. 
+				Check to make sure every row that is now in csv is also in the final grid.
 
 
 
