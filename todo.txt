@@ -4,12 +4,13 @@
 					--authors
 				interaction:
 					--citation
+					--taxa
+					--location
 
 			Conflicts:
 				--Author:
 
 				--Citation:
-					++Format cit information
 						Show truncated full text (25char + ...) with cit id
 							Include the data and phrase the formatting for other conflicting records
 
@@ -20,69 +21,17 @@
 					--locDesc
 				author:
 					shortname
-							++Now holding onto aturhor row numbers through adding tempIds.
+							++Now holding onto author row numbers through adding tempIds.
 				interaction:
-					citation
+					--citation
+					--taxon
 				Citation:
-					author
+					--author
 
-
-tweak filters for each column
-
-
-
-Taylor:
-
-
-Flesh out file set validation
-	--are there 3 csv files exactly?
-	--does each of the three have a name that maps to a distinct entity?
-		"2 identified of 3 expected. Not able to find the file for (entity). Please
-					use a file name with csv extension and (entity) in the file name. "
-		--Went with invalid file name instead as it will catch this error without changing the code structure.
-
-	possible errors with files themselves
-		--is this file empty?			'the file (entity.csv) is empty'
-		make sure there are at least as many headers as there are cols in dict
-			--if some fields, but not all, tell them which ones are missing
-				colCheckList = object.keys(hdrDict)- rmv as found
-					--The following cols are missing ^.join n-missing of x-expected
-		probs matching cols-
-			--if a col in file is not in dict, leave related col data behind.
-		probs matching any rows-
-			--if (missing part of a row) stop and report row number (row x of the data in fileName didn't parse)
 
 
 TODO:
-	popup box shadow
-	++There are 170 Interaction records with references to the above 19 Citation records.
-
-	-There are 10 interactions that have this location data and no location description. Rows: 4326-4329, 4400-4405.
-
-
-
-
-
-locDesc: Parque Nacional Santa Rosa
-              elev: 0,  elevRangeMax: 319,  lat: 10.857584,  long: -85.735352,  country: Costa Rica,  habType: Forest
-              elev: 0,  elevRangeMax: 319,  lat: 10.8379308,  long: -85.7051116,  region: Central America,  country: Costa Rica,  habType: Forest
-
-Found in 221 Interaction records at rows: 116-141, 1234-1362, 1366, 1368, 1370-1372, 1376-1380, 1388-1422, 2825-2840, 3145-3147, 3151-3178.
------------------------------------------
-
-
-
-
-
-
-
-
-	--Just before giving tulen their copy--
-		With fresh data, double check each row is the row it should be from the spreadsheets,
-		delete those rows from csv files.
-			they should then, with all validation errors deleted, load into grid.
-				Check to make sure every row that is now in csv is also in the final grid.
-
+	seperate out util functions
 
 
 
@@ -92,3 +41,17 @@ GENERAL WORK MOVING FORWARD
 	--CRON JOB BACKUPS
 
 
+
+Commemorative notes:
+	/*
+		  * New button on toolbar
+		  * select folder
+		  * find all csv files in folder, if more than three- fail validation and return (filter- isFile and .csv for collection)
+		  * for each file, look for known entity file substr in filenames (interaction, citation, author)
+		  * objectify each file and pass all into parse at once {entity: recrds}
+		  * if validates successfully- flag and return results
+		  * else return meaningful information about any issues in process
+		  * add fullSet to dictionary
+		  *
+		  * Taxa
+		 */
