@@ -9,8 +9,8 @@
 /* values are ignored once the window is moved or resized     */
 
 chrome.app.runtime.onLaunched.addListener(function() {
-	var width = 900;
-	var height = 300;
+	var width = 1350;
+	var height = 500;
 	var left = (screen.width/2)-(width/2);
 	var top = (screen.height/2)-(height/2);
 	chrome.app.window.create('views/validate.html', {

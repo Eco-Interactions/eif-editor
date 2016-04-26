@@ -104,9 +104,9 @@
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
-    var valChkbxElem = document.getElementById('loadIfValid');
-    return valChkbxElem.checked ? true : false;
-    // return true;
+    // var valChkbxElem = document.getElementById('loadIfValid');
+    // return valChkbxElem.checked ? true : false;
+    return true;
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -320,10 +320,10 @@ These names have been replaced with shorter ones. The table below shows the colu
       var storedRprts = {};
       var intSkipped = false;
 
-      valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
-      valData.location && rptErrors("location");
       valData.author && rptErrors("author");
       valData.citation && rptErrors("citation");
+      valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
+      valData.location && rptErrors("location");
       valData.taxon && rptErrors("taxon");
 
       if (!errors) { return false; }
