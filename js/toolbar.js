@@ -318,10 +318,10 @@ These names have been replaced with shorter ones. The table below shows the colu
       var storedRprts = {};
       var intSkipped = false;
 
+      valData.author && rptErrors("author");
       valData.citation && rptErrors("citation");
       valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
       valData.location && rptErrors("location");
-      valData.author && rptErrors("author");
       valData.taxon && rptErrors("taxon");
 
       if (!errors) { return false; }
