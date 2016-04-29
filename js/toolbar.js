@@ -57,9 +57,10 @@
     barElem.value = percent;
     ein.ui.setStatus(status);
   }
-  function clearProgStatus() {
+  function clearProgStatus(statusMsg) {
+    var status = statusMsg || "";
     document.getElementById('progBar').className = 'fade-out';
-    ein.ui.setStatus("");
+    ein.ui.setStatus(status);
     setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
 
@@ -226,8 +227,11 @@
     var valResults = extractValidationResults(resultObj); //console.log("Validation results = %O", valResults);
     var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
 
-    if (textRprt === false && resultData.interaction) {
-      buildDataGridConfig(fSysIds, resultData.interaction)
+    if (textRprt === false && resultData.interaction) { console.log("We are here")
+      buildDataGridConfig(fSysIds, resultData.interaction);
+      boundSetProgress(100);
+      setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
+      boundPopUp('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
     } else if (textRprt === false) {
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000);
