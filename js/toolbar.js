@@ -14,7 +14,8 @@
       runTests: launchTests,
       fileParse: selectFileCsvParse,
       csvSet: selectCSVDataSetParse,
-      allFileSet: csvFileSetParse
+      allFileSet: csvFileSetParse,
+      pushEnt: pushEntity
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     author: ["author"],
@@ -100,6 +101,25 @@
 
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
+  }
+  function pushEntity(data, name) { console.log("pushEntity called.")
+    var overlayParent = document.getElementById('overlay');
+    var webViewCntnr = document.createElement("div");
+    webViewCntnr.id = 'web-view-cntnr';
+    webViewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web" style="width:100%; height:85%"></webview>';
+
+    overlayParent.appendChild(webViewCntnr);
+    overlayParent.style.display = "block";
+  }
+  function webViewMsgHandlr(event) {
+    console.log('message recieved in webview. =%O', event);
+  }
+
+  function getTaxonymStubs() {
+    return [ { name: 'Taxonys Singularis' },
+             { name: 'Repeatus Taxonymicus' },
+             { name: 'Creativ Cranius' },
+             { name: 'Infini Potentius' } ];
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
@@ -828,46 +848,5 @@ These names have been replaced with shorter ones. The table below shows the colu
       }]
     };
   }
-/*-------------Not in use----------------------------------------------------------------------- */
-  // function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
-  //   var authStr = '';
-  //   authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
-  //     authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
-  //   });                                                                   //console.log("authStr = ", authStr);
-  //   return authStr;
-  // }
-  // function processIntFields(recrd) { //console.log("recrd = %O", recrd)
-  //   var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
-  //   str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
-  //   str += addFieldsInRecrd(recrd.location);
-  //   return str;
-  // }
-  // function processPubFields(pubRecrd) {
-  //   var pubStr = '';
-  //   for (var key in pubRecrd) {
-  //     if (pubRecrd[key] !== null) {
-  //       pubStr += key + ': ' + pubRecrd[key] + ', '
-  //     }
-  //   }
-  //   return pubStr + '\n';
-  // }
-  // function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
-  //   var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
-  //   if (recrd[field] !== undefined) {
-  //     var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
-  //     // subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
-  //     return subStr;
-  //   }
-  // }
-  // function addIntTags(tagAry) {
-  //   if (tagAry !== undefined) {
-  //     var subStr = ' intTags: ';
-  //     tagAry.forEach(function(tag){
-  //       subStr += tag + ', '
-  //     });
-  //     return subStr;
-  //   }
-  // }
-
 }());  /* end of namespacing anonymous function */
 

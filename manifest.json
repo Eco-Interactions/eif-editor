@@ -18,7 +18,8 @@
                   "contextMenus",
                   "clipboardWrite",
                   "clipboardRead",
-                  "storage"
+                  "storage",
+                  "webview"
                   ],
   "icons": {
       "16": "img/eco-int-logo-16.png",

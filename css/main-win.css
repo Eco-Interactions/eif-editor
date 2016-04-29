@@ -136,6 +136,9 @@ progress::-webkit-progress::after {
 	color: #1b3b1b;
 	font-weight: bold;
 }
+#web-view-cntnr {
+  padding: 6em;
+}
 #overlay {
 		display: none;
     position: absolute;
@@ -156,8 +159,8 @@ progress::-webkit-progress::after {
     left: 50%;
     width: 500px;
     height: 250px;
-    margin-left: -250px; /*Half the value of width to center div*/
-    margin-top: -100px; /*Half the value of height to center div*/
+    margin-left: -250px;
+    margin-top: -100px;
     z-index: 200;
     border-radius: 5px;
 }
