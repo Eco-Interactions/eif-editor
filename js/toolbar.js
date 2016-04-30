@@ -102,12 +102,19 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
-  function pushEntity(data, name) { console.log("pushEntity called.")
+  function pushEntity(data, name) { console.log("pushEntity begun.")
+    buildWebView();
+
+
+  }
+  function postWebViewMsg(argument) {
+    ContentWindow.postMessage(any message, string targetOrigin);
+  }
+  function buildWebView() {
     var overlayParent = document.getElementById('overlay');
     var webViewCntnr = document.createElement("div");
     webViewCntnr.id = 'web-view-cntnr';
     webViewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web" style="width:100%; height:85%"></webview>';
-
     overlayParent.appendChild(webViewCntnr);
     overlayParent.style.display = "block";
   }
