@@ -1,6 +1,6 @@
 (function(){
   var ein = ECO_INT_NAMESPACE;
-  var progBar, boundPopUp;
+  var progBar, boundPopUp, overlay;
   var validationObj = {};
   var toolbarBtnMap = {
       openFile: openFileCmd,
@@ -36,8 +36,16 @@
     55: " - Begin validation",                    99: " - Displaying data grid",        //data grid ending
     58: " - Validating file set",                100: ""
   };
+  var msgMap = {
+    webviewInitComplete: showWebview,
+    adminLogin: hideWebview,
+    invalidRole: invalidRole
+  };
 
   document.addEventListener("DOMContentLoaded", onDomLoaded);
+
+  window.addEventListener('message', webviewMsgHandlr, false);
+
   function onDomLoaded() {
     overlay = document.getElementById("overlay");
     popup = document.getElementById("popUpDiv");
@@ -45,10 +53,7 @@
     boundSetProgress = setProgressStatus.bind(null, progBar);
     boundPopUp = popUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
-    document.getElementById("popupclose").onclick = function() {
-        overlay.style.display = 'none';
-        popup.style.display = 'none';
-    };
+    document.getElementById("popupclose").onclick = hidePopUp;
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
 
@@ -71,6 +76,19 @@
       popup.firstElementChild.innerHTML = contnt;
       clearProgStatus();
   }
+  function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
+      overlay.style.display = 'block';
+      popup.style.display = 'block';                 console.log("popup.firstChild = %O", popup)
+      popUpBtn.style.display = 'none';
+      popup.firstElementChild.innerHTML = contnt;
+      if (status !== undefined) { ein.ui.setStatus(status); }
+  }
+  function hidePopUp(status) {
+      overlay.style.display = 'none';
+      popup.style.display = 'none';
+      if (status !== undefined) { ein.ui.setStatus(status) }
+  }
+
   /* ============================================================== */
   /* === Toolbar Command functions ================================ */
   /* ============================================================== */
@@ -103,26 +121,39 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
+
+  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
   function pushEntity(data, name) { console.log("pushEntity begun.")
-    buildWebView();
+    var webviewElem = buildWebview();
+    msgPopUp('Initiating connection with batplant.org', 'Connecting to batplant.org');
+    webviewElem.addEventListener('contentload', postWebviewMsg);
 
-
+    function postWebviewMsg(argument) {
+      webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
+    }
+  } /* End pushEntity */
+  function buildWebview() {
+    var overlay = document.getElementById('overlay');
+    var webviewCntnr = document.createElement("div");
+    webviewCntnr.id = 'web-view-cntnr';
+    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web/login" style="width:100%; height:85%"></webview>';
+    return document.getElementById('web-view');
   }
-  function postWebViewMsg(argument) {
-    ContentWindow.postMessage(any message, string targetOrigin);
-  }
-  function buildWebView() {
-    var overlayParent = document.getElementById('overlay');
-    var webViewCntnr = document.createElement("div");
-    webViewCntnr.id = 'web-view-cntnr';
-    webViewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web" style="width:100%; height:85%"></webview>';
-    overlayParent.appendChild(webViewCntnr);
-    overlayParent.style.display = "block";
-  }
-  function webViewMsgHandlr(event) {
-    console.log('message recieved in webview. =%O', event);
+  function webviewMsgHandlr(msg) { console.log('message recieved in webview. =%O', msg);
+    msgMap[msg.data.tag](msg.data);
   }
 
+  function showWebview(msg) {
+    hidePopUp('Please login to batplant.org.');
+    overlay.appendChild(webviewCntnr);
+  }
+  function hideWebview(msg) {
+     hidePopUp("Successful login.");
+     setTimeout(function(){ein.ui.setStatus('')}, 4000);
+  }
+  function invalidRole(msg) {
+
+  }
   function getTaxonymStubs() {
     return [ { name: 'Taxonys Singularis' },
              { name: 'Repeatus Taxonymicus' },
