@@ -1,6 +1,6 @@
 (function(){
+  var progBar, boundPopUpAlert, overlay, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
   var ein = ECO_INT_NAMESPACE;
-  var progBar, boundPopUp, overlay;
   var validationObj = {};
   var toolbarBtnMap = {
       openFile: openFileCmd,
@@ -38,8 +38,9 @@
   };
   var msgMap = {
     webviewInitComplete: showWebview,
-    adminLogin: hideWebview,
-    invalidRole: invalidRole
+    // loggingIn: loginSubmitted,
+    reLogin: loginAgain,
+    adminLogin: hideWebview
   };
 
   document.addEventListener("DOMContentLoaded", onDomLoaded);
@@ -51,7 +52,8 @@
     popup = document.getElementById("popUpDiv");
     progBar = document.getElementById("progBar"); //console.log(progBar);
     boundSetProgress = setProgressStatus.bind(null, progBar);
-    boundPopUp = popUp.bind(null, overlay, popup);
+    boundPopUpAlert = alertPopUp.bind(null, overlay, popup);
+    boundPopUpMsg = msgPopUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
     document.getElementById("popupclose").onclick = hidePopUp;
   }
@@ -70,16 +72,16 @@
   }
 
 /*-------------PopUp Methods----------------------------------------------------*/
-  function popUp(overlay, popup, contnt) {        console.log("popUp contnt = ", contnt)
+  function alertPopUp(overlay, popup, contnt, status) {        console.log("alertPopUp contnt = ", contnt)
       overlay.style.display = 'block';
       popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
       popup.firstElementChild.innerHTML = contnt;
-      clearProgStatus();
+      clearProgStatus(status);
   }
   function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
       overlay.style.display = 'block';
       popup.style.display = 'block';                 console.log("popup.firstChild = %O", popup)
-      popUpBtn.style.display = 'none';
+      document.getElementById('popupclose').style.display = 'none';
       popup.firstElementChild.innerHTML = contnt;
       if (status !== undefined) { ein.ui.setStatus(status); }
   }
@@ -124,35 +126,57 @@
 
   /*--------------------- Push Valid Entity Objs -------------------------------------------*/
   function pushEntity(data, name) { console.log("pushEntity begun.")
-    var webviewElem = buildWebview();
-    msgPopUp('Initiating connection with batplant.org', 'Connecting to batplant.org');
+    webviewElem = buildWebview();
+    boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
     webviewElem.addEventListener('contentload', postWebviewMsg);
 
-    function postWebviewMsg(argument) {
+    function postWebviewMsg() {
       webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
     }
   } /* End pushEntity */
   function buildWebview() {
-    var overlay = document.getElementById('overlay');
-    var webviewCntnr = document.createElement("div");
+    webviewCntnr = document.createElement("div");
     webviewCntnr.id = 'web-view-cntnr';
-    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web/login" style="width:100%; height:85%"></webview>';
+    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web/app_dev.php/login" style="width:100%; height:85%"></webview>';
+    webviewCntnr.style.display = 'none';
+    overlay.appendChild(webviewCntnr);
     return document.getElementById('web-view');
   }
-  function webviewMsgHandlr(msg) { console.log('message recieved in webview. =%O', msg);
+  function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
     msgMap[msg.data.tag](msg.data);
   }
 
   function showWebview(msg) {
     hidePopUp('Please login to batplant.org.');
-    overlay.appendChild(webviewCntnr);
+    overlay.style.display = "block";
+    webviewCntnr.style.display = 'block';
+    webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
+    webviewElem.addEventListener('contentload', checkLogin);
   }
-  function hideWebview(msg) {
-     hidePopUp("Successful login.");
-     setTimeout(function(){ein.ui.setStatus('')}, 4000);
+  // function loginSubmitted() {     console.log("loginSubmitted");
+  //   webviewCntnr.style.display = 'none';
+  //   boundPopUpMsg("<h2>Logging in to batplant.org...</h2>", "Attempting to Login...");
+  //   // webviewElem.addEventListener('contentload', checkLogin);
+  // }
+  function checkLogin() { console.log("checkLogin called. ")
+    webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/app_dev.php/");
+    loginTimeoutId = window.setTimeout(invalidRole, 1000);
   }
-  function invalidRole(msg) {
+  function hideWebview(msg) {  console.log("hideWebview called. ")
+    window.clearTimeout(loginTimeoutId);
+    hidePopUp("Successful login.");
+    setTimeout(function(){ein.ui.setStatus('Select a JSON file containing validated interaction data.')}, 2000);
+  }
+  function loginAgain() {
+    overlay.style.opacity = "1";
+    window.clearTimeout(loginTimeoutId);
+    boundPopUpMsg("<h2>Something went wrong.</h2><h4>Please try logging in again.</h4>", "Please try logging in again.");
+    window.setTimeout(function() { popup.style.display = 'none'}, 1500);
+  }
 
+  function invalidRole(msg) { console.log("invalidRole called");
+    boundPopUpMsg("<br><br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
+    window.setTimeout(function(){hidePopUp("Invalid credentials.")}, 2000);
   }
   function getTaxonymStubs() {
     return [ { name: 'Taxonys Singularis' },
@@ -189,7 +213,7 @@
       boundSetProgress(16);
       var fileSetIds = getCsvFileIds(folderMap); //  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
-        else { boundPopUp("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
+        else { boundPopUpAlert("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
     }
     function getCsvFileIds(folderMap) {//  console.log("getCsvFileIds called. folderMap = %O", folderMap);
       var csvFileIds = [];
@@ -208,7 +232,7 @@
       });
       if (validFileSet) { openFiles();
       } else {
-        boundPopUp('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
+        boundPopUpAlert('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
           'Please use a file name with a csv extension and author, citation, or interaction in the file name.') }
 
       function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
@@ -250,7 +274,7 @@
       }
     } /* End openFiles*/
     function storeCsvObj(fSysId, rcrdAryObjs, topEntity, errors) {
-      if (errors) { boundPopUp(errors); return false; }
+      if (errors) { boundPopUpAlert(errors); return false; }
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
@@ -288,11 +312,11 @@
       buildDataGridConfig(fSysIds, resultData.interaction);
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
-      boundPopUp('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
+      boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
     } else if (textRprt === false) {
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000);
-      boundPopUp('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
+      boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
     } else {
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000);
