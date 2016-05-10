@@ -195,9 +195,9 @@
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
-    // var valChkbxElem = document.getElementById('loadIfValid');
-    // return valChkbxElem.checked ? true : false;
-    return true;
+    var valChkbxElem = document.getElementById('loadIfValid');
+    return valChkbxElem.checked ? true : false;
+    // return true;
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -248,6 +248,10 @@
           'Please use a file name with a csv extension and author, citation, or interaction in the file name.');
           clearProgStatus();
       }
+<<<<<<< HEAD
+=======
+
+>>>>>>> Seperated out Login functions and added an admin section to the toolbar. Made all popups with messages attached to buttons that close them. Also some general refactoring.
       function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
         } else {
