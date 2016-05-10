@@ -27,9 +27,6 @@ button {
 	height: 20px;
 	margin: 5px 0 0 5px;
 }
-.hidden {	/* Removed from DOM flow */
-	display: none;
-}
 /* Animation Styles */
 @keyframes fadeIn {
   to { opacity: 1; }
@@ -54,9 +51,8 @@ button {
   background: WhiteSmoke;
   border-bottom: 1px solid gray;
 }
-#adminCntnr {
-  float: right;
-  padding-right: 1em;
+.admin-only {
+  display: none;
 }
 #outer {
   position: relative;
@@ -144,6 +140,7 @@ progress::-webkit-progress::after {
   top: 7px;
   background-color: white;
 }
+/* Pop Up, Overlay, and Webview Styles */
 #overlay {
 		display: none;
     position: absolute;
