@@ -51,8 +51,9 @@ button {
   background: WhiteSmoke;
   border-bottom: 1px solid gray;
 }
-.admin-only {
-  display: none;
+#adminCntnr {
+  float: right;
+  padding-right: 1em;
 }
 #outer {
   position: relative;

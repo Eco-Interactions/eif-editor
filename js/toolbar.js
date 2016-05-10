@@ -1,5 +1,5 @@
 (function(){
-  var progBar, boundPopUpAlert, overlay, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
+  var progBar, boundPopUpAlert, overlay, popupBtn, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
   var ein = ECO_INT_NAMESPACE;
   var validationObj = {};
   var toolbarBtnMap = {
@@ -15,7 +15,8 @@
       fileParse: selectFileCsvParse,
       csvSet: selectCSVDataSetParse,
       allFileSet: csvFileSetParse,
-      pushEnt: pushEntity
+      pushEnt: pushEntity,
+      login: webviewLogin
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     author: ["author"],
@@ -38,7 +39,7 @@
   };
   var msgMap = {
     webviewInitComplete: showWebview,
-    // loggingIn: loginSubmitted,
+    loginRole: checkRole,
     reLogin: loginAgain,
     adminLogin: hideWebview
   };
@@ -50,15 +51,39 @@
   function onDomLoaded() {
     overlay = document.getElementById("overlay");
     popup = document.getElementById("popUpDiv");
+    popupBtn = document.getElementById("popupclose");
     progBar = document.getElementById("progBar"); //console.log(progBar);
     boundSetProgress = setProgressStatus.bind(null, progBar);
     boundPopUpAlert = alertPopUp.bind(null, overlay, popup);
     boundPopUpMsg = msgPopUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
-    document.getElementById("popupclose").onclick = hidePopUp;
+  }
+  /* ============================================================== */
+  /* === Toolbar Command functions ================================ */
+  /* ============================================================== */
+  function toolbarClickHandler(clickEvent) {
+    var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
+    if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
+  }
+  function openFileCmd() {/* params,           idHandler,                objHandler,        fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
+  }
+  function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
+    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
+  }
+  function saveFileCmd() {  //console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
+  }
+  function fileSaveAsCmd() {/*  file Text   */   // console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
+  }
+  function createFileCmd() {  /*    ID,                                           writeHandler,            name,     callback                                                         fileText   */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFile, "Test", function(newFileId) { console.log('newFileId: %s', newFileId)}, "test content" );
+  }
+  function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
-
   function setProgressStatus(barElem, percent) {    // console.log("setProgress to %s\%", percent)
     var status = percent.toString() + '%' + statusMsgDict[percent];
     barElem.value = percent;
@@ -70,70 +95,55 @@
     ein.ui.setStatus(status);
     setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
-
 /*-------------PopUp Methods----------------------------------------------------*/
   function alertPopUp(overlay, popup, contnt, status) {        console.log("alertPopUp contnt = ", contnt)
+      popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
       popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
-      popup.firstElementChild.innerHTML = contnt;
-      clearProgStatus(status);
+      if (status !== undefined) { ein.ui.setStatus(status); }
+      popupBtn.onclick = hideOverlayAndPopup;  //hides overlay and popup on button close
   }
   function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
+      popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
       popup.style.display = 'block';                 console.log("popup.firstChild = %O", popup)
-      document.getElementById('popupclose').style.display = 'none';
-      popup.firstElementChild.innerHTML = contnt;
+      popupBtn.onclick = hidePopUp;  //hides only popup on button close
       if (status !== undefined) { ein.ui.setStatus(status); }
   }
-  function hidePopUp(status) {
-      overlay.style.display = 'none';
+  function hideOverlayAndPopup(status) {
       popup.style.display = 'none';
+      overlay.style.display = 'none';
       if (status !== undefined) { ein.ui.setStatus(status) }
   }
-
-  /* ============================================================== */
-  /* === Toolbar Command functions ================================ */
-  /* ============================================================== */
-
-  function toolbarClickHandler(clickEvent) {
-    var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
-    if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
+  function hidePopUp(status) {
+      popup.style.display = 'none';
+      popupBtn.style.display = 'block';
+      if (status !== undefined) { ein.ui.setStatus(status) }
   }
-
-  function openFileCmd() {/* params,           idHandler,                objHandler,        fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
-  }
-
-  function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
-    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
-  }
-
-  function saveFileCmd() {  //console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
-    ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
-  }
-
-  function fileSaveAsCmd() {/*  file Text   */   // console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
-    ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
-  }
-
-  function createFileCmd() {  /*    ID,                                           writeHandler,            name,     callback                                                         fileText   */
-    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFile, "Test", function(newFileId) { console.log('newFileId: %s', newFileId)}, "test content" );
-  }
-
-  function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
-    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
-  }
-
   /*--------------------- Push Valid Entity Objs -------------------------------------------*/
-  function pushEntity(data, name) { console.log("pushEntity begun.")
+  function pushEntity () {
+    boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
+  }
+  function getTaxonymStubs() {
+    return [ { name: 'Taxonys Singularis' },
+             { name: 'Repeatus Taxonymicus' },
+             { name: 'Creativ Cranius' },
+             { name: 'Infini Potentius' } ];
+  }
+  /*--------------------- Login with Webview -----------------------------------------------*/
+  function webviewLogin(data, name) { console.log("webviewLogin begun.")
     webviewElem = buildWebview();
+    popupBtn.style.display = 'none';
     boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
     webviewElem.addEventListener('contentload', postWebviewMsg);
 
     function postWebviewMsg() {
       webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
     }
-  } /* End pushEntity */
+  } /* End webviewLogin */
+  function hideWebview() {
+    webviewCntnr.style.display = "none";
+  }
   function buildWebview() {
     webviewCntnr = document.createElement("div");
     webviewCntnr.id = 'web-view-cntnr';
@@ -143,9 +153,8 @@
     return document.getElementById('web-view');
   }
   function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
-    msgMap[msg.data.tag](msg.data);
+    msgMap[msg.data.tag](msg);
   }
-
   function showWebview(msg) {
     hidePopUp('Please login to batplant.org.');
     overlay.style.display = "block";
@@ -153,36 +162,36 @@
     webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
     webviewElem.addEventListener('contentload', checkLogin);
   }
-  // function loginSubmitted() {     console.log("loginSubmitted");
-  //   webviewCntnr.style.display = 'none';
-  //   boundPopUpMsg("<h2>Logging in to batplant.org...</h2>", "Attempting to Login...");
-  //   // webviewElem.addEventListener('contentload', checkLogin);
-  // }
+  function checkRole(msg) {     console.log("checkRole called. msg= %O", msg);
+    hideWebview();
+    if (msg.data.role === "admin" || msg.data.role === "super") {
+      adminLogin(msg);
+    } else {
+      invalidRole();
+    }
+  }
   function checkLogin() { console.log("checkLogin called. ")
     webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/app_dev.php/");
-    loginTimeoutId = window.setTimeout(invalidRole, 1000);
   }
-  function hideWebview(msg) {  console.log("hideWebview called. ")
-    window.clearTimeout(loginTimeoutId);
-    hidePopUp("Successful login.");
-    setTimeout(function(){ein.ui.setStatus('Select a JSON file containing validated interaction data.')}, 2000);
+  function adminLogin(msg) {  console.log("hideWebview called. ")
+    hideOverlayAndPopup("Successful login.");
+    showAdminElems();
+    document.getElementById("username").innerText = "Logged in as " + msg.data.user;
+    document.getElementById("login").style.display = "none";
+  }
+  function showAdminElems () {
+    var adminElems = document.getElementsByClassName('admin-only');  console.log("adminElems = %O", adminElems);
+    for (var i=0; i < adminElems.length; i++) {
+      adminElems[i].className= "admin-only";
+    }
   }
   function loginAgain() {
     overlay.style.opacity = "1";
-    window.clearTimeout(loginTimeoutId);
     boundPopUpMsg("<h2>Something went wrong.</h2><h4>Please try logging in again.</h4>", "Please try logging in again.");
-    window.setTimeout(function() { popup.style.display = 'none'}, 1500);
   }
 
-  function invalidRole(msg) { console.log("invalidRole called");
-    boundPopUpMsg("<br><br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
-    window.setTimeout(function(){hidePopUp("Invalid credentials.")}, 2000);
-  }
-  function getTaxonymStubs() {
-    return [ { name: 'Taxonys Singularis' },
-             { name: 'Repeatus Taxonymicus' },
-             { name: 'Creativ Cranius' },
-             { name: 'Infini Potentius' } ];
+  function invalidRole() { console.log("invalidRole called");
+    boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
@@ -213,7 +222,10 @@
       boundSetProgress(16);
       var fileSetIds = getCsvFileIds(folderMap); //  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
-        else { boundPopUpAlert("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
+        else {
+          boundPopUpAlert("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>");
+          clearProgStatus();
+        }
     }
     function getCsvFileIds(folderMap) {//  console.log("getCsvFileIds called. folderMap = %O", folderMap);
       var csvFileIds = [];
@@ -233,7 +245,9 @@
       if (validFileSet) { openFiles();
       } else {
         boundPopUpAlert('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
-          'Please use a file name with a csv extension and author, citation, or interaction in the file name.') }
+          'Please use a file name with a csv extension and author, citation, or interaction in the file name.');
+          clearProgStatus();
+      }
 
       function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
@@ -274,7 +288,7 @@
       }
     } /* End openFiles*/
     function storeCsvObj(fSysId, rcrdAryObjs, topEntity, errors) {
-      if (errors) { boundPopUpAlert(errors); return false; }
+      if (errors) { boundPopUpAlert(errors); clearProgStatus(); return false; }
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
