@@ -1,6 +1,6 @@
 (function(){
+  var progBar, boundPopUpAlert, overlay, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
   var ein = ECO_INT_NAMESPACE;
-  var progBar, boundPopUp;
   var validationObj = {};
   var toolbarBtnMap = {
       openFile: openFileCmd,
@@ -14,7 +14,9 @@
       runTests: launchTests,
       fileParse: selectFileCsvParse,
       csvSet: selectCSVDataSetParse,
-      allFileSet: csvFileSetParse
+      allFileSet: csvFileSetParse,
+      pushEnt: pushEntity,
+      login: webviewLogin
     };
   var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
     author: ["author"],
@@ -35,23 +37,53 @@
     55: " - Begin validation",                    99: " - Displaying data grid",        //data grid ending
     58: " - Validating file set",                100: ""
   };
+  var msgMap = {
+    webviewInitComplete: showWebview,
+    loginRole: checkRole,
+    reLogin: loginAgain,
+    adminLogin: hideWebview
+  };
 
   document.addEventListener("DOMContentLoaded", onDomLoaded);
+
+  window.addEventListener('message', webviewMsgHandlr, false);
+
   function onDomLoaded() {
     overlay = document.getElementById("overlay");
     popup = document.getElementById("popUpDiv");
+    popupBtn = document.getElementById("popupclose");
     progBar = document.getElementById("progBar"); //console.log(progBar);
     boundSetProgress = setProgressStatus.bind(null, progBar);
-    boundPopUp = popUp.bind(null, overlay, popup);
+    boundPopUpAlert = alertPopUp.bind(null, overlay, popup);
+    boundPopUpMsg = msgPopUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
-    document.getElementById("popupclose").onclick = function() {
-        overlay.style.display = 'none';
-        popup.style.display = 'none';
-        clearProgStatus();
-    };
+  }
+  /* ============================================================== */
+  /* === Toolbar Command functions ================================ */
+  /* ============================================================== */
+  function toolbarClickHandler(clickEvent) {
+    var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
+    if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
+  }
+  function openFileCmd() {/* params,           idHandler,                objHandler,        fileTxtHandler */
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
+  }
+  function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
+    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
+  }
+  function saveFileCmd() {  //console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
+  }
+  function fileSaveAsCmd() {/*  file Text   */   // console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
+    ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
+  }
+  function createFileCmd() {  /*    ID,                                           writeHandler,            name,     callback                                                         fileText   */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFile, "Test", function(newFileId) { console.log('newFileId: %s', newFileId)}, "test content" );
+  }
+  function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
+    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
-
   function setProgressStatus(barElem, percent) {    // console.log("setProgress to %s\%", percent)
     var status = percent.toString() + '%' + statusMsgDict[percent];
     barElem.value = percent;
@@ -63,51 +95,118 @@
     ein.ui.setStatus(status);
     setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
-
 /*-------------PopUp Methods----------------------------------------------------*/
-  function popUp(overlay, popup, contnt) {        console.log("popUp contnt = ", contnt)
+  function alertPopUp(overlay, popup, contnt, status) {        console.log("alertPopUp contnt = ", contnt)
+      popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
       popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
+      if (status !== undefined) { ein.ui.setStatus(status); }
+      popupBtn.onclick = hideOverlayAndPopup;  //hides overlay and popup on button close
+
+  }
+  function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
       popup.firstElementChild.innerHTML = contnt;
-      clearProgStatus();
+      overlay.style.display = 'block';
+      popup.style.display = 'block';                 console.log("popup.firstChild = %O", popup)
+      popupBtn.onclick = hidePopUp;  //hides only popup on button close
+      if (status !== undefined) { ein.ui.setStatus(status); }
   }
-  /* ============================================================== */
-  /* === Toolbar Command functions ================================ */
-  /* ============================================================== */
+  function hideOverlayAndPopup(status) {
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+      if (status !== undefined) { ein.ui.setStatus(status) }
+  }
+  function hidePopUp(status) {
+      popup.style.display = 'none';
+      popupBtn.style.display = 'block';
+      if (status !== undefined) { ein.ui.setStatus(status) }
+  }
+  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
+  function pushEntity () {
+    boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
+  }
+  function getTaxonymStubs() {
+    return [ { name: 'Taxonys Singularis' },
+             { name: 'Repeatus Taxonymicus' },
+             { name: 'Creativ Cranius' },
+             { name: 'Infini Potentius' } ];
+  }
+<<<<<<< HEAD
+  /*--------------------- Login with Webview -----------------------------------------------*/
+  function webviewLogin(data, name) { console.log("webviewLogin begun.")
+    webviewElem = buildWebview();
+    popupBtn.style.display = 'none';
+=======
 
-  function toolbarClickHandler(clickEvent) {
-    var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
-    if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
+  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
+  function pushEntity(data, name) { console.log("pushEntity begun.")
+    webviewElem = buildWebview();
+>>>>>>> Added in code to handle the login process from the app to the website.
+    boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
+    webviewElem.addEventListener('contentload', postWebviewMsg);
+
+    function postWebviewMsg() {
+      webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
+    }
+  } /* End webviewLogin */
+  function hideWebview() {
+    webviewCntnr.style.display = "none";
+  }
+  function buildWebview() {
+    webviewCntnr = document.createElement("div");
+    webviewCntnr.id = 'web-view-cntnr';
+    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web/app_dev.php/login" style="width:100%; height:85%"></webview>';
+    webviewCntnr.style.display = 'none';
+    overlay.appendChild(webviewCntnr);
+    return document.getElementById('web-view');
+  }
+  function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
+<<<<<<< HEAD
+    msgMap[msg.data.tag](msg);
+  }
+  function showWebview(msg) {
+    hidePopUp('Please login to batplant.org.');
+    overlay.style.display = "block";
+    webviewCntnr.style.display = 'block';
+    webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
+    webviewElem.addEventListener('contentload', checkLogin);
+  }
+  function checkRole(msg) {     console.log("checkRole called. msg= %O", msg);
+    hideWebview();
+    if (msg.data.role === "admin" || msg.data.role === "super") {
+      adminLogin(msg);
+    } else {
+      invalidRole();
+    }
+  }
+  function checkLogin() { console.log("checkLogin called. ")
+    webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/app_dev.php/");
+  }
+  function adminLogin(msg) {  console.log("hideWebview called. ")
+    hideOverlayAndPopup("Successful login.");
+    showAdminElems();
+    document.getElementById("username").innerText = "Logged in as " + msg.data.user;
+    document.getElementById("login").style.display = "none";
+  }
+  function showAdminElems () {
+    var adminElems = document.getElementsByClassName('admin-only');  console.log("adminElems = %O", adminElems);
+    for (var i=0; i < adminElems.length; i++) {
+      adminElems[i].className= "admin-only";
+    }
+  }
+  function loginAgain() {
+    overlay.style.opacity = "1";
+    boundPopUpMsg("<h2>Something went wrong.</h2><h4>Please try logging in again.</h4>", "Please try logging in again.");
   }
 
-  function openFileCmd() {/* params,           idHandler,                objHandler,        fileTxtHandler */
-    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, ein.ui.show);
-  }
-
-  function openFolderCmd() {/* params,           idHandler,                 objHandler,             fileTxtHandler */
-    ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, ein.ui.devLog);
-  }
-
-  function saveFileCmd() {  //console.log("saveFileCmd FileText", ECO_INT_NAMESPACE.editorTxtArea.value);
-    ein.fileSys.saveFile(ein.ui.curFileId, ECO_INT_NAMESPACE.editorTxtArea.value);
-  }
-
-  function fileSaveAsCmd() {/*  file Text   */   // console.log('fileSaveAsCmd fileText = ', ECO_INT_NAMESPACE.editorTxtArea.value);
-    ein.fileSys.fileSaveAs(ECO_INT_NAMESPACE.editorTxtArea.value);
-  }
-
-  function createFileCmd() {  /*    ID,                                           writeHandler,            name,     callback                                                         fileText   */
-    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFile, "Test", function(newFileId) { console.log('newFileId: %s', newFileId)}, "test content" );
-  }
-
-  function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
-    ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
+  function invalidRole() { console.log("invalidRole called");
+    boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
-    // var valChkbxElem = document.getElementById('loadIfValid');
-    // return valChkbxElem.checked ? true : false;
-    return true;
+    var valChkbxElem = document.getElementById('loadIfValid');
+    return valChkbxElem.checked ? true : false;
+    // return true;
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -132,7 +231,10 @@
       boundSetProgress(16);
       var fileSetIds = getCsvFileIds(folderMap); //  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
-        else { boundPopUp("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>"); }
+        else {
+          boundPopUpAlert("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>");
+          clearProgStatus();
+        }
     }
     function getCsvFileIds(folderMap) {//  console.log("getCsvFileIds called. folderMap = %O", folderMap);
       var csvFileIds = [];
@@ -151,9 +253,10 @@
       });
       if (validFileSet) { openFiles();
       } else {
-        boundPopUp('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
-          'Please use a file name with a csv extension and author, citation, or interaction in the file name.') }
-
+        boundPopUpAlert('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
+          'Please use a file name with a csv extension and author, citation, or interaction in the file name.');
+        clearProgStatus();
+      }
       function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
         } else {
@@ -193,7 +296,7 @@
       }
     } /* End openFiles*/
     function storeCsvObj(fSysId, rcrdAryObjs, topEntity, errors) {
-      if (errors) { boundPopUp(errors); return false; }
+      if (errors) { boundPopUpAlert(errors); clearProgStatus(); return false; }
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
@@ -231,11 +334,11 @@
       buildDataGridConfig(fSysIds, resultData.interaction);
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
-      boundPopUp('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
+      boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
     } else if (textRprt === false) {
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000);
-      boundPopUp('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
+      boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
     } else {
       boundSetProgress(100);
       setTimeout(clearProgStatus, 3000);
@@ -274,8 +377,8 @@
       }
     } /* End getEntityResultData */
   } /* End extractValidMetaResults */
-  function generateRprt(valData, resultData) { console.log("buildRprt called. valData = %O, resultData = %O", valData, resultData);
-    var rprtStr = conflictsStr = nullRefStr = invalidNullsStr = '';
+  function generateRprt(valData, resultData) {// console.log("generateRprt called. valData = %O, resultData = %O", valData, resultData);
+    var conflictsStr = nullRefStr = invalidNullsStr = '';
     var introStr = getIntroStr();
     var divider = '---------------------------------------------------------------------------------------------------';
     var smlDivider = '-----------------------------------------';
@@ -285,8 +388,6 @@
     var invalidNullsStrAry = [];
 
     return buildRprt();
-    // rprtStr += introStrng + invalidNullsStr + divider + conflictsStr + divider + nullRefStr;// console.log("invalidNullsStr", invalidNullsStr);
-
 
     function getIntroStr() {
       return `                                 Reference Table
@@ -320,6 +421,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 ===================================================================================================`;
     }
     function buildRprt() {
+      var rprtStrngs;
       var errors = false;
       var storedRprts = {};
       var intSkipped = false;
@@ -335,9 +437,9 @@ These names have been replaced with shorter ones. The table below shows the colu
       invalidNullsStr += invalidNullsStrAry.join('\n' + smlDivider + '\n');
       conflictsStr += conflictsStrAry.join('\n');
       nullRefStr += nullRefStrAry.join('\n');
-      rprtStr = [introStr, nullRefStr, invalidNullsStr, conflictsStr].join('\n');
+      rprtStrngs = [introStr, nullRefStr, invalidNullsStr, conflictsStr].filter(function(str) { return str.length > 0 && str !== "\n"; });
 
-      return rprtStr;
+      return rprtStrngs.join('\n');
 
       function rptErrors(entity) {
         if (valData[entity].valErrs !== undefined && valData[entity].valErrs !== null) { buildRprtStrngs(valData[entity].valErrs, entity); }
@@ -371,26 +473,13 @@ These names have been replaced with shorter ones. The table below shows the colu
           }
           function processTaxonNulLRprt() { //console.log("processTaxonNulLRprt called. invldNullRprt = %O", invldNullRprt)
             var taxonStrAry = [];
-            for (var nullType in invldNullRprt) {
-              if (nullType === "kingdom") { getKingdomNullRprt(invldNullRprt[nullType]);
-              } else {
-                getRprtStr(invldNullRprt[nullType], nullType);
-              }
+            for (var role in invldNullRprt) {
+                var recrdCnt = invldNullRprt[role].length;
+                var intIds = invldNullRprt[role].map(function(recrd){ return recrd.tempId+1 });
+                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + role + 'ect taxon: ' + intIds.join(', ') + '.')
             }
             tempNullStrAry.push('\n' + taxonStrAry.join('\n'));
-
-            function getKingdomNullRprt(nullObj) {
-              for (var role in nullObj) { getRprtStr(nullObj[role], "kingdom") }
-            }
-            function getRprtStr(recrdsAry, nullType) {
-              var recrdCnt = recrdsAry.length;
-              var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
-              if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
-              } else {
-                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + 'ect taxon: ' + intIds.join(', ') + '.');
-              }
-            }
-          } /* End processTaxonNullRprt */
+          }
           function getAuthNullRprt() {
             tempNullStrAry.push('\n--Author Short Name missing for the following records: \n');
             invldNullRprt.recrds.forEach(function(recrd){
@@ -455,18 +544,15 @@ These names have been replaced with shorter ones. The table below shows the colu
         function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
           var tempConflictsStrAry = [];
           errors = true;
-          conflictsStr = '\n' + divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+          conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
           if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
             } else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
 
           for (var sharedKey in conflictObj.recrds) {
-            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey);
-            tempConflictsStrAry.push(buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
-
-            tempConflictsStrAry.push(smlDivider);
+            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
           }
-          conflictsStrAry.push(tempConflictsStrAry.join('\n') + divider );
+          conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
           function buildConflictRprts(recrdsAry, sharedKey) {
             var tempRprt = [];
@@ -491,7 +577,7 @@ These names have been replaced with shorter ones. The table below shows the colu
             var nullRefRslts = storedRprts.locNullRefs;
             conflictObj.intIds = {};
 
-            tempConflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields.");
+            conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
 
             for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
               var refObj = conflictObj.intIds[locDescKey] = {};
@@ -535,11 +621,16 @@ These names have been replaced with shorter ones. The table below shows the colu
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
           var tempNullRefStrAry = [];
           errors = true;
-          var tempNullRefStrAry = [];
-          nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider + '\n';   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          "location" in nullRefResults && processLocNullRefs(nullRefResults.location);
-          "citation" in nullRefResults && processCitNullRefs(nullRefResults, nullRefResults.citation);
-          "author" in nullRefResults && processAuthorNullRefs(nullRefResults.author);
+
+          if ("location" in nullRefResults) { processLocNullRefs(nullRefResults.location); }   //location null refs are reported later in the conflicts report, so these are isolated from the nullRefStr init to keep this section from displaying if locations are the only null refs to report.
+          if ("citation" in nullRefResults) {
+            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+            processCitNullRefs(nullRefResults, nullRefResults.citation);
+          }
+          if ("author" in nullRefResults) {
+            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+            processAuthorNullRefs(nullRefResults.author);
+          }
 
           nullRefStrAry.push(tempNullRefStrAry.join('\n'));
 
@@ -666,7 +757,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       });
       mergeEntities();
 
-      function mergeEntities() { console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
+      function mergeEntities() { //console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
         var cb = validMode ? displayValidationResults : entity === "interaction" ? buildDataGridConfig : ein.ui.show;
         var valObj = validMode ? mergeEntityResults() : false;
         ein.parse.mergeDataSet(fSysId, parentObj, childObjs, cb, valObj);
@@ -840,46 +931,5 @@ These names have been replaced with shorter ones. The table below shows the colu
       }]
     };
   }
-/*-------------Not in use----------------------------------------------------------------------- */
-  // function processAuthFields(authRcrdsAry) {// console.log("processAuthFields. arguments = %O", arguments);
-  //   var authStr = '';
-  //   authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
-  //     authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
-  //   });                                                                   //console.log("authStr = ", authStr);
-  //   return authStr;
-  // }
-  // function processIntFields(recrd) { //console.log("recrd = %O", recrd)
-  //   var str = 'citId: ' + recrd.citId + ', intType: ' + recrd.intType + ',' + addIntTags(recrd.intTag);
-  //   str += addTaxonFields(recrd, "subjTaxon")+ addTaxonFields(recrd, "objTaxon");
-  //   str += addFieldsInRecrd(recrd.location);
-  //   return str;
-  // }
-  // function processPubFields(pubRecrd) {
-  //   var pubStr = '';
-  //   for (var key in pubRecrd) {
-  //     if (pubRecrd[key] !== null) {
-  //       pubStr += key + ': ' + pubRecrd[key] + ', '
-  //     }
-  //   }
-  //   return pubStr + '\n';
-  // }
-  // function addTaxonFields(recrd, field) { //console.log("recrd[field] = %O", recrd[field])
-  //   var levels = ['Species', 'Genus', 'Family', 'Order', 'Class', 'Kingdom'];
-  //   if (recrd[field] !== undefined) {
-  //     var subStr = ' ' + field + ': ' + levels[--recrd[field].level] + ' ' + recrd[field].name + ', ';
-  //     // subStr += 'parent: ' + levels[--recrd[field].parent.level] + ' ' + recrd[field].parent.name + ',';
-  //     return subStr;
-  //   }
-  // }
-  // function addIntTags(tagAry) {
-  //   if (tagAry !== undefined) {
-  //     var subStr = ' intTags: ';
-  //     tagAry.forEach(function(tag){
-  //       subStr += tag + ', '
-  //     });
-  //     return subStr;
-  //   }
-  // }
-
 }());  /* end of namespacing anonymous function */
 
