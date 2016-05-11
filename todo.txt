@@ -1,3 +1,70 @@
+
+
+upload to server
+
+	load fos login template (modify css for popup)
+		if role doesnt have permissions->
+			you dont have permissions to do this, contact the webmaster for more information
+			send msg with permission results
+		if you do-
+			hide the webview
+				send msg with permission results
+				(open JSON file selection (entity val results))
+			(show the entities in file and the file they picked)
+			--on recieving side of post msg
+				--cmd dict {"key": func}
+
+				send ajx msg to webview w data.
+
+
+
+
+In batplant-
+
+
+msg posting
+		starts in app
+				wbview.cntnwdw
+				origin- batplant.org
+
+		batplant
+				msg listener
+
+
+
+
+pmsg exmpl
+local-api  52
+	-core
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	make data set exercising all types of validation error reporting
 			--Null Refs:
 				citation:
