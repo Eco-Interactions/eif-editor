@@ -15,7 +15,7 @@
         editorTxtArea.value = fileText;
       },
       setStatus: function(statusStr) {// console.log("-----------attempting to set status. statusStr = ", statusStr);
-        statusBar.innerText = statusStr;
+        if (typeof statusStr === 'string') { statusBar.innerText = statusStr; }
       }
     };
     // initDragBar();
