@@ -1,5 +1,5 @@
 (function(){
-  var progBar, boundPopUpAlert, overlay, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
+  var progBar, boundPopUpAlert, overlay, popupBtn, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
   var ein = ECO_INT_NAMESPACE;
   var validationObj = {};
   var toolbarBtnMap = {
@@ -102,7 +102,6 @@
       popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
       if (status !== undefined) { ein.ui.setStatus(status); }
       popupBtn.onclick = hideOverlayAndPopup;  //hides overlay and popup on button close
-
   }
   function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
       popup.firstElementChild.innerHTML = contnt;
@@ -131,17 +130,10 @@
              { name: 'Creativ Cranius' },
              { name: 'Infini Potentius' } ];
   }
-<<<<<<< HEAD
   /*--------------------- Login with Webview -----------------------------------------------*/
   function webviewLogin(data, name) { console.log("webviewLogin begun.")
     webviewElem = buildWebview();
     popupBtn.style.display = 'none';
-=======
-
-  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
-  function pushEntity(data, name) { console.log("pushEntity begun.")
-    webviewElem = buildWebview();
->>>>>>> Added in code to handle the login process from the app to the website.
     boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
     webviewElem.addEventListener('contentload', postWebviewMsg);
 
@@ -161,7 +153,6 @@
     return document.getElementById('web-view');
   }
   function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
-<<<<<<< HEAD
     msgMap[msg.data.tag](msg);
   }
   function showWebview(msg) {
@@ -204,9 +195,9 @@
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
-    var valChkbxElem = document.getElementById('loadIfValid');
-    return valChkbxElem.checked ? true : false;
-    // return true;
+    // var valChkbxElem = document.getElementById('loadIfValid');
+    // return valChkbxElem.checked ? true : false;
+    return true;
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -255,7 +246,7 @@
       } else {
         boundPopUpAlert('<h3>Invalid file name: "' + invalidFileId[1] + '".</h3>' +
           'Please use a file name with a csv extension and author, citation, or interaction in the file name.');
-        clearProgStatus();
+          clearProgStatus();
       }
       function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
