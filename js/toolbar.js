@@ -465,13 +465,26 @@ These names have been replaced with shorter ones. The table below shows the colu
           }
           function processTaxonNulLRprt() { //console.log("processTaxonNulLRprt called. invldNullRprt = %O", invldNullRprt)
             var taxonStrAry = [];
-            for (var role in invldNullRprt) {
-                var recrdCnt = invldNullRprt[role].length;
-                var intIds = invldNullRprt[role].map(function(recrd){ return recrd.tempId+1 });
-                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + role + 'ect taxon: ' + intIds.join(', ') + '.')
+            for (var nullType in invldNullRprt) {
+              if (nullType === "kingdom") { getKingdomNullRprt(invldNullRprt[nullType]);
+              } else {
+                getRprtStr(invldNullRprt[nullType], nullType);
+              }
             }
             tempNullStrAry.push('\n' + taxonStrAry.join('\n'));
-          }
+
+            function getKingdomNullRprt(nullObj) {
+              for (var role in nullObj) { getRprtStr(nullObj[role], "kingdom") }
+            }
+            function getRprtStr(recrdsAry, nullType) {
+              var recrdCnt = recrdsAry.length;
+              var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
+              if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
+              } else {
+                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + 'ect taxon: ' + intIds.join(', ') + '.');
+              }
+            }
+          } /* End processTaxonNullRprt */
           function getAuthNullRprt() {
             tempNullStrAry.push('\n--Author Short Name missing for the following records: \n');
             invldNullRprt.recrds.forEach(function(recrd){
