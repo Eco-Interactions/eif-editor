@@ -480,15 +480,21 @@ These names have been replaced with shorter ones. The table below shows the colu
             for (var nullType in invldNullRprt) {
               if (nullType === "kingdom") { getKingdomNullRprt(invldNullRprt[nullType]);
               } else {
-                getRprtStr(invldNullRprt[nullType], nullType);
+                getTaxaRprtStr(invldNullRprt[nullType], nullType);
               }
             }
             tempNullStrAry.push('\n' + taxonStrAry.join('\n'));
 
             function getKingdomNullRprt(nullObj) {
-              for (var role in nullObj) { getRprtStr(nullObj[role], "kingdom") }
+              for (var role in nullObj) {
+                var intIds = nullObj[role].map(function(recrd){ return recrd.tempId+1 });
+                var unqIds = [];
+                intIds.forEach(function(id){ if (unqIds.indexOf(id) === -1) {unqIds.push(id)} });
+                var recrdCnt = unqIds.length;
+                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + unqIds.join(', ') + '.')
+              }
             }
-            function getRprtStr(recrdsAry, nullType) {
+            function getTaxaRprtStr(recrdsAry, nullType) {
               var recrdCnt = recrdsAry.length;
               var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
               if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
