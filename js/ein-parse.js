@@ -77,7 +77,7 @@
 		cleanUpReturnResults(entityObj.curRcrds);
 
 		if (validMode) { validationObj[entity] = entityObj; }
-																			//		console.log("entityParams[entity] = %O", entityParams[entity]);
+
 		callback(fSysId, entityObj.valResults); //	console.log("recurParseMethods complete. metaData = %O", entityObj.validationResults);
 	}
 	function copyParseChain(parseMethodChain) {
@@ -906,18 +906,22 @@
 
 	function buildTaxaTree(recrdsObj) {//console.log("buildTaxaTree. arguments = %O, entityObj = %O", arguments, entityObj)
 		var batTaxaRefObjAry, objTaxaRefObjAry;
+		var nullKingdoms = {};
 		var taxonRecrdObjsAry = entityObj.taxaRcrdObjsAry;
 		var curTempId = 1;
 
-
 		initTopTaxa();
 		taxonRecrdObjsAry.forEach(function(recrd) { buildTaxaTree(recrd); });
+
+		if (!isEmpty(nullKingdoms)) { rprtNullKingdoms() }
 
 		entityObj.taxon.batTaxa = batTaxaRefObjAry;
 		entityObj.taxon.objTaxa = objTaxaRefObjAry;
 
 		function buildTaxaTree(recrd) {
 			var lvlAry = [7, 6, 5, 4, 3, 2, 1];
+			var errors = false;
+
 			buildSubjTaxa(recrd);
 			buildObjTaxa(recrd);
 
@@ -948,7 +952,7 @@
 					}
 				});
 			}
-			function foundMostSpecificLevel(tP) { //console.log("foundMostSpecificLevel called");  // tP = taxaParams
+			function foundMostSpecificLevel(tP) { //console.log("foundMostSpecificLevel called. tP = %O", tP);  // tP = taxaParams
 				var nameConcatMethod = tP.role === "subject" ? concatSubjFieldsIntoKey : concatObjFieldsIntoKey;
 				var taxonNameKey = nameConcatMethod(tP, tP.idx);
 				isInRefObjOrAdd(taxonNameKey, tP.field, tP.idx, tP);
@@ -977,35 +981,51 @@
 				var kingdom = tP.
 				role === "subject" ? "Animalia" : tP.recrd.objKingdom;
 				var taxonName = (field === "objSpecies" || field === "subjSpecies") ? getSpecies(tP.recrd[field]) : tP.recrd[field];
-				tP.taxaObjs[taxonNameKeyStr] = {
-					kingdom: kingdom,
-					parent: linkParentTaxon(tP, idx, taxonNameKeyStr),
-					name: taxonName,
-					level: level,				// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
-					tempId:	curTempId++
-				};
+				var parentTaxon = linkParentTaxon(tP, idx, taxonNameKeyStr);
+				if (parentTaxon === null) { nullParentError(tP);
+				} else {
+					tP.taxaObjs[taxonNameKeyStr] = {
+						kingdom: kingdom,
+						parent: parentTaxon,
+						name: taxonName,
+						level: level,				// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
+						tempId:	curTempId++
+					};
+				}
 			}
 			function getSpecies(genusSpeciesStr) {			//	console.log("getSpecies called. arguments = %O", arguments)
 				var nameAry = genusSpeciesStr.split(" ");
 				return nameAry[1];
 			}
-			function linkParentTaxon(tP, idx, taxonNameKeyStr) { //console.log("linkParentTaxon called. taxonNameKeyStr = %s", taxonNameKeyStr);
-			  if (idx === 6) { console.log("parent taxon idx over 7. Error. recrd = %O", tP.recrd); return null; }
+			function linkParentTaxon(tP, idx, taxonNameKeyStr) {// console.log("linkParentTaxon called. arguments = %O", arguments);
+			  if (idx === 6) { console.log("Error. Parent taxon idx too high. recrd = %O", tP.recrd); return null; }
 				var parentIdx = getParentLevel(tP, idx);
-				var parentField = tP.fieldAry[parentIdx];
+				if (parentIdx === false) { return null; }
+				var parentField = tP.fieldAry[parentIdx];  //console.log("parentField = ", parentField)
 				var nameConcatMethod = tP.role === "subject" ? concatSubjFieldsIntoKey : concatObjFieldsIntoKey;
 				var parentTaxonNameKey = nameConcatMethod(tP, parentIdx);
 
 				isInRefObjOrAdd(parentTaxonNameKey, parentField, parentIdx, tP);
 
-				return tP.taxaObjs[parentTaxonNameKey].tempId;
+				return errors ? null : tP.taxaObjs[parentTaxonNameKey].tempId;
 			}
-			function getParentLevel(tP, idx) {		//child level = idx +1
-				for (var i = ++idx; i < 7; i++) {
+			function getParentLevel(tP, idx) {	//	console.log("getParentLevel called. idx = ", idx)
+				for (var i = ++idx; i <= 7; i++) {						// if i ever gets to 7 then there is no value in kingdom(6)
+					if (i === 7) { console.log("i=7. kingdom===null"); return false; }
 					if (tP.recrd[tP.fieldAry[i]] !== null) { return i; }
 				}
 			}
-		} /* end buildTaxaTre e*/
+			function nullParentError(tP) { // console.log("nullParentError tP = %O", tP)
+				errors = true;
+				if (nullKingdoms[tP.role] === undefined) { nullKingdoms[tP.role] = [] };
+				nullKingdoms[tP.role].push(recrd);
+				delete recrdsObj[tP.recrd.tempId];
+			}
+		} /* end buildTaxaTree */
+		function rprtNullKingdoms() {
+			if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
+			entityObj.taxon.valRpt.rcrdsWithNullReqFields.kingdom = nullKingdoms;
+		}
 		function initTopTaxa() {
 		  batTaxaRefObjAry = {
 				Animalia: {
@@ -1046,7 +1066,7 @@
 				}
 			};
 	  } /* End initTopTaxa */
-	} /* End buildTaxaTree */
+	} /* End buildTaxaTreeObjs */
 
   function mergeTaxaIntoInteractions(recrdsObj) {
   	var batTaxa = entityObj.taxon.batTaxa; //console.log("batTaxa = %O", batTaxa)
