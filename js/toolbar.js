@@ -120,27 +120,17 @@
       popupBtn.style.display = 'block';
       if (status !== undefined) { ein.ui.setStatus(status) }
   }
-  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
-  function pushEntity () {
-    boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
-  }
-  function getTaxonymStubs() {
-    return [ { name: 'Taxonys Singularis' },
-             { name: 'Repeatus Taxonymicus' },
-             { name: 'Creativ Cranius' },
-             { name: 'Infini Potentius' } ];
-  }
   /*--------------------- Login with Webview -----------------------------------------------*/
   function webviewLogin(data, name) { console.log("webviewLogin begun.")
     webviewElem = buildWebview();
+    webviewElem.clearData({}, {cache: true}, function(){console.log("cache cleared.")});   // clear webview cache
     popupBtn.style.display = 'none';
     boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
-    webviewElem.addEventListener('contentload', postWebviewMsg);
-
-    function postWebviewMsg() {
-      webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
-    }
+    webviewElem.addEventListener('contentload', postWebviewInitMsg);
   } /* End webviewLogin */
+  function postWebviewInitMsg() {
+    webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
+  }
   function hideWebview() {
     webviewCntnr.style.display = "none";
   }
@@ -160,6 +150,7 @@
     overlay.style.display = "block";
     webviewCntnr.style.display = 'block';
     webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
+    webviewElem.removeEventListener('contentload', postWebviewInitMsg);
     webviewElem.addEventListener('contentload', checkLogin);
   }
   function checkRole(msg) {     console.log("checkRole called. msg= %O", msg);
@@ -193,11 +184,32 @@
   function invalidRole() { console.log("invalidRole called");
     boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
   }
+  /*--------------------- Push Valid Entity Objs -------------------------------------------*/
+  function pushEntity () {
+    // boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
+    webviewElem.contentWindow.postMessage({
+      tag: 'uploadData',
+      data: { 'taxonym': getTaxonymStubs() }}, "http://localhost/batplant/web/app_dev.php/");
+  }
+  function getTaxonymStubs() {
+    return [ { 'name': 'Taxonys Singularis' },
+             { 'name': 'Repeatus Taxonymicus' },
+             { 'name': 'Creativ Cranius' },
+             { 'name': 'Infini Potentius' } ];
+  }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
     var valChkbxElem = document.getElementById('loadIfValid');
     return valChkbxElem.checked ? true : false;
     // return true;
+  }
+  function singleEntityValDisplay(fSysIdAry, resultData) {//  console.log("entityFileValDisplay called. arguments = %O", arguments)
+    var displayObj = {};
+    displayObj[resultData.name] = resultData;
+    displayValidationResults(fSysIdAry, displayObj);
+  }
+  function entityFileValDisplay(fSysIdAry, resultData) { console.log("entityFileValDisplay called. arguments = %O", arguments)
+    entityCsvParseVals[resultData.name];
   }
 /*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
   /**
@@ -736,15 +748,6 @@ These names have been replaced with shorter ones. The table below shows the colu
       } /* End buildRprtStr */
     } /* End buildRprt */
   } /* End generateRprt */
-  /*---------- Used by many ----------------*/
-  function singleEntityValDisplay(fSysIdAry, resultData) {//  console.log("entityFileValDisplay called. arguments = %O", arguments)
-    var displayObj = {};
-    displayObj[resultData.name] = resultData;
-    displayValidationResults(fSysIdAry, displayObj);
-  }
-  function entityFileValDisplay(fSysIdAry, resultData) { console.log("entityFileValDisplay called. arguments = %O", arguments)
-    entityCsvParseVals[resultData.name];
-  }
 /*----------Select entity to parse-------------- */
   function selectFileCsvParse() {
     var entity = document.getElementById('entitySelect').value;
@@ -900,7 +903,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       id: 'spec-win',
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
-/*-----------------------Misc Helpers---------------------------------*/
+/*-----------------------Util Helpers---------------------------------*/
   function pad (pad, str, padLeft) {
     if (padLeft) {
       return (pad + str).slice(-pad.length);
