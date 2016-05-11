@@ -19,7 +19,7 @@
   <body>
     <div class="toolbar" id="toolbar">
       <label>
-      <button id="allFileSet">Parse FileSet</button>
+      <button id="allFileSet">Parse File Set</button>
         <input type="checkbox" name="loadIfValid" id="loadIfValid" checked>
         Load only if valid
       </label>
@@ -34,6 +34,13 @@
       <button id="saveFile">Save File</button>
       <button id="fileSaveAs">Save File As</button>
       <button id="reload">Reload Editor</button>
+      <span id="adminCntnr">
+      <button class="admin-only hidden" id="pushEnt">Push Entity</button>
+      <span class="admin-only hidden" id="username"></span>
+      <button id="login">Admin Login</button>
+      <button class="admin-only hidden" id="logout">LogOut</button>
+      </span>
+
       <!-- <button id="createFile">Create File</button>
       <button id="createFolder">Create Folder</button>
       <button id="setUpTests">Set up Test Env</button>

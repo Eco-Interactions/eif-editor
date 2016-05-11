@@ -27,9 +27,6 @@ button {
 	height: 20px;
 	margin: 5px 0 0 5px;
 }
-.hidden {	/* Removed from DOM flow */
-	display: none;
-}
 /* Animation Styles */
 @keyframes fadeIn {
   to { opacity: 1; }
@@ -46,16 +43,26 @@ button {
   animation: fadeOut .3s ease-out 1 forwards;
 }
 /* Core UI Styles */
+.hidden { /* Removed from DOM flow */
+  display: none;
+}
 .toolbar {
   height: 30px;
   background: WhiteSmoke;
   border-bottom: 1px solid gray;
+}
+.admin-only {
+  display: none;
 }
 #outer {
   position: relative;
   display: flex;
   align-items: stretch;
   height: 100%;
+}
+#dev-log {
+  width: 100%;
+  height:500px;
 }
 #drag-bar {
   position: absolute;
@@ -70,10 +77,6 @@ button {
 #left-pane {
  position: relative;
  width: 11px;
-}
-#dev-log {
-	width: 100%;
-	height:500px;
 }
 #right-pane {
 	flex-grow: 1;
@@ -93,32 +96,7 @@ button {
 #entitySelect {
 	margin-left: 1em;
 }
-progress {
-    position: relative;
-    left: 5px;
-    margin: .5em;
-    border: 0;
-    height: 18px;
-    width: 200px;
-    border-radius: 9px;
-  }
-progress::-webkit-progress-bar {
-   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(245,245,245,.8)));
-}
-progress::-webkit-progress-value {
-  background: -webkit-linear-gradient(top, #2D7853 -35%, #77cab8 100%);
-  border-radius: 5px;
-}
-progress::-webkit-progress::after {
-  content: '45';
-  width: 6px;
-  height: 6px;
-  position: absolute;
-  border-radius: 100%;
-  right: 7px;
-  top: 7px;
-  background-color: white;
-}
+/* Status Bar and Progress Styles */
 #status-bar {
 	display: flex;
 }
@@ -136,6 +114,33 @@ progress::-webkit-progress::after {
 	color: #1b3b1b;
 	font-weight: bold;
 }
+progress {
+    position: relative;
+    left: 5px;
+    margin: .5em;
+    border: 0;
+    height: 18px;
+    width: 200px;
+    border-radius: 9px;
+}
+progress::-webkit-progress-bar {
+   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(245,245,245,.8)));
+}
+progress::-webkit-progress-value {
+  background: -webkit-linear-gradient(top, #2D7853 -35%, #77cab8 100%);
+  border-radius: 5px;
+}
+progress::-webkit-progress::after {
+  content: '45';
+  width: 6px;
+  height: 6px;
+  position: absolute;
+  border-radius: 100%;
+  right: 7px;
+  top: 7px;
+  background-color: white;
+}
+/* Pop Up, Overlay, and Webview Styles */
 #overlay {
 		display: none;
     position: absolute;
@@ -156,8 +161,8 @@ progress::-webkit-progress::after {
     left: 50%;
     width: 500px;
     height: 250px;
-    margin-left: -250px; /*Half the value of width to center div*/
-    margin-top: -100px; /*Half the value of height to center div*/
+    margin-left: -250px;
+    margin-top: -100px;
     z-index: 200;
     border-radius: 5px;
 }
@@ -182,21 +187,6 @@ progress::-webkit-progress::after {
     font-weight: bold;
     font-size: 14px;
 }
-/*
-#progCntnr {
-    width: 200px;
-    height: 20px;
-    border: 1px solid #888;
-    background: WhiteSmoke;
-    position: absolute;
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(245,245,245,.8)));
-    top: 6px;
-    right: 5px;
+#web-view-cntnr {
+  padding: 6em;
 }
-#progVal {
-	margin: auto;
-	position: relative;
-	width: 35px;
-	color: #1b3b1b;
-	font-weight: bold;
-}*/
