@@ -150,10 +150,11 @@
     overlay.style.display = "block";
     webviewCntnr.style.display = 'block';
     webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
-    webviewElem.removeEventListener('contentload', postWebviewInitMsg);
     webviewElem.addEventListener('contentload', checkLogin);
   }
   function checkRole(msg) {     console.log("checkRole called. msg= %O", msg);
+    webviewElem.removeEventListener('contentload', postWebviewInitMsg);    // webviewElem.removeEventListener('contentload', postWebviewInitMsg);
+    webviewElem.removeEventListener('contentload', checkLogin);
     hideWebview();
     if (msg.data.role === "admin" || msg.data.role === "super") {
       adminLogin(msg);
@@ -189,7 +190,9 @@
     // boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
     webviewElem.contentWindow.postMessage({
       tag: 'uploadData',
-      data: { 'taxonym': getTaxonymStubs() }}, "http://localhost/batplant/web/app_dev.php/");
+      data: { 'taxonym': getTaxonymStubs() }},
+      "http://localhost/batplant/web/app_dev.php/"
+    );
   }
   function getTaxonymStubs() {
     return [ { 'name': 'Taxonys Singularis' },
@@ -641,11 +644,6 @@ These names have been replaced with shorter ones. The table below shows the colu
             idSeqAry.push(procSeq);
           }
         } /* End groupIntIds */
-        /**
-         * [addNullRefs description]
-         * @param {[type]} nullRefResults [description]
-         * @param {[type]} entityName)    {            console.log("addNullRefs called. %s nullRefs [description]
-         */
         function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
           var tempNullRefStrAry = [];
           errors = true;
