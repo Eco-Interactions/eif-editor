@@ -143,21 +143,21 @@
     return document.getElementById('web-view');
   }
   function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
-    msgMap[msg.data.tag](msg);
+    msgMap[msg.data.tag](msg.data);
   }
-  function showWebview(msg) {
+  function showWebview(msgData) {
     hidePopUp('Please login to batplant.org.');
     overlay.style.display = "block";
     webviewCntnr.style.display = 'block';
     webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
     webviewElem.addEventListener('contentload', checkLogin);
   }
-  function checkRole(msg) {     console.log("checkRole called. msg= %O", msg);
+  function checkRole(msgData) {     console.log("checkRole called. msgData= %O", msgData);
     webviewElem.removeEventListener('contentload', postWebviewInitMsg);    // webviewElem.removeEventListener('contentload', postWebviewInitMsg);
     webviewElem.removeEventListener('contentload', checkLogin);
     hideWebview();
-    if (msg.data.role === "admin" || msg.data.role === "super") {
-      adminLogin(msg);
+    if (msgData.role === "admin" || msgData.role === "super") {
+      adminLogin(msgData);
     } else {
       invalidRole();
     }
@@ -165,10 +165,10 @@
   function checkLogin() { console.log("checkLogin called. ")
     webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/app_dev.php/");
   }
-  function adminLogin(msg) {  console.log("hideWebview called. ")
+  function adminLogin(msgData) {  console.log("hideWebview called. ")
     hideOverlayAndPopup("Successful login.");
     showAdminElems();
-    document.getElementById("username").innerText = "Logged in as " + msg.data.user;
+    document.getElementById("username").innerText = "Logged in as " + msgData.user;
     document.getElementById("login").style.display = "none";
   }
   function showAdminElems () {
