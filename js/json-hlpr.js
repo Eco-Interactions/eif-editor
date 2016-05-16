@@ -22,9 +22,10 @@
 
 function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
 	var preppedData = {};
+	var refObj = {};
 	buildAuthorObjs(resultData.author.finalRecords);
+	buildPublicationObjs(resultData.publication.finalRecords);
 	// buildCitationObjs(resultData.citation.finalRecords);
-	// buildPublicationObjs(resultData.publication.finalRecords);
 	// buildLocationObjs(resultData.location.finalRecords);
 	// buildInteractionObjs(resultData.interaction.finalRecords);
 
@@ -41,7 +42,12 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 		}
 		return returnObj;
 	}
-	function buildAuthorObjs(rcrds) {
+	function addTempIds(rcrds) {
+		var id = 1;
+		for (var key in rcrds) { rcrds[key].tempId = id++; }
+		return rcrds;
+	}
+	function buildAuthorObjs(rcrds) { 						console.log("buildAuthorObjs called")
 		var preppedObjs = {};
 		var authRcrds = stripArray(resultData.author.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 
@@ -49,10 +55,17 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 
 		preppedData.author = preppedObjs;
 	}
-	function buildCitationObjs(rcrds) {
-		// body...
+	function buildPublicationObjs(rcrds) {				console.log("buildPublicationObjs called")
+		var preppedObjs = {};
+		var rcrdsObj = stripArray(resultData.publication.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
+		var pubRcrds = rcrdsObj[Object.keys(rcrdsObj)[0]].id === undefined ? addTempIds(rcrdsObj) : rcrdsObj;
+
+		for (var rcrd in pubRcrds) { preppedObjs[pubRcrds[rcrd].tempId] = pubRcrds[rcrd]; }
+
+		refObj.publication = pubRcrds;
+		preppedData.publication = preppedObjs;
 	}
-	function buildPublicationObjs(rcrds) {
+	function buildCitationObjs(rcrds) {
 		// body...
 	}
 	function buildLocationObjs(rcrds) {
