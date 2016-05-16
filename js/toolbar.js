@@ -337,22 +337,25 @@
     var valResults = extractValidationResults(resultObj); //console.log("Validation results = %O", valResults);
     var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
 
-    if (textRprt === false && resultData.interaction) { console.log("We are here")
-      buildDataGridConfig(fSysIds, resultData.interaction);
-      boundSetProgress(100);
-      setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
-      boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
-    } else if (textRprt === false) {
-      boundSetProgress(100);
-      setTimeout(clearProgStatus, 3000);
-      boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
-    } else {
-      boundSetProgress(100);
-      setTimeout(clearProgStatus, 3000);
-      ein.editorTxtArea.value = textRprt;
+    showResults();
+
+    function showResults() {
+      if (textRprt === false && resultData.interaction) { console.log("We are here")
+        buildDataGridConfig(fSysIds, resultData.interaction);
+        boundSetProgress(100);
+        setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
+        boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
+      } else if (textRprt === false) {
+        boundSetProgress(100);
+        setTimeout(clearProgStatus, 3000);
+        boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
+      } else {
+        boundSetProgress(100);
+        setTimeout(clearProgStatus, 3000);
+        ein.editorTxtArea.value = textRprt;
+      }
     }
-    // ein.fileSys.fileSaveAs(textRprt);
-  }
+  } /* End displayValidationResults */
   function extractValidationResults(resultData) {
     var valData = {};
     for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
