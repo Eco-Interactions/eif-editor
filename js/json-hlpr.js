@@ -26,7 +26,7 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 	buildAuthorObjs(resultData.author.finalRecords);
 	buildPublicationObjs(resultData.publication.finalRecords);
 	buildCitationObjs(resultData.citation.finalRecords);
-	// buildLocationObjs(resultData.location.finalRecords);
+	buildLocationObjs(resultData.location.finalRecords);
 	// buildInteractionObjs(resultData.interaction.finalRecords);
 
 
@@ -83,9 +83,54 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 	function getPubRefId(pubObj) { //console.log("pubId = %s", refObj.publication[pubObj.pubTitle].tempId)
 		return pubObj === null ? null : refObj.publication[pubObj.pubTitle].tempId;
 	}
-	function buildLocationObjs(rcrds) {
-		// body...
-	}
+	function buildLocationObjs(rcrds) {				console.log("buildLocationObjs called")
+		var cntryId = regionId = habId = 1;
+		var habitatType = {};
+		var country = {};
+		var region = {};
+
+		var locRcrds = stripArray(resultData.location.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
+
+		for (var rcrd in locRcrds) {
+			locRcrds[rcrd].country = addCntryRef(locRcrds[rcrd].country);
+			locRcrds[rcrd].region = addRegionRef(locRcrds[rcrd].region);
+			locRcrds[rcrd].habitatType = addHabRef(locRcrds[rcrd].habType);
+			delete locRcrds[rcrd].habType;
+		}  console.log("locRcrds = %O", locRcrds);
+
+		preppedData.country = rearrangeDataObj(country);
+		preppedData.region = rearrangeDataObj(region);
+		preppedData.habitatType = rearrangeDataObj(habitatType);  	console.log("preppedData = %O", preppedData);
+
+
+		function rearrangeDataObj(refObj) {
+			var preppedObj = {};
+			for (var key in refObj) { preppedObj[refObj[key]] = key; }
+			return preppedObj;
+		}
+		function addCntryRef(countryName) {
+			if (countryName === null) {return null}
+			if (country[countryName] === undefined) {
+				country[countryName] = cntryId++;
+			}
+			return country[countryName];
+		}
+		function addRegionRef(regionName) {
+			if (regionName === null) {return null}
+			if (region[regionName] === undefined) {
+				region[regionName] = regionId++;
+			}
+		  return region[regionName];
+		}
+		function addHabRef(habitat) {
+			if (habitat === null) {return null}
+			if (habitatType[habitat] === undefined) {
+				habitatType[habitat] = habId++;
+			}
+		  return habitatType[habitat];
+		}
+	} /* End buildLocationObjs */
+
 	function buildInteractionObjs(rcrds) {
 		// body...
 	}
