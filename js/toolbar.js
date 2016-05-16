@@ -96,17 +96,17 @@
     setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
 /*-------------PopUp Methods----------------------------------------------------*/
-  function alertPopUp(overlay, popup, contnt, status) {        console.log("alertPopUp contnt = ", contnt)
+  function alertPopUp(overlay, popup, contnt, status) {    //    console.log("alertPopUp contnt = ", contnt)
       popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
-      popup.style.display = 'block';        console.log("popup.firstChild = %O", popup)
+      popup.style.display = 'block';      //  console.log("popup.firstChild = %O", popup)
       if (status !== undefined) { ein.ui.setStatus(status); }
       popupBtn.onclick = hideOverlayAndPopup;  //hides overlay and popup on button close
   }
-  function msgPopUp(overlay, popup, contnt, status) {        console.log("popUp contnt = ", contnt)
+  function msgPopUp(overlay, popup, contnt, status) {     //   console.log("popUp contnt = ", contnt)
       popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
-      popup.style.display = 'block';                 console.log("popup.firstChild = %O", popup)
+      popup.style.display = 'block';          //       console.log("popup.firstChild = %O", popup)
       popupBtn.onclick = hidePopUp;  //hides only popup on button close
       if (status !== undefined) { ein.ui.setStatus(status); }
   }
