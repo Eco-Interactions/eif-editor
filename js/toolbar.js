@@ -324,7 +324,7 @@
   function loadDataGrid(gridConfig) {
     ein.editorTxtArea.className = "hidden";
 
-    agGridGlobalFunc('#grid-cntnr', gridConfig);       //return datagrid code, and config, to toolbar      //
+    agGridGlobalFunc('#grid-cntnr', gridConfig);
 
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
@@ -340,20 +340,29 @@
     showResults();
 
     function showResults() {
-      if (textRprt === false && resultData.interaction) { console.log("We are here")
+      if (textRprt === false) {
+        showRecrds();
+        ein.jsonHlpr.save(resultData);
+      } else {
+        showRprt();
+      }
+    }
+    function showRecrds() {
+      if (resultData.interaction) {
         buildDataGridConfig(fSysIds, resultData.interaction);
         boundSetProgress(100);
         setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
         boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
-      } else if (textRprt === false) {
-        boundSetProgress(100);
-        setTimeout(clearProgStatus, 3000);
-        boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
       } else {
         boundSetProgress(100);
         setTimeout(clearProgStatus, 3000);
-        ein.editorTxtArea.value = textRprt;
+        boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
       }
+    }
+    function showRprt() {
+      boundSetProgress(100);
+      setTimeout(clearProgStatus, 3000);
+      ein.editorTxtArea.value = textRprt;
     }
   } /* End displayValidationResults */
   function extractValidationResults(resultData) {
@@ -885,9 +894,6 @@ These names have been replaced with shorter ones. The table below shows the colu
       subEntityObjAry = [];
       subEntityObjAry.push(mergedCitRecrds);
       processTopEntities();
-    }
-    function saveJSONresults(fSysId, mergedIntRecrds) {
-      ein.fileSys.fileSaveAs(JSON.stringify(mergedIntRecrds.finalRecords, null, 2));
     }
   }/* End csvInteractionDataSetParse */
 /*--------------- Methods For Testing -------------------------- */
