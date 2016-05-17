@@ -4,22 +4,12 @@
 		serialize: buildJsonData
 	};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Splits record data into each of the contained entites in a json compatible format.
+ * TODO: Needs to be made to recognize and work with existing ids, if they exist.
+ * @param  {obj} resultData  Parsing result data
+ * @return {string}          Entity objs split and linked by tempId references.
+ */
 function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
 	var preppedData = {};
 	var refObj = {};
@@ -30,9 +20,8 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 	buildLocationObjs(resultData.location.finalRecords);
 	buildTaxonObjs(resultData.taxon.finalRecords);
 	buildInteractionObjs(resultData.interaction.finalRecords);
-
-	return JSON.stringify(preppedData, null, 2);
 	// console.log("preppedData = %O", preppedData)
+	return JSON.stringify(preppedData, null, 2);
 
 	function stripArray(rcrds) {
 		var returnObj = {};
