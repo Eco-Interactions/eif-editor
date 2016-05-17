@@ -15,6 +15,7 @@
       fileParse: selectFileCsvParse,
       csvSet: selectCSVDataSetParse,
       allFileSet: csvFileSetParse,
+      jsonSave: saveJsonResults,
       pushEnt: pushEntity,
       login: webviewLogin
     };
@@ -82,6 +83,9 @@
   }
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
+  }
+  function saveJsonResults() {
+    ein.fileSys.fileSaveAs(jsonResultsObj)
   }
   /*---------------------Progress and Status Methods--------------------------------------*/
   function setProgressStatus(barElem, percent) {    // console.log("setProgress to %s\%", percent)
@@ -187,7 +191,7 @@
   }
   /*--------------------- Push Valid Entity Objs -------------------------------------------*/
   function pushEntity () {
-    // boundPopUpAlert('Select a JSON file containing validated interaction data.', 'Select a JSON file containing validated interaction data.');
+    boundPopUpAlert('<h1>Finish Me. </h1><p>Select a JSON file containing validated interaction data.</p>', 'Select a JSON file containing validated interaction data.');
     webviewElem.contentWindow.postMessage({
       tag: 'uploadData',
       data: { 'taxonym': getTaxonymStubs() }},
@@ -343,6 +347,7 @@
       if (textRprt === false) {
         showRecrds();
         jsonResultsObj = ein.jsonHlpr.serialize(resultData);
+        document.getElementById("jsonSave").className = '';
       } else {
         showRprt();
       }
