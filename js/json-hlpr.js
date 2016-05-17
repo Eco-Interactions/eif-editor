@@ -23,17 +23,15 @@
 function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
 	var preppedData = {};
 	var refObj = {};
+
 	buildAuthorObjs(resultData.author.finalRecords);
 	buildPublicationObjs(resultData.publication.finalRecords);
 	buildCitationObjs(resultData.citation.finalRecords);
 	buildLocationObjs(resultData.location.finalRecords);
-	// buildInteractionObjs(resultData.interaction.finalRecords);
+	buildTaxonObjs(resultData.taxon.finalRecords);
+	buildInteractionObjs(resultData.interaction.finalRecords);
 
-
-
-
-
-
+	ein.fileSys.fileSaveAs(JSON.stringify(preppedData, null, 2));
 
 	function stripArray(rcrds) {
 		var returnObj = {};
@@ -46,6 +44,18 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 		var id = 1;
 		for (var key in rcrds) { rcrds[key].tempId = id++; }
 		return rcrds;
+	}
+	function arrangeDataObjByKey(refObj) {
+		var preppedObj = {};
+		for (var key in refObj) { preppedObj[refObj[key]] = key; }
+		return preppedObj;
+	}
+	function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called")
+		for (var rcrd in rcrds) {
+			rcrds[rcrd].parent = rcrds[rcrd].parent === null? null : rcrds[rcrd].parent.tempId;
+			delete rcrds[rcrd].kingdom;
+		}
+		preppedData.taxon = rcrds;										//	console.log("taxon rcrds = %O", rcrds)
 	}
 	function buildAuthorObjs(rcrds) { 						console.log("buildAuthorObjs called")
 		var preppedObjs = {};
@@ -88,8 +98,8 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 		var habitatType = {};
 		var country = {};
 		var region = {};
-
-		var locRcrds = stripArray(resultData.location.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
+		var strippedRcrds = stripArray(resultData.location.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
+		var locRcrds = strippedRcrds[Object.keys(strippedRcrds)[0]].id === undefined ? addTempIds(strippedRcrds) : rcrdsObj;
 
 		for (var rcrd in locRcrds) {
 			locRcrds[rcrd].country = addCntryRef(locRcrds[rcrd].country);
@@ -98,16 +108,11 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 			delete locRcrds[rcrd].habType;
 		}  console.log("locRcrds = %O", locRcrds);
 
-		preppedData.country = rearrangeDataObj(country);
-		preppedData.region = rearrangeDataObj(region);
-		preppedData.habitatType = rearrangeDataObj(habitatType);  	console.log("preppedData = %O", preppedData);
+		preppedData.country = arrangeDataObjByKey(country);
+		preppedData.region = arrangeDataObjByKey(region);
+		preppedData.habitatType = arrangeDataObjByKey(habitatType);  	console.log("preppedData = %O", preppedData);
+		preppedData.location = rearrangeLocRcrds();
 
-
-		function rearrangeDataObj(refObj) {
-			var preppedObj = {};
-			for (var key in refObj) { preppedObj[refObj[key]] = key; }
-			return preppedObj;
-		}
 		function addCntryRef(countryName) {
 			if (countryName === null) {return null}
 			if (country[countryName] === undefined) { country[countryName] = cntryId++; }
@@ -123,11 +128,48 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 			if (habitatType[habitat] === undefined) { habitatType[habitat] = habId++; }
 		  return habitatType[habitat];
 		}
+		function rearrangeLocRcrds() {
+			var locObjs = {};
+			for (var rcrd in locRcrds) { locObjs[locRcrds[rcrd].tempId] = locRcrds[rcrd];	}  console.log("locRcrds = %O, locObjs =%O", locRcrds, locObjs)
+			return locObjs;
+		}
 	} /* End buildLocationObjs */
+	function buildInteractionObjs(rcrds) {				console.log("buildInteractionObjs called")
+		var intTagId = intTypeId = 1;
+		var preppedObj = {};
+		var intTagObj = {};
+		var intTypeObj = {};
+		var intObjs = stripArray(rcrds);
 
-	function buildInteractionObjs(rcrds) {
-		// body...
-	}
+		for (var key in intObjs) {
+			intObjs[key].citation = intObjs[key].citation.citId;
+			intObjs[key].location = intObjs[key].location === null ? null : intObjs[key].location.tempId;
+			intObjs[key].intTag = getIntTagRef(intObjs[key].intTag);
+			intObjs[key].intType = getIntTypeRef(intObjs[key].intType);
+			intObjs[key].subjTaxon = getTaxonRef(intObjs[key].subjTaxon);
+			intObjs[key].objTaxon = getTaxonRef(intObjs[key].objTaxon);
+		}  console.log("intObjs = %O, intTagObj = %O, intType = %O", intObjs, intTagObj, intTypeObj);
+
+		preppedData.intObjs = intObjs;
+		preppedData.intTag = arrangeDataObjByKey(intTagObj);
+		preppedData.intType = arrangeDataObjByKey(intTypeObj);
+
+		function getIntTagRef(intTags) {
+			if (intTags === null) {return null}
+			return intTags.map(function(tag){
+				if (intTagObj[tag] === undefined) { intTagObj[tag] = intTagId++; }
+		  	return intTagObj[tag];
+			});
+		}
+		function getIntTypeRef(intTypeStr) {
+			if (intTypeStr === null) {return null}
+			if (intTypeObj[intTypeStr] === undefined) { intTypeObj[intTypeStr] = intTypeId++; }
+		  return intTypeObj[intTypeStr];
+		}
+		function getTaxonRef(taxon) {
+			return taxon.tempId;
+		}
+	} /* End buildInteractionObjs */
 } /* End buildJsonFile */
 
 
