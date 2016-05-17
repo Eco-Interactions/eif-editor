@@ -110,23 +110,17 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 		}
 		function addCntryRef(countryName) {
 			if (countryName === null) {return null}
-			if (country[countryName] === undefined) {
-				country[countryName] = cntryId++;
-			}
+			if (country[countryName] === undefined) { country[countryName] = cntryId++; }
 			return country[countryName];
 		}
 		function addRegionRef(regionName) {
 			if (regionName === null) {return null}
-			if (region[regionName] === undefined) {
-				region[regionName] = regionId++;
-			}
+			if (region[regionName] === undefined) { region[regionName] = regionId++; }
 		  return region[regionName];
 		}
 		function addHabRef(habitat) {
 			if (habitat === null) {return null}
-			if (habitatType[habitat] === undefined) {
-				habitatType[habitat] = habId++;
-			}
+			if (habitatType[habitat] === undefined) { habitatType[habitat] = habId++; }
 		  return habitatType[habitat];
 		}
 	} /* End buildLocationObjs */
