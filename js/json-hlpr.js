@@ -1,7 +1,7 @@
 (function() {
 	var ein = ECO_INT_NAMESPACE;
 	ein.jsonHlpr = {
-		save: buildJsonFile
+		serialize: buildJsonData
 	};
 
 
@@ -20,7 +20,7 @@
 
 
 
-function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
+function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
 	var preppedData = {};
 	var refObj = {};
 
@@ -31,7 +31,8 @@ function buildJsonFile(resultData) {			console.log("buildJsonFile called. rcrds 
 	buildTaxonObjs(resultData.taxon.finalRecords);
 	buildInteractionObjs(resultData.interaction.finalRecords);
 
-	ein.fileSys.fileSaveAs(JSON.stringify(preppedData, null, 2));
+	return JSON.stringify(preppedData, null, 2);
+	// console.log("preppedData = %O", preppedData)
 
 	function stripArray(rcrds) {
 		var returnObj = {};

@@ -1,5 +1,5 @@
 (function(){
-  var progBar, boundPopUpAlert, overlay, popupBtn, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId;
+  var progBar, boundPopUpAlert, overlay, popupBtn, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId, jsonResultsObj;
   var ein = ECO_INT_NAMESPACE;
   var validationObj = {};
   var toolbarBtnMap = {
@@ -342,7 +342,7 @@
     function showResults() {
       if (textRprt === false) {
         showRecrds();
-        ein.jsonHlpr.save(resultData);
+        jsonResultsObj = ein.jsonHlpr.serialize(resultData);
       } else {
         showRprt();
       }
