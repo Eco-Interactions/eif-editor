@@ -1,69 +1,106 @@
+Merged up until push entity begins 36507fd47d47699e4a55c665b4ab65533f7983b2
 
 
-upload to server
-
-	load fos login template (modify css for popup)
-		if role doesnt have permissions->
-			you dont have permissions to do this, contact the webmaster for more information
-			send msg with permission results
-		if you do-
-			hide the webview
-				send msg with permission results
-				(open JSON file selection (entity val results))
-			(show the entities in file and the file they picked)
-			--on recieving side of post msg
-				--cmd dict {"key": func}
-
-				send ajx msg to webview w data.
+Taxonym
+		Namings
+				Taxa
 
 
 
-
-In batplant-
-
-
-msg posting
-		starts in app
-				wbview.cntnwdw
-				origin- batplant.org
-
-		batplant
-				msg listener
-
-
-
-
-pmsg exmpl
-local-api  52
-	-core
-
-
+taxa: {
+	level_id:
+	display_name:
+	parent_taxon_id:
+	namings: {
+		authority_id:
+		guid:
+		naming_type_id:
+		parent_taxon_id:
+		taxon_id:
+		from_date:
+		to_date:
+		taxonym_id: {
+			name:
+			namings: []
+		}
+	}
+}
 
 
+Notes:
+-----------Entity Relationships---------
+author>        <attribution>		<Citation
+publication>
 
+country> 		<location
+habtype>
+region>
 
+level>
+taxon>      <interaction
+inttag>
+inttype>
 
-
-
-
-
-
-
-
-
-
-
-
-
+------------Linking up the Entities-----
 
 
 
+----------Entity Notes---------------
+Author:
+Publication:
+	Fields Publisher and Publication Type need homes
+Citation:
+	description === shortDesc??
+	title, issue, pgs, vol (year?)
+Attributions:
+	cited as??
+
+
+----Field discrepencies----
+Author:
+	first
+	middle
+	last
+	suffix
+Citation:
+	title, issue, pgs, vol (year?) fields to publication?
+Level:
+	add phylum
 
 
 
 
 
 
+
+
+
+
+
+
+
+---TODO---
+Add error handling to webview
+
+catch tags with single character??
+
+Taxonym need a collection of namings
+
+
+
+
+Taylor:
+	leave targeturl set to false unless role beta or higher?
+
+
+
+
+GENERAL WORK MOVING FORWARD
+	--PAYMENT PAGE FOR WHM
+	--CRON JOB BACKUPS
+
+-------------------------------------------------------------------------------------------------------
+Validation reporting notes:
 
 	make data set exercising all types of validation error reporting
 			--Null Refs:
@@ -71,13 +108,12 @@ local-api  52
 					--authors
 				interaction:
 					--citation
-					--taxa
-					--location
 
 			Conflicts:
 				--Author:
 
 				--Citation:
+					++Format cit information
 						Show truncated full text (25char + ...) with cit id
 							Include the data and phrase the formatting for other conflicting records
 
@@ -88,37 +124,8 @@ local-api  52
 					--locDesc
 				author:
 					shortname
-							++Now holding onto author row numbers through adding tempIds.
+							++Now holding onto aturhor row numbers through adding tempIds.
 				interaction:
-					--citation
-					--taxon
+					citation
 				Citation:
-					--author
-
-
-
-TODO:
-	seperate out util functions
-		val reprt.js
-
-
-
-GENERAL WORK MOVING FORWARD
-	--PAYMENT PAGE FOR WHM
-	--CRON JOB BACKUPS
-
-
-
-Commemorative notes:
-	/*
-		  * New button on toolbar
-		  * select folder
-		  * find all csv files in folder, if more than three- fail validation and return (filter- isFile and .csv for collection)
-		  * for each file, look for known entity file substr in filenames (interaction, citation, author)
-		  * objectify each file and pass all into parse at once {entity: recrds}
-		  * if validates successfully- flag and return results
-		  * else return meaningful information about any issues in process
-		  * add fullSet to dictionary
-		  *
-		  * Taxa
-		 */
+					author
