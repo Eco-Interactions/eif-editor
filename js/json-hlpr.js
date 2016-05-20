@@ -72,14 +72,33 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		preppedData.publication = preppedObjs;
 	}
 	function buildCitationObjs(rcrds) {					console.log("buildCitationObjs called")
+		var attrId = 1;
 		var citRcrds = stripArray(resultData.citation.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
+		var attributes = {};
+		var preppedCits = {};
 
-		for (var rcrd in citRcrds) {
-			citRcrds[rcrd].author = getAuthRefIds(citRcrds[rcrd].author);
-			citRcrds[rcrd].publication = getPubRefId(citRcrds[rcrd].publication);
-		}		console.log("citrecrds = %O", citRcrds);
+		for (var id in citRcrds) {
+			var rcrd = citRcrds[id];
+			addAttributions(rcrd);
 
-		preppedData.citation = citRcrds;
+			preppedCits[rcrd.citId] = {			//Needs extra fields added
+				description: rcrd.shortDesc,
+				publication: getPubRefId(rcrd.publication),
+				fullText: rcrd.fullText,
+				publicationIssue: rcrd.issue
+			};
+		}																																								console.log("citrecrds = %O", citRcrds);
+		preppedData.citation = preppedCits;
+		preppedData.attributions = attributes;
+
+		function addAttributions(citRcrd) {
+			citRcrd.authors.forEach(function(author){
+				attributes[attrId++] = {
+					citation: citRcrd.citId,
+					author: author.tempId
+				};
+			});
+		}
 	}
 	function getAuthRefIds(authAry) {
 		return authAry.map(function(auth){
