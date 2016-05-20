@@ -51,7 +51,13 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		var preppedObjs = {};
 		var authRcrds = stripArray(resultData.author.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 
-		for (var rcrd in authRcrds) { preppedObjs[authRcrds[rcrd].tempId] = authRcrds[rcrd]; }
+		for (var rcrd in authRcrds) {
+			var rcrd = authRcrds[rcrd];
+			preppedObjs[rcrd.tempId] = {
+				fullName:  rcrd.first + rcrd.middle + rcrd.last + rcrd.suffix,
+				shortName: rcrd.shortName,
+				lastName: rcrd.last
+			}; }
 
 		preppedData.author = preppedObjs;
 	}
