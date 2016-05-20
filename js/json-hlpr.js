@@ -66,7 +66,13 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		var rcrdsObj = stripArray(resultData.publication.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
 		var pubRcrds = rcrdsObj[Object.keys(rcrdsObj)[0]].id === undefined ? addTempIds(rcrdsObj) : rcrdsObj;
 
-		for (var rcrd in pubRcrds) { preppedObjs[pubRcrds[rcrd].tempId] = pubRcrds[rcrd]; }
+		for (var id in pubRcrds) {			// Additional publicagtion fields remain
+			var rcrd = pubRcrds[rcrd];
+			preppedObjs[rcrd.tempId] = {
+				name: rcrd.pubTitle,
+
+			};
+			pubRcrds[rcrd]; }
 
 		refObj.publication = pubRcrds;
 		preppedData.publication = preppedObjs;
