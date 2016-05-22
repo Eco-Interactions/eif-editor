@@ -37,7 +37,7 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 	}
 	function arrangeDataObjByKey(refObj) {
 		var preppedObj = {};
-		for (var key in refObj) { preppedObj[refObj[key]] = key; }
+		for (var key in refObj) { preppedObj[refObj[key].tempId] = refObj[key]; }
 		return preppedObj;
 	}
 	function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called")
@@ -66,11 +66,11 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		var rcrdsObj = stripArray(resultData.publication.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
 		var pubRcrds = rcrdsObj[Object.keys(rcrdsObj)[0]].id === undefined ? addTempIds(rcrdsObj) : rcrdsObj;
 
-		for (var id in pubRcrds) {			// Additional publicagtion fields remain
-			var rcrd = pubRcrds[rcrd];
+		for (var id in pubRcrds) {		
+			var rcrd = pubRcrds[id];
 			preppedObjs[rcrd.tempId] = {
 				name: rcrd.pubTitle,
-
+				tempId: rcrd.tempId
 			};
 			pubRcrds[rcrd]; }
 
@@ -98,7 +98,7 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		preppedData.attributions = attributes;
 
 		function addAttributions(citRcrd) {
-			citRcrd.authors.forEach(function(author){
+			citRcrd.author.forEach(function(author){
 				attributes[attrId++] = {
 					citation: citRcrd.citId,
 					author: author.tempId
@@ -136,18 +136,30 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 
 		function addCntryRef(countryName) {
 			if (countryName === null) {return null}
-			if (country[countryName] === undefined) { country[countryName] = cntryId++; }
-			return country[countryName];
+			if (country[countryName] === undefined) { 
+				country[countryName] = {
+					tempId: cntryId++,
+					name: countryName   }; 
+			}
+			return country[countryName].tempId;
 		}
 		function addRegionRef(regionName) {
 			if (regionName === null) {return null}
-			if (region[regionName] === undefined) { region[regionName] = regionId++; }
-		  return region[regionName];
+			if (region[regionName] === undefined) { 
+				region[regionName] = {
+					tempId: regionId++,
+					name: regionName  };
+			}
+		    return region[regionName].tempId;
 		}
 		function addHabRef(habitat) {
 			if (habitat === null) {return null}
-			if (habitatType[habitat] === undefined) { habitatType[habitat] = habId++; }
-		  return habitatType[habitat];
+			if (habitatType[habitat] === undefined) { 
+				habitatType[habitat] = {
+					tempId: habId++,
+					name: habitat 		}; 
+			}
+		    return habitatType[habitat].tempId;
 		}
 		function rearrangeLocRcrds() {
 			var locObjs = {};
@@ -176,16 +188,24 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		preppedData.intType = arrangeDataObjByKey(intTypeObj);
 
 		function getIntTagRef(intTags) {
-			if (intTags === null) {return null}
-			return intTags.map(function(tag){
-				if (intTagObj[tag] === undefined) { intTagObj[tag] = intTagId++; }
-		  	return intTagObj[tag];
+			if (intTags === null) { return null }
+			return intTags.map(function(tagStr){
+				if (intTagObj[tagStr] === undefined) { 
+					intTagObj[tagStr] = {
+						tempId: intTagId++,
+						tag: tagStr		 };
+				}
+		  		return intTagObj[tagStr].tempId;
 			});
 		}
 		function getIntTypeRef(intTypeStr) {
 			if (intTypeStr === null) {return null}
-			if (intTypeObj[intTypeStr] === undefined) { intTypeObj[intTypeStr] = intTypeId++; }
-		  return intTypeObj[intTypeStr];
+			if (intTypeObj[intTypeStr] === undefined) { 
+				intTypeObj[intTypeStr] = {
+					tempId: intTypeId++,
+					name: intTypeStr	  };
+			}
+		    return intTypeObj[intTypeStr].tempId;
 		}
 		function getTaxonRef(taxon) {
 			return taxon.tempId;
