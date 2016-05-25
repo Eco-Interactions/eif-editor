@@ -1,30 +1,6 @@
 Merged up until push entity begins 36507fd47d47699e4a55c665b4ab65533f7983b2
 
 
-Taxonym
-		Namings
-				Taxa
-
-
-
-taxa: {
-	level_id:
-	display_name:
-	parent_taxon_id:
-	namings: {
-		authority_id:
-		guid:
-		naming_type_id:
-		parent_taxon_id:
-		taxon_id:
-		from_date:
-		to_date:
-		taxonym_id: {
-			name:
-			namings: []
-		}
-	}
-}
 
 
 Notes:
@@ -43,29 +19,26 @@ inttype>
 
 ------------Linking up the Entities-----
 
-
+display name === genus + species??
 
 ----------Entity Notes---------------
 Author:
 Publication:
 	Fields Publisher and Publication Type need homes
 Citation:
-	description === shortDesc??
+	description === shortDesc??	`								ADD FIELDS
 	title, issue, pgs, vol (year?)
 Attributions:
 	cited as??
 
 
+location:
+	gpsData field??
+
 ----Field discrepencies----
-Author:
-	first
-	middle
-	last
-	suffix
-Citation:
-	title, issue, pgs, vol (year?) fields to publication?
 Level:
 	add phylum
+	ordinals?
 
 
 
