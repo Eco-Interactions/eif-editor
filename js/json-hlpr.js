@@ -161,7 +161,7 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 					tempId: regionId++,
 					name: regionName  };
 			}
-		    return region[regionName].tempId;
+		    return [region[regionName].tempId];
 		}
 		function addHabRef(habitat) {
 			if (habitat === null) {return null}
