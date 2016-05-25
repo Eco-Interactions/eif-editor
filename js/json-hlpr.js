@@ -174,21 +174,23 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 	} /* End buildLocationObjs */
 	function buildInteractionObjs(rcrds) {				console.log("buildInteractionObjs called")
 		var intTagId = intTypeId = 1;
-		var preppedObj = {};
 		var intTagObj = {};
+		var intObjs = {};
 		var intTypeObj = {};
-		var intObjs = stripArray(rcrds);
+		var preppedObj = {};
+		var rcrdsObj = stripArray(rcrds);
 
-		for (var key in intObjs) {
-			intObjs[key].citation = intObjs[key].citation.citId;
-			intObjs[key].location = intObjs[key].location === null ? null : intObjs[key].location.tempId;
-			intObjs[key].intTag = getIntTagRef(intObjs[key].intTag);
-			intObjs[key].intType = getIntTypeRef(intObjs[key].intType);
-			intObjs[key].subjTaxon = getTaxonRef(intObjs[key].subjTaxon);
-			intObjs[key].objTaxon = getTaxonRef(intObjs[key].objTaxon);
+		for (var key in rcrdsObj) {
+			intObjs[key] = {};
+			intObjs[key].citation = rcrdsObj[key].citation.citId;
+			intObjs[key].location = rcrdsObj[key].location === null ? null : rcrdsObj[key].location.tempId;
+			intObjs[key].tags = getIntTagRef(rcrdsObj[key].intTag);
+			intObjs[key].interactionType = getIntTypeRef(rcrdsObj[key].intType);
+			intObjs[key].subject = getTaxonRef(rcrdsObj[key].subjTaxon);
+			intObjs[key].object = getTaxonRef(rcrdsObj[key].objTaxon);
 		}  console.log("intObjs = %O, intTagObj = %O, intType = %O", intObjs, intTagObj, intTypeObj);
 
-		preppedData.intObjs = intObjs;
+		preppedData.interaction = intObjs;
 		preppedData.intTag = arrangeDataObjByKey(intTagObj);
 		preppedData.intType = arrangeDataObjByKey(intTypeObj);
 
