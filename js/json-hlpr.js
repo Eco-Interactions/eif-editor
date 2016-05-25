@@ -80,23 +80,27 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 	}
 	function buildCitationObjs(rcrds) {					console.log("buildCitationObjs called")
 		var attrId = 1;
-		var citRcrds = stripArray(resultData.citation.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 		var attributes = {};
 		var preppedCits = {};
+		var citRcrds = stripArray(resultData.citation.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 
 		for (var id in citRcrds) {
 			var rcrd = citRcrds[id];
 			addAttributions(rcrd);
 
 			preppedCits[rcrd.citId] = {			//Needs extra fields added
-				description: rcrd.shortDesc,
-				publication: getPubRefId(rcrd.publication),
+				description: rcrd.citShortDesc,
 				fullText: rcrd.fullText,
-				publicationIssue: rcrd.issue
+				publication: getPubRefId(rcrd.publication),
+				publicationIssue: rcrd.issue,
+				publicationVolume: rcrd.vol,
+				publicationPages: rcrd.pgs,
+				title: rcrd.title,
+				year: rcrd.year
 			};
 		}																																								console.log("citrecrds = %O", citRcrds);
-		preppedData.citation = preppedCits;
 		preppedData.attributions = attributes;
+		preppedData.citation = preppedCits;
 
 		function addAttributions(citRcrd) {
 			citRcrd.author.forEach(function(author){
