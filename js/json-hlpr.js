@@ -53,8 +53,9 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 
 		for (var rcrd in authRcrds) {
 			var rcrd = authRcrds[rcrd];
+			var suffix = rcrd.suffix ? " " + rcrd.suffix : "";
 			preppedObjs[rcrd.tempId] = {
-				fullName:  rcrd.first + rcrd.middle + rcrd.last + rcrd.suffix,
+				fullName:  rcrd.first + " " + rcrd.middle + " " + rcrd.last + suffix,
 				shortName: rcrd.shortName,
 				lastName: rcrd.last
 			}; }
