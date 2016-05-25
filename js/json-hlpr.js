@@ -40,12 +40,16 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		for (var key in refObj) { preppedObj[refObj[key].tempId] = refObj[key]; }
 		return preppedObj;
 	}
-	function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called")
-		for (var rcrd in rcrds) {
-			rcrds[rcrd].parent = rcrds[rcrd].parent === null? null : rcrds[rcrd].parent.tempId;
-			delete rcrds[rcrd].kingdom;
+	function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called. rcrds = %O", rcrds);
+		var taxonObjs = {};
+		for (var rcrd in rcrds) { console.log("rcrd = %O", rcrd)
+			var displayName = rcrds[rcrd].level === 7 ? rcrds[rcrd].parent.name + ' ' + rcrds[rcrd].name : rcrds[rcrd].name; 
+			taxonObjs[rcrds[rcrd].tempId] = {};
+			taxonObjs[rcrds[rcrd].tempId].level = rcrds[rcrd].level;
+			taxonObjs[rcrds[rcrd].tempId].displayName = displayName;
+			taxonObjs[rcrds[rcrd].tempId].parentTaxon = rcrds[rcrd].parent === null ? null : rcrds[rcrd].parent.tempId;
 		}
-		preppedData.taxon = rcrds;										//	console.log("taxon rcrds = %O", rcrds)
+		preppedData.taxon = taxonObjs;										//	console.log("taxon rcrds = %O", rcrds)
 	}
 	function buildAuthorObjs(rcrds) { 						console.log("buildAuthorObjs called")
 		var preppedObjs = {};
@@ -171,11 +175,6 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 					name: habitat 		}; 
 			}
 		    return habitatType[habitat].tempId;
-		}
-		function rearrangeLocRcrds() {
-			var locObjs = {};
-			for (var rcrd in locRcrds) { locObjs[locRcrds[rcrd].tempId] = locRcrds[rcrd];	}  console.log("locRcrds = %O, locObjs =%O", locRcrds, locObjs)
-			return locObjs;
 		}
 	} /* End buildLocationObjs */
 	function buildInteractionObjs(rcrds) {				console.log("buildInteractionObjs called")
