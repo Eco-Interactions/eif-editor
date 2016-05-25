@@ -124,20 +124,26 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		var habitatType = {};
 		var country = {};
 		var region = {};
+		var locObjs = {};
 		var strippedRcrds = stripArray(resultData.location.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
 		var locRcrds = strippedRcrds[Object.keys(strippedRcrds)[0]].id === undefined ? addTempIds(strippedRcrds) : rcrdsObj;
 
 		for (var rcrd in locRcrds) {
-			locRcrds[rcrd].country = addCntryRef(locRcrds[rcrd].country);
-			locRcrds[rcrd].region = addRegionRef(locRcrds[rcrd].region);
-			locRcrds[rcrd].habitatType = addHabRef(locRcrds[rcrd].habType);
-			delete locRcrds[rcrd].habType;
+			locObjs[rcrd.tempId] = {};
+			locObjs[rcrd.tempId].description = rcrd.locDesc,
+			locObjs[rcrd.tempId].elevation = rcrd.elev,
+			locObjs[rcrd.tempId].elevationMaxRange = rcrd.elevMaxRange,
+			locObjs[rcrd.tempId].latitude = rcrd.locDesc,
+			locObjs[rcrd.tempId].longitude = rcrd.locDesc,
+			locObjs[rcrd.tempId].country = addCntryRef(locRcrds[rcrd].country),
+			locObjs[rcrd.tempId].regions = addRegionRef(locRcrds[rcrd].region),
+			locObjs[rcrd.tempId].habitatType = addHabRef(locRcrds[rcrd].habType)
 		}  console.log("locRcrds = %O", locRcrds);
 
 		preppedData.country = arrangeDataObjByKey(country);
 		preppedData.region = arrangeDataObjByKey(region);
 		preppedData.habitatType = arrangeDataObjByKey(habitatType);  	console.log("preppedData = %O", preppedData);
-		preppedData.location = rearrangeLocRcrds();
+		preppedData.location = locObjs;
 
 		function addCntryRef(countryName) {
 			if (countryName === null) {return null}
