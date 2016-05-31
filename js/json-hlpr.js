@@ -20,9 +20,24 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 	buildLocationObjs(resultData.location.finalRecords);
 	buildTaxonObjs(resultData.taxon.finalRecords);
 	buildInteractionObjs(resultData.interaction.finalRecords);
+	addLevels();
 	// console.log("preppedData = %O", preppedData)
 	return JSON.stringify(preppedData, null, 2);
 
+	function addLevels () {
+		var levels = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'];
+		var plurals = ['Kingdoms', 'Phyla', 'Classes', 'Orders', 'Families', 'Genera', 'Species'];
+		var ordinals = ['10', '30', '50', '70', '90', '110', '130'];
+		var lvlObjs = {}
+		for (i=0; i<levels.length; i++) {
+			lvlObjs[String(i)] = {
+				name: levels[i],
+				ordinal: ordinals[i],
+				pluralName: plurals[i]
+			};
+		}
+		preppedData.levels = lvlObjs;
+	}
 	function stripArray(rcrds) {
 		var returnObj = {};
 		for (var rcrd in rcrds) {
