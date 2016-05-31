@@ -11,7 +11,7 @@
  * @return {string}          Entity objs split and linked by tempId references.
  */
 function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
-	var preppedData = {};
+	var preppedData = {};					 	//	console.log("preppedData = %O", preppedData);
 	var refObj = {};
 
 	buildAuthorObjs(resultData.author.finalRecords);
@@ -40,9 +40,9 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		for (var key in refObj) { preppedObj[refObj[key].tempId] = refObj[key]; }
 		return preppedObj;
 	}
-	function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called. rcrds = %O", rcrds);
+	function buildTaxonObjs(rcrds) {  	//console.log("buildTaxonObjs called. rcrds = %O", rcrds);
 		var taxonObjs = {};
-		for (var rcrd in rcrds) { console.log("rcrd = %O", rcrd)
+		for (var rcrd in rcrds) {						
 			var displayName = rcrds[rcrd].level === 7 ? rcrds[rcrd].parent.name + ' ' + rcrds[rcrd].name : rcrds[rcrd].name; 
 			taxonObjs[rcrds[rcrd].tempId] = {};
 			taxonObjs[rcrds[rcrd].tempId].level = rcrds[rcrd].level;
@@ -51,7 +51,7 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		}
 		preppedData.taxon = taxonObjs;										//	console.log("taxon rcrds = %O", rcrds)
 	}
-	function buildAuthorObjs(rcrds) { 						console.log("buildAuthorObjs called")
+	function buildAuthorObjs(rcrds) { 			//			console.log("buildAuthorObjs called")
 		var preppedObjs = {};
 		var authRcrds = stripArray(resultData.author.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 
@@ -62,12 +62,12 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 				fullName:  rcrd.first + " " + rcrd.middle + " " + rcrd.last + suffix,
 				shortName: rcrd.shortName,
 				lastName: rcrd.last
-			}; }
-
+			};
+		}
 		preppedData.author = preppedObjs;
 	}
-	function buildPublicationObjs(rcrds) {				console.log("buildPublicationObjs called")
-		var preppedObjs = {};
+	function buildPublicationObjs(rcrds) {				//console.log("buildPublicationObjs called. rcrds = %O", rcrds)
+		var preppedObjs = {};					
 		var rcrdsObj = stripArray(resultData.publication.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
 		var pubRcrds = rcrdsObj[Object.keys(rcrdsObj)[0]].id === undefined ? addTempIds(rcrdsObj) : rcrdsObj;
 
@@ -75,14 +75,16 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 			var rcrd = pubRcrds[id];
 			preppedObjs[rcrd.tempId] = {
 				name: rcrd.pubTitle,
+				publicationType: rcrd.pubType,
+				publisher: rcrd.publisher,
 				tempId: rcrd.tempId
 			};
-			pubRcrds[rcrd]; }
+		}
 
 		refObj.publication = pubRcrds;
 		preppedData.publication = preppedObjs;
 	}
-	function buildCitationObjs(rcrds) {					console.log("buildCitationObjs called")
+	function buildCitationObjs(rcrds) {				//	console.log("buildCitationObjs called")
 		var attrId = 1;
 		var attributes = {};
 		var preppedCits = {};
