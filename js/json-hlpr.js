@@ -10,8 +10,8 @@
  * @param  {obj} resultData  Parsing result data
  * @return {string}          Entity objs split and linked by tempId references.
  */
-function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds = %O", resultData);
-	var preppedData = {};					 	//	console.log("preppedData = %O", preppedData);
+function buildJsonData(resultData) {			//console.log("buildJsonFile called. rcrds = %O", resultData);
+	var preppedData = {};					 		console.log("preppedData = %O", preppedData);
 	var refObj = {};
 
 	buildAuthorObjs(resultData.author.finalRecords);
@@ -30,7 +30,7 @@ function buildJsonData(resultData) {			console.log("buildJsonFile called. rcrds 
 		var ordinals = ['10', '30', '50', '70', '90', '110', '130'];
 		var lvlObjs = {}
 		for (i=0; i<levels.length; i++) {
-			lvlObjs[String(i)] = {
+			lvlObjs[String(i + 1)] = {
 				name: levels[i],
 				ordinal: ordinals[i],
 				pluralName: plurals[i]
