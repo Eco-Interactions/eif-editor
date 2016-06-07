@@ -1,11 +1,25 @@
 Merged up until push entity begins 36507fd47d47699e4a55c665b4ab65533f7983b2
 
 
+-----0603----------TODO------------
+--remove nulls from author full nammes-> json (saves) 
+--Wrap ajax code with authentication check
+--Add new fields to entity show pages
+--test, dev, and prod on server
+	--create testDb 
+	--populate and test
+
+
+
 
 
 Notes:
+0603
+	Trouble with setting properties on Authorsp
+
+
 -----------Entity Relationships---------
-author>        <attribution>		<Citation
+author>   XX     <attribution>		<Citation
 publication>
 
 country> 		<location
@@ -17,34 +31,28 @@ taxon>      <interaction
 inttag>
 inttype>
 
-------------Linking up the Entities-----
-
-display name === genus + species??
-
-----------Entity Notes---------------
-Author:
-Publication:
-	Fields Publisher and Publication Type need homes
-Citation:
-	description === shortDesc??	`								ADD FIELDS
-	title, issue, pgs, vol (year?)
-Attributions:
-	cited as??
-
-
-location:
-	gpsData field??
-
-----Field discrepencies----
-Level:
-	add phylum
-	ordinals?
 
 
 
+no prep
+	author
+	publication	
+	country
+	habtype
+	region
+	level
+	inttag
+	inttype
 
 
 
+one relationship
+	citation - pub
+	taxa - lvl
+
+multi
+	attribution
+	interaction
 
 
 
