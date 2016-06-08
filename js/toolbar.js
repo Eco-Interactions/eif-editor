@@ -190,19 +190,16 @@
     boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
   }
   /*--------------------- Push Valid Entity Objs -------------------------------------------*/
-  function pushEntity () {
-    boundPopUpAlert('<h1>Finish Me. </h1><p>Select a JSON file containing validated interaction data.</p>', 'Select a JSON file containing validated interaction data.');
-    webviewElem.contentWindow.postMessage({
-      tag: 'uploadData',
-      data: { 'taxonym': getTaxonymStubs() }},
-      "http://localhost/batplant/web/app_dev.php/"
-    );
-  }
-  function getTaxonymStubs() {
-    return [ { 'name': 'Taxonys Singularis' },
-             { 'name': 'Repeatus Taxonymicus' },
-             { 'name': 'Creativ Cranius' },
-             { 'name': 'Infini Potentius' } ];
+  function pushEntity () { console.log("pushEntity called.")
+    ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, pushJsonResults)
+
+    function pushJsonResults(fSysId, jsonResults) {  console.log("jsonResults = %O", JSON.parse(jsonResults));
+      webviewElem.contentWindow.postMessage({
+        tag: 'uploadData',
+        data: { 'jsonData': jsonResults }},
+        "http://localhost/batplant/web/"
+      );
+    }
   }
 /*--------------------Helper Methods--------------------------------------------------------*/
   function isValidOnlyMode() {
