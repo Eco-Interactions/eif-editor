@@ -73,8 +73,8 @@
 			for (var rcrd in authRcrds) {
 				var rcrd = authRcrds[rcrd];
 				var suffix = rcrd.suffix ? " " + rcrd.suffix : "";
-				var middle = rcrd.middle + " " ? rcrd.middle : ""; 
-				var first = rcrd.first  + " " ? rcrd.first : ''; 
+				var middle = rcrd.middle ? rcrd.middle + " " : ""; 
+				var first = rcrd.first  ? rcrd.first + " " : ''; 
 
 				preppedObjs[rcrd.tempId] = {
 					fullName:  first + middle + rcrd.last + suffix,
@@ -123,7 +123,7 @@
 					year: rcrd.year
 				};
 			}																																								console.log("citrecrds = %O", citRcrds);
-			preppedData.attributions = attributes;
+			preppedData.attribution = attributes;
 			preppedData.citation = preppedCits;
 
 			function addAttributions(citRcrd) {
@@ -161,7 +161,7 @@
 				locations[rcrd.tempId].latitude = rcrd.lat,
 				locations[rcrd.tempId].longitude = rcrd.long,
 				locations[rcrd.tempId].country = addCntryRef(rcrd.country),
-				locations[rcrd.tempId].regions = addRegionRef(rcrd.region),
+				locations[rcrd.tempId].region = addRegionRef(rcrd.region),
 				locations[rcrd.tempId].habitatType = addHabRef(rcrd.habType)
 			}  					//	console.log("locations = %O", locations);
 								
