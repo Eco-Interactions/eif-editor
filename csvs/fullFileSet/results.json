@@ -71930,5 +71930,22 @@
       "ordinal": "130",
       "pluralName": "Species"
     }
+  },
+  "domain": {
+    "2": {
+      "name": "Bat",
+      "pluralName": "Bats",
+      "taxon": 2
+    },
+    "3": {
+      "name": "Plant",
+      "pluralName": "Plants",
+      "taxon": 3
+    },
+    "4": {
+      "name": "Arthropod",
+      "pluralName": "Arthropods",
+      "taxon": 4
+    }
   }
 }

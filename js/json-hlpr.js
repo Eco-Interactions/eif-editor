@@ -21,6 +21,7 @@
 		buildTaxonObjs(resultData.taxon.finalRecords);
 		buildInteractionObjs(resultData.interaction.finalRecords);
 		addLevels();
+		addDomains()
 		// console.log("preppedData = %O", preppedData)
 		return JSON.stringify(preppedData, null, 2);
 
@@ -37,6 +38,26 @@
 				};
 			}
 			preppedData.level = lvlObjs;
+		}
+		function addDomains() {
+			var domains = {
+				2: {
+					name: "Bat",
+					pluralName: "Bats",
+					taxon: 2
+				},
+				3: {
+					name: "Plant",
+					pluralName: "Plants",
+					taxon: 3
+				},
+				4: {
+					name: "Arthropod",
+					pluralName: "Arthropods",
+					taxon: 4
+				}
+			};
+			preppedData.domain = domains;
 		}
 		function stripArray(rcrds) {
 			var returnObj = {};
