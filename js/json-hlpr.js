@@ -53,7 +53,7 @@
 				},
 				4: {
 					name: "Arthropod",
-					pluralName: "Arthropods",
+					pluralName: "Arthropoda",
 					taxon: 4
 				}
 			};

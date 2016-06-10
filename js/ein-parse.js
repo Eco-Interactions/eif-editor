@@ -1058,12 +1058,13 @@
 					level: 1,					// Kingdom (1), Phylum (2), Class (3), Order (4), Family (5), Genus (6), Species (7)
 					tempId:	curTempId++
 				},
-				Arthropoda: {
+				AnimaliaArthropoda: {			// concat names of taxa, and all parent levels present, are used as keys to later link taxa.
+					kingdom: "Animalia",
 					parent: 1,
 					name: "Arthropoda",
 					level: 2,
 					tempId:	curTempId++
-				}
+				},
 			};
 	  } /* End initTopTaxa */
 	} /* End buildTaxaTreeObjs */
