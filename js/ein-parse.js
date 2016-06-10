@@ -579,164 +579,6 @@
 		}
 		return conflicted;
 	}
-/*--------------------------- Merge Entities Methods ------------------------------------- */
-	function mergeEntities(fSysIdAry, parentEntity, childEntities, callback, prevEntityReslts) { //console.log("mergeEntities called. Arguments = ", arguments);
-		var nullRefResults = {}, nullRefChildKeys = [];
-		var dataSet = parentEntity.name;
-		var parentRcrds = parentEntity.finalRecords;     							//		 console.log("parentRcrds = %O", parentRcrds);
-		var parentValRpt = parentEntity.valRpt
-		var returnRecrdsObj = prevEntityReslts ?  prevEntityReslts : parentEntity;
-
-		childEntities.forEach(function(subEntityObjMetaData) { replaceRefsWithPointers(subEntityObjMetaData); });
-		if (parentValRpt.nullRefResults !== undefined) { removeNullRefRcrds(); }
-
-		callback(fSysIdAry, returnRecrdsObj);
-
-		function replaceRefsWithPointers(childParseResults) { 				//	 console.log("replaceRefsWithPointers. childParseResults = %O", childParseResults);
-			var parentEntityRecrd, rcrdsAry;
-			var childName = childParseResults.name; //console.log("childName = %s", childName);
-			var childRecrds = childParseResults.finalRecords;  				//	 console.log("entityParams = %O", entityParams);
-			var isCollection = "subEntityCollection" in entityParams[childName];
-			var processMethod = isCollection ? processChildCollection : processSingleChildEntity;
-
-			processParentEntity();
-
-			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
-				for (var key in  parentRcrds) {
-					parentEntityRecrd = parentRcrds[key][0];
-					processMethod(parentEntityRecrd, key); }
-			}
-			function processChildCollection(parentEntityRecrd, parentKey) { 													// console.log("isCollection")
-				var childrenToReplace = parentEntityRecrd[childName]; 										// console.log("childrenToReplace= %O ",childrenToReplace);
-				rcrdsAry = [];
-				forEachChildInCollection(parentKey);
-				replaceWithPointer(rcrdsAry, parentKey);
-
-				function forEachChildInCollection(parentKey) {
-					childrenToReplace.forEach(function(childEntityRef){
-						matchRefInChildRecrds(childEntityRef, parentKey);
-						if (parentValRpt.nullRefResults!== undefined) { addNullRefResults(childName) }
-					}); 																																				//  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
-				}
-			} /* End processChildCollection */
-			function processSingleChildEntity(parentEntityRecrd, parentKey) {  																// console.log("is not Collection")
-			  var refKey = entityParams[childName].unqKey[0];
-				var unqKeyValToReplace = parentEntityRecrd[refKey];														//	 console.log("parentEntityRecrd = %O. unqKeyValToReplace = %s", parentEntityRecrd, unqKeyValToReplace);
-				ifKeyValueIsNotNullFindKey(parentKey);
-
-				function ifKeyValueIsNotNullFindKey(parentKey) {
-					if (unqKeyValToReplace === null) {
-						parentEntityRecrd[childName] = null;
-						delete parentEntityRecrd[refKey];
-					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey, refKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
-				}
-			} /* End processSingleChildEntity */
-			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey, refKey) {							// If key in obj, grab
-				var matched = false;
-				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace, refKey); }
-				if (!matched) { extractNullRefRecrd(parentKey, unqKeyStrToReplace) }
-
-				function ifKeyValuesMatch(childKey, refVal, refKey) {
-					if (childKey == refVal) { 								//	if (childName === "location") {console.log("subEntity record match found. = %O.", childRecrds[childKey]);}
-						matched = true;
-						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0], refKey); //console.log("foundMatchingSubEntityObj");}
-					}
-				}
-			} /* End matchRefInChildRecrds */
-			function extractNullRefRecrd(parentKey, unqKeyStrVal) {				//console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
-				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
-				if (parentValRpt.nullRefResults[childName] === undefined) {
-					parentValRpt.nullRefResults[childName] = {};
-				}
-				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);  //console.log("nullRefResults = %O", nullRefResults);
-				if (parentValRpt.nullRefResults[childName][parentKey].nullRefKeys === undefined) {parentValRpt.nullRefResults[childName][parentKey].nullRefKeys = []; }  //console.log("nullRefResults = %O", nullRefResults);
-				parentValRpt.nullRefResults[childName][parentKey].nullRefKeys.push(unqKeyStrVal);  //console.log("nullRefResults = %O", nullRefResults);
-			}
-			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
-				parentEntityRecrd[childName] = matchedRecrd;
-				delete parentEntityRecrd[refKey];
-			}
-		} /* End replaceRefsWithPointers */
-		function addNullRefResults(childName) { //console.log("childsName = ", childName)
-		  if (parentValRpt.nullRefResults[childName] !== undefined) {// console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
-		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
-		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey[0];
-		  }
-		}
-		function removeNullRefRcrds() {
-			for (var entity in parentValRpt.nullRefResults) {
-				for (var parentKey in parentValRpt.nullRefResults[entity]) {
-					delete parentRcrds[parentKey];
-				}
-			}
-		}
-	} /* End mergeEntities */
-/*--------------Parse File Set Records--------------------------------------------------- */
-	/**
-	 * Recieves record objs from each of three entity csv files opened (author, citation, and interaction) and, from these,
-	 * individual entities and their related data are extracted, redundancies are reduced and any errors identified during
-	 * the parsing and validation are flagged and their related records quarantined. The valid records are then merged into
-	 * their related interaction records. If in 'valid mode', indicated by the validationMode parameter, the validation result
-	 * data objects for each parsed entity are returned along with the final merged records.
-	 *
-	 * @param  {obj}   fileSetObj       record obj arrays from each of three entity csv files opened (author, citation, and interaction)
-	 * @param  {bool}  validationMode   if true, validation result data will be returned
-	 * @param  {func}  callback         if in 'validMode', displayValidationresults (toolbar); otherwise, dataGrid.fillData
-	 * @param  {func}  setProgress			bound func that updates progress bar and status message
-	 */
-	function parseFileSetRecrds(fileSetObj, validationMode, callback, setProgress) { //  console.log("parseFileSetRecrds called. arguments = %O", arguments);
-	    var csvRowEntities = ["author", "citation", "interaction"]; // console.log("parseFileSetRecrds. entityParams = %O", JSON.parse(JSON.stringify(entityParams)));
-	    var resultData = {};
-	    var curProg = 58;
-
-	    csvRowEntities.forEach(parseCsvContent);
-	    mergeParsedRecords(callback, validationMode);
-
-	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
-	    	var entityMetaData = Object.assign({}, entityParams[entityName]);// console.log("entityMetaData = %O", entityMetaData);
-			var csvFileId = fileSetObj[entityName].fileId;
-			var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
-	    	curProg = curProg + 5;				//	console.log("parseCsvContent called. curProg = ", curProg);
-	    	setProgress(curProg);
-	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
-
-	    	if ("subEntities" in entityMetaData) { entityMetaData.subEntities.forEach(parseSubEntity) }
-
-	    	function parseSubEntity(subEntityName) { // console.log("parseSubEntity called.");
-		    	curProg = curProg + 7;		//	console.log("parseSubEntity called. curProg = ", curProg);
-		    	setProgress(curProg);
-	    		resultData[subEntityName] = runParseChain(csvFileId, csvRcrdsAry, subEntityName);
-	    	}
-	    } /* End parseCsvContent */
-	    function mergeParsedRecords(callback, validMode) {//console.log("mergeParsedRecords called. arguments = %O", arguments);
-	    	var citSubAry = [resultData.publication, resultData.author];
-	    	var intSubAry = [resultData.location];
-	    	setProgress(93)
-	    	ein.parse.mergeDataSet([], resultData.citation, citSubAry, mergeIntoInteractions)
-
-	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData);	// var cb = callback || null		//	console.log("resultData = %O", resultData);
-	    		var valData = validMode ? resultData : false;
-	    		storeTaxaResults();
-      	  setProgress(96);
-	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
-	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
-	    	}
-	    } /* End mergeParsedRecords */
-	    function storeTaxaResults() {
-    		resultData.taxon = {
-    			finalRecords: resultData.interaction.taxon.taxaObjs,
-    			valRpt: resultData.interaction.taxon.valRpt,
-    			name: "taxon"
-    		};
-	    }
-	} /* End parseFileSetRecrds */
-	function runParseChain(csvFileId, csvRcrdsAry, curEntity) {
-		var result;
-		ein.parse.parseChain(csvFileId, csvRcrdsAry, curEntity, function(fSysId, resultObj){ result = JSON.parse(JSON.stringify(resultObj)); });
-		return result;
-	}
-
-
 /*--------------Entity Specific Methods--------------------------------------------------- */
 	/* -------------------------------------Location Helpers------------------------------------*/
 	function autoFillLocDesc() { // console.log("autoFillLocDesc called. entityObj.curRcrds = %O", entityObj.curRcrds);
@@ -1044,7 +886,7 @@
 				},
 		  };
 		  objTaxaRefObjAry = {
-				Animalia: {									//Repeated here because it will be collapsed in the merge process and animalia waas added as an ancestor antrhopoda very late in the writting of this code and restructuring didn't seen worth the effort and time.
+				Animalia: {			//Repeated here because it will be collapsed in the merge process and animalia waas added as an ancestor antrhopoda very late in the writting of this code and restructuring didn't seen worth the effort and time.
 					kingdom: "Animalia",
 					parent: null,
 					name: "Animalia",
@@ -1138,6 +980,166 @@
 				unqKey: ["citId"]
 			};
 		}
+	}
+/*--------------------------- Merge Entities Methods ------------------------------------- */
+	/**
+	 * Links child entities references to their validated record object.
+	 * NOTE: This is currently dependent upon the final variable being prevEntityReslts and undefined 
+	 * except in the case of previous results needing to continue forward with those being merged.
+	 */
+	function mergeEntities(fSysIdAry, parentEntity, childEntities, callback, prevEntityReslts) { //console.log("mergeEntities called. Arguments = ", arguments);
+		var nullRefResults = {}, nullRefChildKeys = [];
+		var dataSet = parentEntity.name;
+		var parentRcrds = parentEntity.finalRecords;     							//		 console.log("parentRcrds = %O", parentRcrds);
+		var parentValRpt = parentEntity.valRpt
+		var returnRecrdsObj = prevEntityReslts ?  prevEntityReslts : parentEntity;
+
+		childEntities.forEach(function(subEntityObjMetaData) { replaceRefsWithPointers(subEntityObjMetaData); });
+		if (parentValRpt.nullRefResults !== undefined) { removeNullRefRcrds(); }
+
+		callback(fSysIdAry, returnRecrdsObj);
+
+		function replaceRefsWithPointers(childParseResults) { 				//	 console.log("replaceRefsWithPointers. childParseResults = %O", childParseResults);
+			var parentEntityRecrd, rcrdsAry;
+			var childName = childParseResults.name; //console.log("childName = %s", childName);
+			var childRecrds = childParseResults.finalRecords;  				//	 console.log("entityParams = %O", entityParams);
+			var isCollection = "subEntityCollection" in entityParams[childName];
+			var processMethod = isCollection ? processChildCollection : processSingleChildEntity;
+
+			processParentEntity();
+
+			function processParentEntity() {// console.log("parentRcrds = %O", parentRcrds);
+				for (var key in  parentRcrds) {
+					parentEntityRecrd = parentRcrds[key][0];
+					processMethod(parentEntityRecrd, key); }
+			}
+			function processChildCollection(parentEntityRecrd, parentKey) { 													// console.log("isCollection")
+				var childrenToReplace = parentEntityRecrd[childName]; 										// console.log("childrenToReplace= %O ",childrenToReplace);
+				rcrdsAry = [];
+				forEachChildInCollection(parentKey);
+				replaceWithPointer(rcrdsAry, parentKey);
+
+				function forEachChildInCollection(parentKey) {
+					childrenToReplace.forEach(function(childEntityRef){
+						matchRefInChildRecrds(childEntityRef, parentKey);
+						if (parentValRpt.nullRefResults!== undefined) { addNullRefResults(childName) }
+					}); 																																				//  console.log("calling replacedWithPointer. rcrdsAry = %O", rcrdsAry);			}
+				}
+			} /* End processChildCollection */
+			function processSingleChildEntity(parentEntityRecrd, parentKey) {  																// console.log("is not Collection")
+			  var refKey = entityParams[childName].unqKey[0];
+				var unqKeyValToReplace = parentEntityRecrd[refKey];														//	 console.log("parentEntityRecrd = %O. unqKeyValToReplace = %s", parentEntityRecrd, unqKeyValToReplace);
+				ifKeyValueIsNotNullFindKey(parentKey);
+
+				function ifKeyValueIsNotNullFindKey(parentKey) {
+					if (unqKeyValToReplace === null) {
+						parentEntityRecrd[childName] = null;
+						delete parentEntityRecrd[refKey];
+					} else { matchRefInChildRecrds(unqKeyValToReplace, parentKey, refKey) } ;// console.log("unqKeyValToReplace = ", unqKeyValToReplace);
+				}
+			} /* End processSingleChildEntity */
+			function matchRefInChildRecrds(unqKeyStrToReplace, parentKey, refKey) {							// If key in obj, grab
+				var matched = false;
+				for (var childKey in childRecrds) { ifKeyValuesMatch(childKey, unqKeyStrToReplace, refKey); }
+				if (!matched) { extractNullRefRecrd(parentKey, unqKeyStrToReplace) }
+
+				function ifKeyValuesMatch(childKey, refVal, refKey) {
+					if (childKey == refVal) { 								//	if (childName === "location") {console.log("subEntity record match found. = %O.", childRecrds[childKey]);}
+						matched = true;
+						isCollection ? rcrdsAry.push(childRecrds[childKey][0]) : replaceWithPointer(childRecrds[childKey][0], refKey); //console.log("foundMatchingSubEntityObj");}
+					}
+				}
+			} /* End matchRefInChildRecrds */
+			function extractNullRefRecrd(parentKey, unqKeyStrVal) {				//console.log("extractNullRefRecrd called. parentEntityRecrd = %O, childName = %s, unqKeyStrVal = %s", parentEntityRecrd, childName, unqKeyStrVal)
+				if (parentValRpt.nullRefResults === undefined) { parentValRpt.nullRefResults = {}; }
+				if (parentValRpt.nullRefResults[childName] === undefined) {
+					parentValRpt.nullRefResults[childName] = {};
+				}
+				parentValRpt.nullRefResults[childName][parentKey] = Object.assign({}, parentRcrds[parentKey]);  //console.log("nullRefResults = %O", nullRefResults);
+				if (parentValRpt.nullRefResults[childName][parentKey].nullRefKeys === undefined) {parentValRpt.nullRefResults[childName][parentKey].nullRefKeys = []; }  //console.log("nullRefResults = %O", nullRefResults);
+				parentValRpt.nullRefResults[childName][parentKey].nullRefKeys.push(unqKeyStrVal);  //console.log("nullRefResults = %O", nullRefResults);
+			}
+			function replaceWithPointer(matchedRecrd, refKey) {																					// console.log("replacedWithPointer called. matchedRecrd = %O",matchedRecrd);
+				parentEntityRecrd[childName] = matchedRecrd;
+				delete parentEntityRecrd[refKey];
+			}
+		} /* End replaceRefsWithPointers */
+		function addNullRefResults(childName) { //console.log("childsName = ", childName)
+		  if (parentValRpt.nullRefResults[childName] !== undefined) {// console.log("adding cnt. childName = %s, obj = %O", childName, parentValRpt.nullRefResults[childName])
+		  	parentValRpt.nullRefResults[childName].cnt = Object.keys(parentValRpt.nullRefResults[childName]).length;
+		  	parentValRpt.nullRefResults[childName].refKey = entityParams[childName].unqKey[0];
+		  }
+		}
+		function removeNullRefRcrds() {
+			for (var entity in parentValRpt.nullRefResults) {
+				for (var parentKey in parentValRpt.nullRefResults[entity]) {
+					delete parentRcrds[parentKey];
+				}
+			}
+		}
+	} /* End mergeEntities */
+/*--------------Parse File Set Records--------------------------------------------------- */
+	/**
+	 * Recieves record objs from each of three entity csv files opened (author, citation, and interaction) and, from these,
+	 * individual entities and their related data are extracted, redundancies are reduced and any errors identified during
+	 * the parsing and validation are flagged and their related records quarantined. The valid records are then merged into
+	 * their related interaction records. If in 'valid mode', indicated by the validationMode parameter, the validation result
+	 * data objects for each parsed entity are returned along with the final merged records.
+	 *
+	 * @param  {obj}   fileSetObj       record obj arrays from each of three entity csv files opened (author, citation, and interaction)
+	 * @param  {bool}  validationMode   if true, validation result data will be returned
+	 * @param  {func}  callback         if in 'validMode', displayValidationresults (toolbar); otherwise, dataGrid.fillData
+	 */
+	function parseFileSetRecrds(fileSetObj, validationMode, callback) { //  console.log("parseFileSetRecrds called. arguments = %O", arguments);
+	    var csvRowEntities = ["author", "citation", "interaction"]; // console.log("parseFileSetRecrds. entityParams = %O", JSON.parse(JSON.stringify(entityParams)));
+	    var resultData = {};
+	    var curProg = 58;
+
+	    csvRowEntities.forEach(parseCsvContent);
+	    mergeParsedRecords(callback, validationMode);
+
+	    function parseCsvContent(entityName) {// console.log("parseCsvContent called.");
+	    	var entityMetaData = Object.assign({}, entityParams[entityName]);// console.log("entityMetaData = %O", entityMetaData);
+			var csvFileId = fileSetObj[entityName].fileId;
+			var csvRcrdsAry = fileSetObj[entityName].orgRcrdAryObjs;
+	    	curProg = curProg + 5;				//	console.log("parseCsvContent called. curProg = ", curProg);
+	    	ein.tools.setProgress(curProg);
+	    	resultData[entityName] = runParseChain(csvFileId, csvRcrdsAry, entityName);
+
+	    	if ("subEntities" in entityMetaData) { entityMetaData.subEntities.forEach(parseSubEntity) }
+
+	    	function parseSubEntity(subEntityName) { // console.log("parseSubEntity called.");
+		    	curProg = curProg + 7;		//	console.log("parseSubEntity called. curProg = ", curProg);
+		    	ein.tools.setProgress(curProg);
+	    		resultData[subEntityName] = runParseChain(csvFileId, csvRcrdsAry, subEntityName);
+	    	}
+	    } /* End parseCsvContent */
+	    function mergeParsedRecords(callback, validMode) {//console.log("mergeParsedRecords called. arguments = %O", arguments);
+	    	var citSubAry = [resultData.publication, resultData.author];
+	    	var intSubAry = [resultData.location];
+	    	ein.tools.setProgress(93)
+	    	ein.parse.mergeDataSet([], resultData.citation, citSubAry, mergeIntoInteractions)
+
+	    	function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData);	// var cb = callback || null		//	console.log("resultData = %O", resultData);
+	    		var valData = validMode ? resultData : false;
+	    		storeTaxaResults();
+      	  		ein.tools.setProgress(96);
+	    		intSubAry.push(mergedCitRecrds);// console.log("callback = %O", callback);
+	    		ein.parse.mergeDataSet(fSysIdAry, resultData.interaction, intSubAry, callback, valData)
+	    	}
+	    } /* End mergeParsedRecords */
+	    function storeTaxaResults() {
+    		resultData.taxon = {
+    			finalRecords: resultData.interaction.taxon.taxaObjs,
+    			valRpt: resultData.interaction.taxon.valRpt,
+    			name: "taxon"
+    		};
+	    }
+	} /* End parseFileSetRecrds */
+	function runParseChain(csvFileId, csvRcrdsAry, curEntity) {
+		var result;
+		ein.parse.parseChain(csvFileId, csvRcrdsAry, curEntity, function(fSysId, resultObj){ result = JSON.parse(JSON.stringify(resultObj)); });
+		return result;
 	}
 /*--------------General Helper Methods---------------------------------------------------- */
 	/**
