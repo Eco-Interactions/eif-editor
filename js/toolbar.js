@@ -1,7 +1,15 @@
 (function(){
   var progBar, boundPopUpAlert, overlay, popupBtn, webviewElem, webviewCntnr, boundPopUpMsg, loginTimeoutId, jsonResultsObj;
   var ein = ECO_INT_NAMESPACE;
-  var validationObj = {};
+  /**
+   * Attached methods at ein.tools.
+   *   setProgress: boundSetProgress
+   *   clearProgress: clearProgStatus
+   */
+  ein.tools = {
+      clearProgress: clearProgStatus,
+  };
+  /**Routes toolbar button clicks to their corresponding method. */
   var toolbarBtnMap = {
       openFile: openFileCmd,
       openFolder: openFolderCmd,
@@ -18,14 +26,21 @@
       jsonSave: saveJsonResults,
       pushEnt: pushEntity,
       login: webviewLogin
-    };
-  var entityCsvParseVals = {    /* Index 0 = dataSet, From 1 on are the sub entities in the order which they will be parsed  */
+  };
+  /**
+   * Entities to be parsed for each collection.
+   * Index 0 = parent dataSet, then children in the order which they will be parsed.
+   */
+  var entityCsvParseVals = {   
     author: ["author"],
     citation: ["citation", "publication"],
     interaction: ["interaction", "location"],
     interactionSet: ["interaction", "citation", "author"],
     citationSet: ["citation", "author"],
   };
+  /**
+   * Status bar messages for notable stages in the parse and validation process. 
+   */
   var statusMsgDict = {
      2: " - Load file set",                       63: " - Validating Author entity",
     16: " - Finding files",                       68: " - Validating Citation entity",
@@ -34,10 +49,15 @@
     35: " - Reading Citation file",               87: " - Validating Location entity",
     40: " - Parsing Citation CSV",                93: " - Merging Citation data set",
     45: " - Reading Interaction file",            96: " - Merging Interaction data set",
-    50: " - Parsing Interaction CSV",             98: " - Displaying validation results",
-    55: " - Begin validation",                    99: " - Displaying data grid",        //data grid ending
+    50: " - Parsing Interaction CSV",             98: " - Displaying validation results", // report shown
+    55: " - Begin validation",                    99: " - Displaying data grid",          // grid shown
     58: " - Validating file set",                100: ""
   };
+  /**
+   * Routes data from a recieved message to its corresponding response method.
+   * Keys are tags received in the message's data package and correspond to 
+   * the appropriate response methods. 
+   */
   var msgMap = {
     webviewInitComplete: showWebview,
     loginRole: checkRole,
@@ -48,20 +68,23 @@
   document.addEventListener("DOMContentLoaded", onDomLoaded);
 
   window.addEventListener('message', webviewMsgHandlr, false);
-
+  /**
+   * Grab DOM elements, init bound functions, and toolbar listener.
+   */
   function onDomLoaded() {
     overlay = document.getElementById("overlay");
     popup = document.getElementById("popUpDiv");
     popupBtn = document.getElementById("popupclose");
     progBar = document.getElementById("progBar"); //console.log(progBar);
-    boundSetProgress = setProgressStatus.bind(null, progBar);
+    ein.tools.setProgress = boundSetProgress = setProgressStatus.bind(null, progBar);
     boundPopUpAlert = alertPopUp.bind(null, overlay, popup);
     boundPopUpMsg = msgPopUp.bind(null, overlay, popup);
     document.getElementById("toolbar").addEventListener("click", toolbarClickHandler);
   }
-  /* ============================================================== */
-  /* === Toolbar Command functions ================================ */
-  /* ============================================================== */
+/*------------------Toolbar Command functions---------------------------------*/
+  /**
+   * Routes toolbar button clicks to their corresponding method via the toolbarBtnMap object.
+   */
   function toolbarClickHandler(clickEvent) {
     var btnId = clickEvent.srcElement.localName === 'button' ? clickEvent.srcElement.id : 'not-button';
     if (btnId in toolbarBtnMap) { toolbarBtnMap[btnId](); };
@@ -84,56 +107,64 @@
   function createFolderCmd() {  /*  ID,                                           writeHandler,             name,     callback          */
     ein.fileSys.getFolderEntry("A06D490E460ABB3202AD3EEAD92D371C:Eco-Int_Editor", ein.fileSys.createFolder, "Test", function(newFolderId) { console.log('newFolderId: %s', newFolderId)});
   }
+  /**
+   * Button appears when validated data has been successfully parsed and stored in the jsonResultsObj. 
+   */
   function saveJsonResults() {
     ein.fileSys.fileSaveAs(jsonResultsObj)
   }
-  /*---------------------Progress and Status Methods--------------------------------------*/
-  function setProgressStatus(barElem, percent) {    // console.log("setProgress to %s\%", percent)
+  /*---------------------Progress Bar and Status Methods--------------------------*/
+  /** Sets percentage on the progress bar and updates the status message. */
+  function setProgressStatus(barElem, percent) {                                // console.log("setProgress to %s\%", percent)
     var status = percent.toString() + '%' + statusMsgDict[percent];
     barElem.value = percent;
     ein.ui.setStatus(status);
   }
+  /**
+   * Clears progress bar and, optionally, set's a final status message.
+   */
   function clearProgStatus(statusMsg) {
     var status = statusMsg || "";
     document.getElementById('progBar').className = 'fade-out';
     ein.ui.setStatus(status);
     setTimeout(function(){document.getElementById('progBar').className = 'hidden'}, 1000);
   }
-/*-------------PopUp Methods----------------------------------------------------*/
-  function alertPopUp(overlay, popup, contnt, status) {    //    console.log("alertPopUp contnt = ", contnt)
+/*-------------PopUp Methods--------------------------------------------------*/
+  /** Creates popup message that closes both the popup and the overlay element. */
+  function alertPopUp(overlay, popup, contnt, status) {                         //    console.log("alertPopUp contnt = ", contnt)
       popup.firstElementChild.innerHTML = contnt;
       overlay.style.display = 'block';
-      popup.style.display = 'block';      //  console.log("popup.firstChild = %O", popup)
+      popup.style.display = 'block';                                            //  console.log("popup.firstChild = %O", popup)
       if (status !== undefined) { ein.ui.setStatus(status); }
-      popupBtn.onclick = hideOverlayAndPopup;  //hides overlay and popup on button close
-  }
-  function msgPopUp(overlay, popup, contnt, status) {     //   console.log("popUp contnt = ", contnt)
-      popup.firstElementChild.innerHTML = contnt;
-      overlay.style.display = 'block';
-      popup.style.display = 'block';          //       console.log("popup.firstChild = %O", popup)
-      popupBtn.onclick = hidePopUp;  //hides only popup on button close
-      if (status !== undefined) { ein.ui.setStatus(status); }
+      popupBtn.onclick = hideOverlayAndPopup;  
   }
   function hideOverlayAndPopup(status) {
       popup.style.display = 'none';
       overlay.style.display = 'none';
       if (status !== undefined) { ein.ui.setStatus(status) }
   }
+  /** Creates popup message that closes independently of the overlay element. */
+  function msgPopUp(overlay, popup, contnt, status) {                           //   console.log("popUp contnt = ", contnt)
+      popup.firstElementChild.innerHTML = contnt;
+      overlay.style.display = 'block';
+      popup.style.display = 'block';
+      popupBtn.onclick = hidePopUp; 
+      if (status !== undefined) { ein.ui.setStatus(status); }
+  }
   function hidePopUp(status) {
       popup.style.display = 'none';
       popupBtn.style.display = 'block';
       if (status !== undefined) { ein.ui.setStatus(status) }
   }
-  /*--------------------- Login with Webview -----------------------------------------------*/
-  function webviewLogin(data, name) { console.log("webviewLogin begun.")
+  /*--------------------- Login with Webview ---------------------------------*/
+  function webviewLogin(data, name) {                                           // console.log("webviewLogin begun.")
     webviewElem = buildWebview();
-    webviewElem.clearData({}, {cache: true}, function(){console.log("cache cleared.")});   // clear webview cache
     popupBtn.style.display = 'none';
     boundPopUpMsg('Initiating connection with batplant.org', 'Connecting to batplant.org');
     webviewElem.addEventListener('contentload', postWebviewInitMsg);
   } /* End webviewLogin */
   function postWebviewInitMsg() {
-    webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batplant/web/app_dev.php/login");
+    webviewElem.contentWindow.postMessage({tag: "init"}, "http://localhost/batei/web/app_dev.php/login");
   }
   function hideWebview() {
     webviewCntnr.style.display = "none";
@@ -141,7 +172,7 @@
   function buildWebview() {
     webviewCntnr = document.createElement("div");
     webviewCntnr.id = 'web-view-cntnr';
-    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batplant/web/app_dev.php/login" style="width:100%; height:85%"></webview>';
+    webviewCntnr.innerHTML = '<webview id="web-view" src="http://localhost/batei/web/login" style="width:100%; height:85%"></webview>';
     webviewCntnr.style.display = 'none';
     overlay.appendChild(webviewCntnr);
     return document.getElementById('web-view');
@@ -149,6 +180,7 @@
   function webviewMsgHandlr(msg) { console.log('message recieved in toolbar. =%O', msg);
     msgMap[msg.data.tag](msg.data);
   }
+  /** Show batplant login page and prepare for login messaging. */
   function showWebview(msgData) {
     hidePopUp('Please login to batplant.org.');
     overlay.style.display = "block";
@@ -156,8 +188,9 @@
     webviewElem.addEventListener('loadstart', function(){ overlay.style.opacity = ".3"; });
     webviewElem.addEventListener('contentload', checkLogin);
   }
-  function checkRole(msgData) {     console.log("checkRole called. msgData= %O", msgData);
-    webviewElem.removeEventListener('contentload', postWebviewInitMsg);    // webviewElem.removeEventListener('contentload', postWebviewInitMsg);
+/*----------------Login and Admin Specific Methods----------------------------*/
+  function checkRole(msgData) {                                                 //   console.log("checkRole called. msgData= %O", msgData);
+    webviewElem.removeEventListener('contentload', postWebviewInitMsg);    
     webviewElem.removeEventListener('contentload', checkLogin);
     hideWebview();
     if (msgData.role === "admin" || msgData.role === "super") {
@@ -167,10 +200,18 @@
     }
   }
   function checkLogin() { console.log("checkLogin called. ")
-    webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/app_dev.php/");
+    webviewElem.contentWindow.postMessage({tag: "loginRole"}, "http://localhost/batplant/web/");
+  }
+  function loginAgain() {
+    overlay.style.opacity = "1";
+    boundPopUpMsg("<h2>Something went wrong.</h2><h4>Please try logging in again.</h4>", "Please try logging in again.");
+  }
+  function invalidRole() { console.log("invalidRole called");
+    boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
   }
   function adminLogin(msgData) {  console.log("hideWebview called. ")
     hideOverlayAndPopup("Successful login.");
+    clearProgStatus();
     showAdminElems();
     document.getElementById("username").innerText = "Logged in as " + msgData.user;
     document.getElementById("login").style.display = "none";
@@ -181,18 +222,15 @@
       adminElems[i].className= "admin-only";
     }
   }
-  function loginAgain() {
-    overlay.style.opacity = "1";
-    boundPopUpMsg("<h2>Something went wrong.</h2><h4>Please try logging in again.</h4>", "Please try logging in again.");
-  }
-
-  function invalidRole() { console.log("invalidRole called");
-    boundPopUpAlert("<br><p>You should not be here.</p><p>You do not have access.</p><p>You must go.</p><p>Now.", "Invalid credentials.");
-  }
   /*--------------------- Push Valid Entity Objs -------------------------------------------*/
+  /**
+   * Prompts user to select a json file containing validated json results. @pushJsonResults
+   */
   function pushEntity () { console.log("pushEntity called.")
     ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, pushJsonResults)
-
+    /**
+     * Sends validated record objs to batplant.org.
+     */
     function pushJsonResults(fSysId, jsonResults) {  console.log("jsonResults = %O", JSON.parse(jsonResults));
       webviewElem.contentWindow.postMessage({
         tag: 'uploadData',
@@ -200,28 +238,32 @@
         "http://localhost/batplant/web/"
       );
     }
-  }
+  } /* End pushEntity */
 /*--------------------Helper Methods--------------------------------------------------------*/
+  /**
+   *  Valid only mode will show a validation report if there were any errors in the data,
+   *  otherwise only records that had no issues will be loaded in the data grid. 
+   */
   function isValidOnlyMode() {
     var valChkbxElem = document.getElementById('loadIfValid');
     return valChkbxElem.checked ? true : false;
     // return true;
-  }
-  function singleEntityValDisplay(fSysIdAry, resultData) {//  console.log("entityFileValDisplay called. arguments = %O", arguments)
-    var displayObj = {};
-    displayObj[resultData.name] = resultData;
-    displayValidationResults(fSysIdAry, displayObj);
-  }
-  function entityFileValDisplay(fSysIdAry, resultData) { console.log("entityFileValDisplay called. arguments = %O", arguments)
-    entityCsvParseVals[resultData.name];
-  }
-/*------------------------------Interaction File Set parsing----------------------------------------------------------------------------- */
+  }   
+  /**
+    * A wrapper to place single entity validation results in the format reporting expects.
+    */
+    function singleEntityValDisplay(fSysIdAry, resultData) {                     
+      var displayObj = {};
+      displayObj[resultData.name] = resultData;
+      ein.errReport(fSysIdAry, displayObj);
+    }
+/*--------------Interaction File Set Parsing--------(CURRENT MAIN PARSE METHODS)--------------------------------------*/
   /**
    * User selects folder with exactly 3 csv files (with author, citation and interaction in their file names). These files are turned into
    * record objects representing each entity and their valid data from the files. In 'valid mode' a report is generated deescribing any
    * errors in the validation process. If there were no errors, or not in 'valid mode', valid data is loaded into a data grid in the editor.
    */
-  function csvFileSetParse() {// console.log("csvFileSetParse called");
+  function csvFileSetParse() {                                                  // console.log("csvFileSetParse called");
     var curProg = 20;
     var fileNameStrngs = ["interaction", "citation", "author"];
     var fileObjs = {
@@ -310,14 +352,17 @@
     }
     function parseAllRecrdObjs(curProg) {      //   console.log("parseAllRecrdObjs curProg= ", curProg);
       var validMode = isValidOnlyMode();
-      var cb = validMode === true ? displayValidationResults : buildDataGridConfig;
+      var cb = validMode === true ? ein.errReport : buildDataGridConfig;
 
       curProg = curProg + 3;        //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
 
-      ein.parse.parseFileSet(fileObjs, validMode, cb, boundSetProgress);
+      ein.parse.parseFileSet(fileObjs, validMode, cb);
     }
   }/* End csvFileSetParse */
+  /**
+   * Loads the final validated records collection into the data grid.
+   */
   function buildDataGridConfig(fSysIdAry, recrdsMetaData) {
     boundSetProgress(99);
     ein.dataGrid.buildConfig(recrdsMetaData.finalRecords, loadDataGrid);
@@ -330,442 +375,6 @@
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
   }
-  function displayValidationResults(fSysIds, resultData) { // console.log("displayValidationResults called. arguments = %O", arguments);
-    boundSetProgress(98);
-    var results = {};
-    if (resultData.name !== undefined) { results[resultData.name] = resultData; }
-    var resultObj = !(isEmpty(results)) ?  results : resultData;
-    var valResults = extractValidationResults(resultObj); //console.log("Validation results = %O", valResults);
-    var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
-
-    showResults();
-
-    function showResults() {
-      if (textRprt === false) {
-        showRecrds();
-        jsonResultsObj = ein.jsonHlpr.serialize(resultData);
-        document.getElementById("jsonSave").className = '';
-      } else {
-        showRprt();
-      }
-    }
-    function showRecrds() {
-      if (resultData.interaction) {
-        buildDataGridConfig(fSysIds, resultData.interaction);
-        boundSetProgress(100);
-        setTimeout(clearProgStatus, 3000, "Valid data loaded into grid.");
-        boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
-      } else {
-        boundSetProgress(100);
-        setTimeout(clearProgStatus, 3000);
-        boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
-      }
-    }
-    function showRprt() {
-      boundSetProgress(100);
-      setTimeout(clearProgStatus, 3000);
-      ein.editorTxtArea.value = textRprt;
-    }
-  } /* End displayValidationResults */
-  function extractValidationResults(resultData) {
-    var valData = {};
-    for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
-    return valData;
-
-    function getEntityResultData(entityResultData) {    //console.log("getEntityResultData metaData: %O", entityResultData);
-      var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
-      valData[curEntity] = { cleanRecrds: entityResultData.finalRecords };
-      if (entityResultData.valRpt !== undefined) {
-        valData[curEntity].parseRpt = getParseRpt(curEntity), //parseRpt
-        valData[curEntity].valErrs = getValErrs(curEntity)//valErrs (conflicts, invalidNulls, nullRef)
-      }
-
-      function getValErrs() { // console.log("valErrors = ")
-        var errFields = ['rcrdsWithNullReqFields', 'nullRefResults', 'shareUnqKeyWithConflictedData'];
-        var errs = {};
-        errFields.forEach(function(field){
-          if (entityResultData.valRpt[field] !== undefined) { errs[field] = entityResultData.valRpt[field]; }
-        });
-        return errs;
-      }
-      function getParseRpt() { // console.log("valErrors = ")
-        var rptFields = ['autoFill', 'dupCnt'];
-        var rpt = {};
-        rptFields.forEach(function(field){
-          if (entityResultData.valRpt[field] !== undefined) { rpt[field] = entityResultData.valRpt[field]; }
-        });
-        return rpt;
-      }
-    } /* End getEntityResultData */
-  } /* End extractValidMetaResults */
-  function generateRprt(valData, resultData) {// console.log("generateRprt called. valData = %O, resultData = %O", valData, resultData);
-    var conflictsStr = nullRefStr = invalidNullsStr = '';
-    var introStr = getIntroStr();
-    var divider = '---------------------------------------------------------------------------------------------------';
-    var smlDivider = '-----------------------------------------';
-    var rcrdsRmvdWithNullRefs = {};
-    var conflictsStrAry = [];
-    var nullRefStrAry = [];
-    var invalidNullsStrAry = [];
-
-    return buildRprt();
-
-    function getIntroStr() {
-      return `                                 Reference Table
----------------------------------------------------------------------------------------------------
-Some column headers in the spreadsheets are long, have spaces, or otherwise make this report more difficult to format in a way that is easy to read.
-These names have been replaced with shorter ones. The table below shows the column headers from the spreadsheets with their shortened equivalents.
-+-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
-|                                                    Interaction                                                    |                 Citation                 |        Author         |
-+-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
-| ----Interaction id explanation----                                                                                | Citation ID: citId                       | Short Name: shortName |
-| Primary or Secondary interaction: (Merged with intTag)                                                            | Citation Short Description: citShortDesc | Last: last            |
-| Citation Number: citId                                                                                            | Full Text: fullText                      | First: first          |
-| Citation Short Description: citShortDesc                                                                          | Authors: author                          | Middle: middle        |
-| Region: region                                                                                                    | Year: year                               | Suffix: suffix        |
-| Location Description: locDesc                                                                                     | Publication Title: pubTitle              |                       |
-| Country: country                                                                                                  | Publication Type: pubType                |                       |
-| Habitat Type: habType                                                                                             | Publisher: publisher                     |                       |
-| Lat.: lat                                                                                                         | Issue: issue                             |                       |
-| Long.: long                                                                                                       | Pages: pgs                               |                       |
-| Elev. (or Range Min): elev                                                                                        |                                          |                       |
-| Elev. Range Max: elevRangeMax                                                                                     |                                          |                       |
-| Interaction Type: intType                                                                                         |                                          |                       |
-| Interaction Tags: intTag                                                                                          |                                          |                       |
-| Subject Order, Bat Family, Bat Genus, Bat Species: subjTaxon*                                                     |                                          |                       |
-| Object Kingdom, Object Phylum, Object Class, Object Order, Object Family, Object Genus, Object Species: objTaxon* |                                          |                       |
-|                                                                                                                   |                                          |                       |
-| *Only the most specific taxon for subject and object is shown.                                                    |                                          |                       |
-+-------------------------------------------------------------------------------------------------------------------+------------------------------------------+-----------------------+
-===================================================================================================
-                                Data Validation Errors
-===================================================================================================`;
-    }
-    function buildRprt() {
-      var rprtStrngs;
-      var errors = false;
-      var storedRprts = {};
-      var intSkipped = false;
-
-      valData.author && rptErrors("author");
-      valData.citation && rptErrors("citation");
-      valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
-      valData.location && rptErrors("location");
-      valData.taxon && rptErrors("taxon");
-
-      if (!errors) { return false; }
-
-      invalidNullsStr += invalidNullsStrAry.join('\n' + smlDivider + '\n');
-      conflictsStr += conflictsStrAry.join('\n');
-      nullRefStr += nullRefStrAry.join('\n');
-      rprtStrngs = [introStr, nullRefStr, invalidNullsStr, conflictsStr].filter(function(str) { return str.length > 0 && str !== "\n"; });
-
-      return rprtStrngs.join('\n');
-
-      function rptErrors(entity) {
-        if (valData[entity].valErrs !== undefined && valData[entity].valErrs !== null) { buildRprtStrngs(valData[entity].valErrs, entity); }
-      }
-      function buildRprtStrngs(valErrs, entityName) {
-        var unqKeyDict = { shortName: "Short Name", locDesc: "Location Description" , citId: "Citation Id" };
-        if (nonNullErrType("nullRefResults")) { addNullRefs(valErrs.nullRefResults, entityName) }
-        if (nonNullErrType("rcrdsWithNullReqFields")) { addInvalidNulls(valErrs.rcrdsWithNullReqFields, entityName) }
-        if (nonNullErrType("shareUnqKeyWithConflictedData")) { addConflicts(valErrs.shareUnqKeyWithConflictedData, entityName) }
-
-        function nonNullErrType(errType) {
-          return valErrs[errType] !== null && valErrs[errType] !== undefined;
-        }
-        function addInvalidNulls(invldNullRprt, entityName) {  //console.log("%s invldNullRprt = %O",entityName, invldNullRprt);
-          var tempNullStrAry = [];
-          errors = true;
-          invalidNullsStr = divider + '\n  Fields required but left blank:\n' + divider + '\n';        // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-          entityName === "location" && getLocNullRprt();
-          entityName === "author" && getAuthNullRprt();
-          entityName === "interaction" && getIntNullRprt();
-          entityName === "citation" && getCitNullRprt();
-          entityName === "taxon" && processTaxonNulLRprt();
-
-          invalidNullsStrAry.push(tempNullStrAry.join('\n'));
-
-          function getCitNullRprt() {
-            var tempIdAry = [];
-            invldNullRprt.recrds.forEach(function(recrd){ tempIdAry.push(recrd.citId); });
-
-            tempNullStrAry.push('\n--Author missing for citations on rows: ' + tempIdAry.join(', ') + '.');
-          }
-          function processTaxonNulLRprt() { //console.log("processTaxonNulLRprt called. invldNullRprt = %O", invldNullRprt)
-            var taxonStrAry = [];
-            for (var nullType in invldNullRprt) {
-              if (nullType === "kingdom") { getKingdomNullRprt(invldNullRprt[nullType]);
-              } else {
-                getTaxaRprtStr(invldNullRprt[nullType], nullType);
-              }
-            }
-            tempNullStrAry.push('\n' + taxonStrAry.join('\n'));
-
-            function getKingdomNullRprt(nullObj) {
-              for (var role in nullObj) {
-                var intIds = nullObj[role].map(function(recrd){ return recrd.tempId+1 });
-                var unqIds = [];
-                intIds.forEach(function(id){ if (unqIds.indexOf(id) === -1) {unqIds.push(id)} });
-                var recrdCnt = unqIds.length;
-                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + unqIds.join(', ') + '.')
-              }
-            }
-            function getTaxaRprtStr(recrdsAry, nullType) {
-              var recrdCnt = recrdsAry.length;
-              var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
-              if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
-              } else {
-                taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + 'ect taxon: ' + intIds.join(', ') + '.');
-              }
-            }
-          } /* End processTaxonNullRprt */
-          function getAuthNullRprt() {
-            tempNullStrAry.push('\n--Author Short Name missing for the following records: \n');
-            invldNullRprt.recrds.forEach(function(recrd){
-              tempNullStrAry.push('  On row ' + recrd.tempId + ': ' + addFieldsInRecrd(recrd, "tempId"));
-            });
-            // tempNullStrAry.push('\n');
-          }
-          function getIntNullRprt() {  //console.log("interaction Null rprt = %O", invldNullRprt);
-            var nullIds = [];
-            invldNullRprt.recrds.forEach(function(recrd){ nullIds.push(recrd.tempId); });
-            tempNullStrAry.push('\n--Citation ID missing for interaction records on rows: ' + nullIds.join(', ') + '.');
-          }
-          function getLocNullRprt() { //console.log("location invldNullRprt = %O", invldNullRprt);
-            var intLocRefObj = getIntIds();     //       console.log("intLocRefObj = %O", intLocRefObj);
-            getIds();
-            invldNullRprt.recrds.forEach(function(recrd){
-              tempNullStrAry.push(mergeLocDataWithIntIds(recrd) + addFieldsInRecrd(recrd));
-            });
-
-            function mergeLocDataWithIntIds(recrd) {
-              var concatLocData = concatLocFields(recrd);
-              var str = '\n-There are ' +  intLocRefObj[concatLocData].length + ' interactions that have this location data and no location description. Rows: '
-              return str + groupIntIds(intLocRefObj[concatLocData]) + '\n ';
-            }
-            function getIds() {  //console.log("invldNullRprt.concatLocFields = %O", invldNullRprt.concatLocFields)
-              invldNullRprt.concatLocFields = concatFieldsInLocs();  //console.log("invldNullRprt.concatLocFields = %O", invldNullRprt.concatLocFields)
-              invldNullRprt.intIds = intLocRefObj;
-            }
-            function concatFieldsInLocs() {
-              return invldNullRprt.recrds.map(function(recrd){
-                var str = '';
-                for (var key in recrd) { if (recrd[key] !== null) { str += recrd[key] }}
-                return str;
-              });
-            }
-            function getIntIds(recrd) {
-              var refObj = {};
-              resultData.interaction.orgRcrdAry.forEach(getIntsForInvalidLocs);
-              return refObj;
-
-              function getIntsForInvalidLocs(intRcrd) {
-                intRcrd.locDesc === null && nonCollapsableData(intRcrd) && concatLocData(intRcrd);
-              }
-              function nonCollapsableData(intRcrd) {
-                var locFieldsNull = ['elev', 'elevRangeMax', 'lat', 'long'].every(function(field) { return intRcrd[field] === null; });
-                return !locFieldsNull;
-              }
-              function concatLocData(intRcrd) {                     // console.log("intRcrd = %O", intRcrd);
-                var concatIntLocData = concatLocFields(intRcrd);      //   console.log("concatLocData called. concatIntLocData = %O", concatIntLocData)
-                if (!(concatIntLocData in refObj)) { refObj[concatIntLocData] = []; }
-                refObj[concatIntLocData].push(intRcrd.tempId-1);
-              }
-            } /* End getIntIds */
-          } /* End getLocNullRprt */
-        } /* End addInvalidNulls */
-        function concatLocFields(rcrd) {
-          var concatLocFields = '';
-          var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
-          locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
-          return concatLocFields;
-        }
-        function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
-          var tempConflictsStrAry = [];
-          errors = true;
-          conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-
-          if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-            } else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
-
-          for (var sharedKey in conflictObj.recrds) {
-            tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
-          }
-          conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
-
-          function buildConflictRprts(recrdsAry, sharedKey) {
-            var tempRprt = [];
-            var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
-            recrdsAry.forEach(function(recrd, idx) {
-              entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
-              if (entityName === "citation" || entityName === "author" ) { tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); }
-            });
-            entityName === "location" && tempRprt.push(locIntRcrds.join(''));
-
-            return tempRprt.join('\n');
-
-            function buildLocConflictRprt(recrd, idx) {
-              var concatLocKey = concatLocFields(recrd);
-              var intConflictIntro = '\n   Data Set ' + (idx + 1) + ' found in ' + conflictObj.intIds[sharedKey][concatLocKey].length + ' Interaction records at rows: ';
-              locIntRcrds.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey][concatLocKey]));
-              return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
-
-            }
-          }
-          function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
-            var nullRefRslts = storedRprts.locNullRefs;
-            conflictObj.intIds = {};
-
-            conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
-
-            for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
-              var refObj = conflictObj.intIds[locDescKey] = {};
-
-              nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  // console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
-                var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
-                if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
-                refObj[locFieldsStr].push(intId-1);
-              });
-            }                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-          }
-        } /* End addConflicts */
-        function groupIntIds(intIdAry) {  //console.log("groupIntIds called. intIdAry = %O", arguments[0]);
-          var procSeq, lastSeqId;
-          var idSeqAry = [];
-          intIdAry.forEach(function(id, i){      // console.log("id = %s, i=%s", id, i)
-            if (i === 0) {
-              procSeq = lastSeqId = id;
-              if (intIdAry.length === 1) { finalSeq(id) }
-              return;
-            }
-            if (i === intIdAry.length-1) { finalSeq(id)
-            } else if (+id !== +lastSeqId+1) { resetSeq(id);
-            } else { lastSeqId = id; }
-          });   //console.log("idSeqAry joined = %s", idSeqAry.join(', '))
-          return idSeqAry.join(', ') + '.';
-
-          function resetSeq(id) {     //     console.log("resetSeq. procSeq = %s,  id = %s, lastSeqId=%s", procSeq, id, lastSeqId);
-            if (+lastSeqId != +procSeq) { procSeq = ++procSeq + '-' + ++lastSeqId;
-            } else { procSeq = ++procSeq; }
-            idSeqAry.push(procSeq);
-            procSeq = lastSeqId = id;
-          }
-          function finalSeq(id) {    //   console.log("finalSeq. id = %s, procSeq = %s", id, procSeq);
-            if (+id === +procSeq) { procSeq = ++procSeq;
-            } else if (+id === +lastSeqId+1){ procSeq = ++procSeq + '-' + ++id;
-            } else { procSeq = ++procSeq + '-' + ++lastSeqId + ', ' + ++id }
-            idSeqAry.push(procSeq);
-          }
-        } /* End groupIntIds */
-        function addNullRefs(nullRefResults, entityName) { //console.log("addNullRefs called. %s nullRefs = %O", entityName, nullRefResults);
-          var tempNullRefStrAry = [];
-          errors = true;
-
-          if ("location" in nullRefResults) { processLocNullRefs(nullRefResults.location); }   //location null refs are reported later in the conflicts report, so these are isolated from the nullRefStr init to keep this section from displaying if locations are the only null refs to report.
-          if ("citation" in nullRefResults) {
-            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-            processCitNullRefs(nullRefResults, nullRefResults.citation);
-          }
-          if ("author" in nullRefResults) {
-            nullRefStr = divider + '\n  Rows referenced but not found:\n' + divider;   // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
-            processAuthorNullRefs(nullRefResults.author);
-          }
-
-          nullRefStrAry.push(tempNullRefStrAry.join('\n'));
-
-          function processLocNullRefs(locNullRefs) {  //  console.log("locNullRefs = %O", locNullRefs);
-            var intLocRefs = {};
-            for (var intId in locNullRefs) {// console.log("locNullRefs[intId] = %O", locNullRefs[intId]);
-              var locNullObj = locNullRefs[intId];
-              if (!(locNullObj[0].locDesc in intLocRefs)) { intLocRefs[locNullObj[0].locDesc] = [] }
-                intLocRefs[locNullObj[0].locDesc].push(intId);
-            }                                                 // console.log("intLocRefs = %O", intLocRefs)
-            storedRprts.locNullRefs = { intIdRefs: intLocRefs };
-          }
-          function processCitNullRefs(nullRefResults, citNullRefs) { //console.log("nullRefResults = %O", nullRefResults);
-            var citRcrdsRmvdWithNullRefs = rcrdsRmvdWithNullRefs.citation || false;          //       console.log("citRcrdsRmvdWithNullRefs @@ rcrdsRmvdWithNullRefs = %O", rcrdsRmvdWithNullRefs);
-            var citRefsToRmvdRcrds = 0;
-            var returnStrAry = [];
-            var citRefs = {};
-            for (var key in citNullRefs) { if(citNullRefs[key][0] !== undefined) { processCitRef(); } }
-
-            if (citRcrdsRmvdWithNullRefs) { returnStrAry.push('  There are ' + citRefsToRmvdRcrds + ' Interaction records with references to the above ' + citRcrdsRmvdWithNullRefs.length + ' Citation records that have validation errors.\n');}
-
-            if (!isEmpty(citRefs)) {returnStrAry.push(buildCitRefRprtStr(citRefs));}
-
-            tempNullRefStrAry.push(returnStrAry.join('\n'));
-
-            function processCitRef() {
-              if (citRcrdsRmvdWithNullRefs && citRcrdsRmvdWithNullRefs.indexOf(parseInt(citNullRefs[key][0].citId)) > -1) { citRefsToRmvdRcrds++;
-              } else {
-                if (citRefs[citNullRefs[key][0].citId] === undefined) { citRefs[citNullRefs[key][0].citId] = []; }
-                citRefs[citNullRefs[key][0].citId].push(key-1);
-              }
-            }
-          } /* End processCitNullRefs */
-          function buildCitRefRprtStr(citRefs) { //console.log("buildCitRefRprtStr arguments = %O", arguments)
-            var strAry = [];
-            for ( var citId in citRefs ) {
-              strAry.push('--Citation ' + citId + ' does not exist in the imported citation data and is referenced by ' + citRefs[citId].length + ' Interaction records on rows ' + groupIntIds(citRefs[citId]));
-            }
-            return '\n' + strAry.join('\n') + '\n';
-          }
-          function processAuthorNullRefs(authorNullRefs) {        //        console.log("processAuthorNullRefs. authorNullRefs = %O", authorNullRefs);
-            var tempAuthRefObj = {};
-            var str = '';
-            var authStrAry = [];
-            rcrdsRmvdWithNullRefs.citation = [];
-            for(var key in authorNullRefs) {
-              if (authorNullRefs[key][0] !== undefined) {
-                rcrdsRmvdWithNullRefs.citation.push(parseInt(key));  // console.log("rcrdsRmvdWithNullRefs.citation pushing now");
-                processAuth();
-              }
-            }
-            authStrAry.push(buildAuthRefReturnStr(tempAuthRefObj, rcrdsRmvdWithNullRefs.citation.length) + '\n');
-            tempNullRefStrAry.push(authStrAry.join('\n'));
-
-            function processAuth() {
-              if (typeof authorNullRefs[key][0] === "object") {
-                if (tempAuthRefObj[authorNullRefs[key].nullRefKeys] === undefined) { tempAuthRefObj[authorNullRefs[key].nullRefKeys] = []; };
-                  tempAuthRefObj[authorNullRefs[key].nullRefKeys].push(key);
-              }
-            }
-            function buildAuthRefReturnStr(tempAuthRefObj, citRecCnt) {           //    console.log("buildAuthRefReturnStr. tempAuthRefObj = %O", tempAuthRefObj);
-              var strAry = ['\n--There are ' + citRecCnt + ' Citation records which reference Author short names not found in the Author data.\n',
-                            '  Short Name             |  Citation IDs ', '---------------------------------------------'];
-              var padding = '                       '; //23
-
-              for (var auth in tempAuthRefObj) {
-                strAry.push('  ' + pad(padding, auth) + '|  ' + pad (padding, tempAuthRefObj[auth].join(', ')));
-              }
-              return strAry.join('\n');
-            }
-          } /* End processAuthorNullRefs */
-        } /* End addNullRefs */
-        function processAuthFields(authRcrdsAry) { console.log("processAuthFields. arguments = %O", arguments);
-          var authStr = '';
-          authRcrdsAry.forEach(function(recrd){ //console.log("authRcrdsAry loop. recrd = %O, authStr = ", recrd, authStr);
-            authStr += 'Author (shortName): ' + recrd.shortName + ',' + addFieldsInRecrd(recrd, 'shortName') + ' ';
-          });                                                                   //console.log("authStr = ", authStr);
-          return authStr;
-        }
-        function addFieldsInRecrd(recrd, unqKey, skipKeyAry) { //console.log("addFieldsInRecrd. arguments = %O", arguments);
-          var skipKeyAry = skipKeyAry || [];
-          var tempStrAry = [];
-          for (var field in recrd) {// console.log("field = %s, recrd = %O", field, recrd)
-            if (skipKeyAry.indexOf(field) > -1) { continue } //console.log("field = ", field);
-            if (field === unqKey || recrd[field] === null || recrd[field] === undefined) { continue }
-            if (typeof recrd[field] === "string" || typeof recrd[field] === "number") {
-              tempStrAry.push(' ' + field + ': ' + recrd[field]);
-            } else if (field === "author") { tempStrAry.push('Author (shortName): ' + recrd[field][0]);
-            } else { tempStrAry.push(addFieldsInRecrd(recrd[field])); }
-          }
-          return tempStrAry.join(', ');
-        } /* End addFieldsInRecrd */
-      } /* End buildRprtStr */
-    } /* End buildRprt */
-  } /* End generateRprt */
 /*----------Select entity to parse-------------- */
   function selectFileCsvParse() {
     var entity = document.getElementById('entitySelect').value;
@@ -789,7 +398,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       mergeEntities();
 
       function mergeEntities() { //console.log("childObjs = %O,  parentObj = %O", childObjs, parentObj);
-        var cb = validMode ? displayValidationResults : entity === "interaction" ? buildDataGridConfig : ein.ui.show;
+        var cb = validMode ? ein.errReport : entity === "interaction" ? buildDataGridConfig : ein.ui.show;
         var valObj = validMode ? mergeEntityResults() : false;
         ein.parse.mergeDataSet(fSysId, parentObj, childObjs, cb, valObj);
       }
@@ -918,25 +527,7 @@ These names have been replaced with shorter ones. The table below shows the colu
       id: 'spec-win',
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
-/*-----------------------Util Helpers---------------------------------*/
-  function pad (pad, str, padLeft) {
-    if (padLeft) {
-      return (pad + str).slice(-pad.length);
-    } else {
-      return (str + pad).substring(0, pad.length);
-    }
-  }
-  /**
-   * Checks if an object is empty
-   * @param  {object}  obj
-   * @return {Boolean}     Returns false if key is found.
-   */
-  function isEmpty(obj) {
-    for (var x in obj) { return false; }
-    return true;
-  }
 /* =================== Build Params Packages ======================= */
-
   function openFileParams() {
     return {
       type: 'openFile',
