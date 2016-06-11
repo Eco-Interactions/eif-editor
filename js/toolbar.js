@@ -257,7 +257,8 @@
       displayObj[resultData.name] = resultData;
       ein.errReport(fSysIdAry, displayObj);
     }
-/*--------------Interaction File Set Parsing--------(CURRENT MAIN PARSE METHODS)--------------------------------------*/
+/*====================================================================================================================*/
+/*================Interaction File Set Parsing======(CURRENT MAIN PARSE METHODS)======================================*/
   /**
    * User selects folder with exactly 3 csv files (with author, citation and interaction in their file names). These files are turned into
    * record objects representing each entity and their valid data from the files. In 'valid mode' a report is generated deescribing any
@@ -276,26 +277,30 @@
     ein.fileSys.selectFileSys(openFolderParams(), ein.fileSys.getFolderData, ein.fileSys.readFolder, getCsvFiles);
     boundSetProgress(2);
 
-    function getCsvFiles(pathStr, folderMap) {                                //Grab files with .csv extensions
+    function getCsvFiles(pathStr, folderMap) {                                  //Grab files with .csv extensions
       boundSetProgress(16);
-      var fileSetIds = getCsvFileIds(folderMap); //  console.log("fileSetIds = %O", fileSetIds)
+      var fileSetIds = getCsvFileIds(folderMap);                                //  console.log("fileSetIds = %O", fileSetIds)
       if ( fileSetIds.length === 3 ) { validateFileSet(fileSetIds); }
         else {
           boundPopUpAlert("<h3>There are " + (fileSetIds.length > 3 ? "more" : "less") + " than 3 .csv files in this folder.</h3>");
           clearProgStatus();
         }
     }
-    function getCsvFileIds(folderMap) {//  console.log("getCsvFileIds called. folderMap = %O", folderMap);
+    function getCsvFileIds(folderMap) {                                         //  console.log("getCsvFileIds called. folderMap = %O", folderMap);
       var csvFileIds = [];
       var fileKeys = Object.keys(folderMap.files);
       fileKeys.forEach(function(fileKey) {
         var splitFile = folderMap.files[fileKey].id.split('.');
         var extension = splitFile[splitFile.length - 1];
         if (extension === "csv") { csvFileIds.push(folderMap.files[fileKey].id); }
-      }); //  console.log("csvFileIds  = %O", csvFileIds)
+      });                                                                       //  console.log("csvFileIds  = %O", csvFileIds)
       return csvFileIds;
     }
-    function validateFileSet(fileSetIds) {    //     console.log("validateFileSet called = %O", fileSetIds)
+    /**
+     * Checks that each of the three csv files contains a main entity file string: 
+     * 'interaction', 'citation', 'author'. These are not case sensitive.
+     */
+    function validateFileSet(fileSetIds) {                                      //     console.log("validateFileSet called = %O", fileSetIds)
       var invalidFileId, unmatched;
       var validFileSet = fileSetIds.every(function(fileId) {
         return validFileNameCheck(fileId);
@@ -307,17 +312,16 @@
           clearProgStatus();
       }
 
-      function validFileNameCheck(fileId) { // console.log("validFileNameCheck called.");
+      function validFileNameCheck(fileId) {                                     // console.log("validFileNameCheck called.");
         if (ifValidFileName(fileId)) { return true;
         } else {
-          invalidFileId = fileId.split("/");  //  console.log("invalidFileId = ", invalidFileId)
+          invalidFileId = fileId.split("/");                                    //  console.log("invalidFileId = ", invalidFileId)
           return false;
         }
       }
     } /* End validateFileSet */
-    function ifValidFileName(fileId) { // console.log("ifValidFileName called.");
-      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });
-      // console.log("validFileName = ", validFileName);
+    function ifValidFileName(fileId) {                                           // console.log("ifValidFileName called.");
+      var validFileName = fileNameStrngs.some(function(fileNameStr) { return ifStrInFileName(fileNameStr); });          // console.log("validFileName = ", validFileName);
       return validFileName;
 
       function ifStrInFileName(fileNameStr) {
@@ -329,10 +333,15 @@
         }
       }
     } /* End ifValidFileName */
+    /**
+     * Opens each of the csv files and sends the csv string to a parser that will turn it into an array
+     * of row, or record, objects. After each has been parsed, the record objects are sent to the data
+     * parsing library and validated.
+     */
     function openFiles() {
       var curFile = fileNameStrngs.pop();
       curProg = curProg + 5;
-      boundSetProgress(curProg);      //  console.log("openFile %s. curProg = ", curFile, curProg);
+      boundSetProgress(curProg);                                                //  console.log("openFile %s. curProg = ", curFile, curProg);
       if (curFile === undefined) {
         parseAllRecrdObjs(curProg)
       } else {
@@ -340,7 +349,7 @@
       }
 
       function objectifyCSV(fSysId, fileText) {
-        curProg = curProg + 5;       //   console.log("objectifyCSV called. curProg = ", curProg);
+        curProg = curProg + 5;                                                  //   console.log("objectifyCSV called. curProg = ", curProg);
         boundSetProgress(curProg);
         ein.csvHlpr.csvToObject(fSysId, fileText, storeCsvObj, curFile);
       }
@@ -350,16 +359,17 @@
       fileObjs[topEntity].orgRcrdAryObjs = rcrdAryObjs;
       openFiles();
     }
-    function parseAllRecrdObjs(curProg) {      //   console.log("parseAllRecrdObjs curProg= ", curProg);
+    function parseAllRecrdObjs(curProg) {                                       //   console.log("parseAllRecrdObjs curProg= ", curProg);
       var validMode = isValidOnlyMode();
       var cb = validMode === true ? ein.errReport : buildDataGridConfig;
 
-      curProg = curProg + 3;        //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
+      curProg = curProg + 3;                                                    //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
 
       ein.parse.parseFileSet(fileObjs, validMode, cb);
     }
   }/* End csvFileSetParse */
+/*--------------Data Grid Methods---------------------------------------------*/
   /**
    * Loads the final validated records collection into the data grid.
    */
@@ -375,7 +385,16 @@
     boundSetProgress(100);
     setTimeout(clearProgStatus, 3000);
   }
-/*----------Select entity to parse-------------- */
+/*=================================Misc Entity Parsing Methods====================================*/
+/*-------------Select entity to parse-----------------------------------------*/
+  /**
+   * The user selects an entity from a select box, and then presses the #fileParse button. 
+   * The user is prompted to select that entity's csv file. The csv string is sent to a 
+   * csv parser that will turn it into an array of row, or record, objects. The record 
+   * objects are sent to the data parsing library with a string identifying the entity being 
+   * validated. The validation resulting records and validation results are returned.
+   * The records are then all re-merged into the parent entity once more and the results are displayed. 
+   */
   function selectFileCsvParse() {
     var entity = document.getElementById('entitySelect').value;
     var entitiesInFile = entityCsvParseVals[entity];
@@ -415,81 +434,100 @@
     } /* End validateEntity */
   } /* End selectFileCsvParse */
 /*----------Select Data Set to parse-------------- */
+  /**
+   * The user selects a data set from a select box, presses a then-existent button and is prompted 
+   * to load csv files in a specific order for the set. NOT CURRENTLY CONNECTED TO A BUTTON.
+   *     Citation set -> Load *author*.csv, Load *citation*.csv
+   * Only currently useful in this one case. Authors are self-contained and Interactions use @csvFileSetParse.
+   * 
+   * The user is prompted to select the csv files, in order. The csv strings are sent to a 
+   * csv parser that will turn them into respective arrays of row, or record, objects. The record 
+   * objects are sent to the data parsing library, along with a string indicating the entity being 
+   * validated. The validation resulting records and validation results are returned.
+   * The records are then all re-merged into the parent entity once more and the results are displayed. 
+   */
   function selectCSVDataSetParse() {
     var curTopEntity, outerDataObj, entitiesInFile;
     var outerEntity = false;
     var fSysIdAry = [];
     var subEntityObjAry = [];
-    var dataSet = document.getElementById('dataSetSelect').value;                   console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
+    var dataSet = document.getElementById('dataSetSelect').value;               //  console.log("selectCSVDataSetParse called.  dataSet = ", dataSet);
     var paramTopEntitiesAry = entityCsvParseVals[dataSet];
 
     parseEachTopEntity();
 
-    function parseEachTopEntity() {                                                 console.log("parseEachTopEntity called.");
+    function parseEachTopEntity() {                                            
       outerEntity !== false ? mergeEntitiesIntoDataObj() : processTopEntity();
     }
     function processTopEntity() {
-      curTopEntity = paramTopEntitiesAry.pop();                                     console.log("curTopEntity = ", curTopEntity);
-      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
-      outerEntity = paramTopEntitiesAry.length === 0 ? curTopEntity : false;        console.log("outerEntity = ", outerEntity);
+      curTopEntity = paramTopEntitiesAry.pop();                                
+      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();             
+      outerEntity = paramTopEntitiesAry.length === 0 ? curTopEntity : false;   
       openEntityFile();
     }
     function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
       ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
     }
-    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
-      fSysIdAry.push(fSysId);                                                       console.log("curTopEntity inside = ", curTopEntity);
+    function csvToObjForEntity(fSysId, text) {                                 
+      fSysIdAry.push(fSysId);                                                  
       ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
     }
-    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile called. arguments = %O", arguments);
-      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile called. parseEntity = ", parseEntity);
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {          
+      entitiesInFile.forEach(function(parseEntity) {                           
         ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
       });
-      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if (outerEntity === recrdsObj.name) {                                       console.log("storeParsedEntityRecords called. isOuterEntity true. recrdsObj = %O", recrdsObj);
+      function storeParsedEntityRecords(fSysId, recrdsObj) {                   
+        if (outerEntity === recrdsObj.name) {                                  
           outerDataObj = recrdsObj;
-        } else {                                                                    console.log("forEachEntityInFile called on subEntity");
+        } else {                                                               
           subEntityObjAry.push(recrdsObj);
         }
         if (recrdsObj.name === topEntity) { parseEachTopEntity(); }
       }
     } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj() {                                           console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+    function mergeEntitiesIntoDataObj() {                                      //     console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
       ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry);
     }
   }/* End selectCSVDataSetParse */
   /*----------Interaction Data Set parsing-------------- */
+  /**
+   * The user is prompted to select the parent entity csv files in order, *author*.csv, *citation*.csv, and 
+   * *interaction*.csv. The csv strings are sent to a csv parser that will turn them into respective arrays 
+   * of row, or record, objects. The record objects are sent to the data parsing library, along with a string
+   * indicating the entity being validated. The validation resulting records and validation results are returned.
+   * The records are then all re-merged into the parent interaction records once more and the results are displayed. 
+   */
   function csvInteractionDataSetParse() {
     var curTopEntity, citDataObj, intDataObj, entitiesInFile;
     var outerEntity = false;
     var fSysIdAry = [];
     var subEntityObjAry = [];
-    var dataSet = "interactionSet";                                                 console.log("csvInteractionDataSetParse called.  dataSet = ", dataSet);
+    var dataSet = "interactionSet";                                             //  console.log("csvInteractionDataSetParse called.  dataSet = ", dataSet);
     var paramTopSubEntitiesAry = entityCsvParseVals[dataSet];
 
     processTopEntities();
 
     function processTopEntities() {
-      curTopEntity = paramTopSubEntitiesAry.pop();                                  console.log("Open file for curTopEntity = ", curTopEntity);
-      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();                  console.log("entitiesInFile = %O", entitiesInFile); // Reverse so top entity is the last entity ro be parsed, triggering the next top entity parsing
+      curTopEntity = paramTopSubEntitiesAry.pop();                              
+      entitiesInFile = entityCsvParseVals[curTopEntity].reverse();              
       openEntityFile();
     }
     function openEntityFile() {/* params,             idHandler,            objHandler,          fileTxtHandler */
       ein.fileSys.selectFileSys(openFileParams(), ein.fileSys.getFileObj, ein.fileSys.readFile, csvToObjForEntity);
     }
-    function csvToObjForEntity(fSysId, text) {                                      console.log("csvToObjForEntity called.");
+    function csvToObjForEntity(fSysId, text) {                                  
       fSysIdAry.push(fSysId);
       ein.csvHlpr.csvToObject(fSysId, text, forEachEntityInFile, curTopEntity);
     }
-    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {               console.log("forEachEntityInFile first called. arguments = %O", arguments);
-      entitiesInFile.forEach(function(parseEntity) {                                console.log("forEachEntityInFile parsing = ", parseEntity);
+    function forEachEntityInFile(fSysId, orgRcrdAryObjs, topEntity) {           
+      entitiesInFile.forEach(function(parseEntity) {                            
         ein.parse.parseChain(fSysId, orgRcrdAryObjs, parseEntity, storeParsedEntityRecords);
       });
-      function storeParsedEntityRecords(fSysId, recrdsObj) {                        console.log("storeParsedEntityRecords called. arguments = %O", arguments);
-        if ("interaction" === recrdsObj.name) {                                    console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
+      function storeParsedEntityRecords(fSysId, recrdsObj) {                    //    console.log("storeParsedEntityRecords called. arguments = %O", arguments);
+        if ("interaction" === recrdsObj.name) {                                 //   console.log("storeParsedEntityRecords called. Interactions recrdsObj = %O", recrdsObj);
           intDataObj = recrdsObj;
           mergeEntitiesIntoDataObj(intDataObj, subEntityObjAry);
-        } else if ("citation" === recrdsObj.name){                                  console.log("------------citations top record parsed. Merging now.")    //Vital citations is parsed last in its set
+        } else if ("citation" === recrdsObj.name){                                  
           citDataObj = recrdsObj;
           mergeEntitiesIntoDataObj(citDataObj, subEntityObjAry, storeMergedCits);
         } else {
@@ -498,7 +536,7 @@
         }
       }/* End storeParsedEntityRecords */
     } /* End forEachEntityInFile */
-    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {    console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
+    function mergeEntitiesIntoDataObj(outerDataObj, subEntityObjAry, callback) {   // console.log("mergeEntitiesIntoDataObj called. outerDataObj = %O,  subEntityObjAry = %O", outerDataObj, subEntityObjAry);
       ein.parse.mergeDataSet(fSysIdAry, outerDataObj, subEntityObjAry, callback);
     }
     function storeMergedCits(fSysId, mergedCitRecrds) {
@@ -508,6 +546,7 @@
     }
   }/* End csvInteractionDataSetParse */
 /*--------------- Methods For Testing -------------------------- */
+  /** Opens a window with options to intiate the test environment variables. */
   function initTests() {
     var width = 900;
     var height = 300;
@@ -517,7 +556,7 @@
     id: 'test-win',
       outerBounds: { top: top, left: left, width: width, height: height }});
   }
-
+  /** Opens a window where the tests are run and results displayed. */
   function launchTests() {
     var width = 1100;
     var height = 600;
@@ -540,15 +579,6 @@
   }
   function openFolderParams() {
     return {type: 'openDirectory'};
-  }
-  function openFolderCsvs() {
-    return {
-      type: 'openDirectory',
-      accepts: [{
-        mimeTypes: ['text/*'],
-        extensions: ['csv']
-      }]
-    };
   }
 }());  /* end of namespacing anonymous function */
 
