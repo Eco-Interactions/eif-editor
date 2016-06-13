@@ -361,7 +361,7 @@
     }
     function parseAllRecrdObjs(curProg) {                                       //   console.log("parseAllRecrdObjs curProg= ", curProg);
       var validMode = isValidOnlyMode();
-      var cb = validMode === true ? ein.errReport : buildDataGridConfig;
+      var cb = validMode === true ? buildErrReport : buildDataGridConfig;
 
       curProg = curProg + 3;                                                    //    console.log("parseAllRecrdObjs called. curProg = ", curProg);
       boundSetProgress(curProg);
@@ -369,6 +369,36 @@
       ein.parse.parseFileSet(fileObjs, validMode, cb);
     }
   }/* End csvFileSetParse */
+/*--------------Display Results-----------------------------------------------*/
+    function buildErrReport(fSysIdAry, recrdsMetaData) {
+      ein.errReport(recrdsMetaData, showResults);
+    }
+
+    function showResults(textRprt, resultData) {  console.log("showing Results")
+      if (textRprt === false) {
+        showRecrds();
+        jsonResultsObj = ein.jsonHlpr.serialize(resultData);
+        document.getElementById("jsonSave").className = '';
+      } else {
+        showRprt();
+      }
+      function showRecrds() {
+        if (resultData.interaction) {
+          buildDataGridConfig([], resultData.interaction);
+          setTimeout(ein.tools.clearProgress, 3000, "Valid data loaded into grid.");
+          boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
+        } else {
+          ein.tools.setProgress(100);
+          setTimeout(ein.tools.clearProgress, 3000);
+          boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
+        }
+      }
+      function showRprt() {
+        ein.tools.setProgress(100);
+        setTimeout(ein.tools.clearProgress, 3000);
+        ein.editorTxtArea.value = textRprt;
+      }
+    } /* End showResults */
 /*--------------Data Grid Methods---------------------------------------------*/
   /**
    * Loads the final validated records collection into the data grid.

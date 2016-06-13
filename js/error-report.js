@@ -1,9 +1,9 @@
 (function() {
 	var ein = ECO_INT_NAMESPACE;
 
-	ein.errReport = displayValidationResults;
+	ein.errReport = buildValidationReport;
 
-	function displayValidationResults(fSysIds, resultData) { // console.log("displayValidationResults called. arguments = %O", arguments);
+	function buildValidationReport(resultData, callback) { // console.log("displayValidationResults called. arguments = %O", arguments);
 		ein.tools.setProgress(98);
 		var results = {};
 		if (resultData.name !== undefined) { results[resultData.name] = resultData; }
@@ -11,66 +11,39 @@
 		var valResults = extractValidationResults(resultObj); //console.log("Validation results = %O", valResults);
 		var textRprt = generateRprt(valResults, resultObj);// console.log("textRprt = %s", textRprt);
 
-		showResults();
+		callback(textRprt, resultData)
 
-		function showResults() {  console.log("showing Results")
-		  if (textRprt === false) {
-		    showRecrds();
-		    jsonResultsObj = ein.jsonHlpr.serialize(resultData);
-		    document.getElementById("jsonSave").className = '';
-		  } else {
-		    showRprt();
-		  }
-		}
-		function showRecrds() {
-			if (resultData.interaction) {
-				buildDataGridConfig(fSysIds, resultData.interaction);
-				ein.tools.setProgress(100);
-				setTimeout(ein.tools.clearProgress, 3000, "Valid data loaded into grid.");
-				boundPopUpAlert('<h2>No validation errors were found.</h2><h2>Valid data loaded in grid.</h2>');
-			} else {
-				ein.tools.setProgress(100);
-				setTimeout(ein.tools.clearProgress, 3000);
-				boundPopUpAlert('<h2>No validation errors were found in </h2><h2>"' + fSysIds.split(":")[1] + '".</h2>');
+	} /* End buildValidationReport */
+	function extractValidationResults(resultData) {
+		var valData = {};
+		for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
+		return valData;
+
+		function getEntityResultData(entityResultData) {    //console.log("getEntityResultData metaData: %O", entityResultData);
+			var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
+			valData[curEntity] = { cleanRecrds: entityResultData.finalRecords };
+			if (entityResultData.valRpt !== undefined) {
+				valData[curEntity].parseRpt = getParseRpt(curEntity), //parseRpt
+				valData[curEntity].valErrs = getValErrs(curEntity)//valErrs (conflicts, invalidNulls, nullRef)
 			}
-		}
-		function showRprt() {
-			ein.tools.setProgress(100);
-			setTimeout(ein.tools.clearProgress, 3000);
-			ein.editorTxtArea.value = textRprt;
-		}
-		} /* End displayValidationResults */
 
-		function extractValidationResults(resultData) {
-			var valData = {};
-			for (var topKey in resultData) { getEntityResultData(resultData[topKey]); }  //  console.log("Final valData = %O", valData);
-			return valData;
-
-			function getEntityResultData(entityResultData) {    //console.log("getEntityResultData metaData: %O", entityResultData);
-				var curEntity = entityResultData.name;// console.log("curEntity = %s", curEntity);
-				valData[curEntity] = { cleanRecrds: entityResultData.finalRecords };
-				if (entityResultData.valRpt !== undefined) {
-					valData[curEntity].parseRpt = getParseRpt(curEntity), //parseRpt
-					valData[curEntity].valErrs = getValErrs(curEntity)//valErrs (conflicts, invalidNulls, nullRef)
-				}
-
-				function getValErrs() { // console.log("valErrors = ")
-					var errFields = ['rcrdsWithNullReqFields', 'nullRefResults', 'shareUnqKeyWithConflictedData'];
-					var errs = {};
-					errFields.forEach(function(field){
-					  if (entityResultData.valRpt[field] !== undefined) { errs[field] = entityResultData.valRpt[field]; }
-					});
-					return errs;
-				}
-				function getParseRpt() { // console.log("valErrors = ")
-					var rptFields = ['autoFill', 'dupCnt'];
-					var rpt = {};
-					rptFields.forEach(function(field){
-					  if (entityResultData.valRpt[field] !== undefined) { rpt[field] = entityResultData.valRpt[field]; }
-					});
-					return rpt;
-				}
-			} /* End getEntityResultData */
+			function getValErrs() { // console.log("valErrors = ")
+				var errFields = ['rcrdsWithNullReqFields', 'nullRefResults', 'shareUnqKeyWithConflictedData'];
+				var errs = {};
+				errFields.forEach(function(field){
+				  if (entityResultData.valRpt[field] !== undefined) { errs[field] = entityResultData.valRpt[field]; }
+				});
+				return errs;
+			}
+			function getParseRpt() { // console.log("valErrors = ")
+				var rptFields = ['autoFill', 'dupCnt'];
+				var rpt = {};
+				rptFields.forEach(function(field){
+				  if (entityResultData.valRpt[field] !== undefined) { rpt[field] = entityResultData.valRpt[field]; }
+				});
+				return rpt;
+			}
+		} /* End getEntityResultData */
 	} /* End extractValidMetaResults */
 	function generateRprt(valData, resultData) {// console.log("generateRprt called. valData = %O, resultData = %O", valData, resultData);
 		var conflictsStr = nullRefStr = invalidNullsStr = '';
@@ -121,9 +94,9 @@ These names have been replaced with shorter ones. The table below shows the colu
 		  var storedRprts = {};
 		  var intSkipped = false;
 
-		  valData.author && rptErrors("author");
+		  valData.author && rptErrors("author");	//Reports need to be processed in a certain order
 		  valData.citation && rptErrors("citation");
-		  valData.interaction && rptErrors("interaction");           //Reports sometimes need to be processed in a certain order
+		  valData.interaction && rptErrors("interaction");  
 		  valData.location && rptErrors("location");
 		  valData.taxon && rptErrors("taxon");
 
