@@ -7,7 +7,7 @@
 	/**
 	 * Splits record data into each of the contained entites in a json compatible format.
 	 * TODO: Needs to be made to recognize and work with existing ids, if they exist.
-	 * @param  {obj} resultData  Parsing result data
+	 * @param  {obj} resultData  Validation parsing result data
 	 * @return {string}          Entity objs split and linked by tempId references.
 	 */
 	function buildJsonData(resultData) {			//console.log("buildJsonFile called. rcrds = %O", resultData);
@@ -21,7 +21,7 @@
 		buildTaxonObjs(resultData.taxon.finalRecords);
 		buildInteractionObjs(resultData.interaction.finalRecords);
 		addLevels();
-		addDomains()
+		addDomains();
 		// console.log("preppedData = %O", preppedData)
 		return JSON.stringify(preppedData, null, 2);
 
@@ -231,26 +231,33 @@
 				intObjs[key] = {};
 				intObjs[key].citation = rcrdsObj[key].citation.citId;
 				intObjs[key].location = rcrdsObj[key].location === null ? null : rcrdsObj[key].location.tempId;
-				intObjs[key].tags = getIntTagRef(rcrdsObj[key].intTag);
 				intObjs[key].interactionType = getIntTypeRef(rcrdsObj[key].intType);
 				intObjs[key].subject = getTaxonRef(rcrdsObj[key].subjTaxon);
 				intObjs[key].object = getTaxonRef(rcrdsObj[key].objTaxon);
+				addTags(rcrdsObj[key].intTag, rcrdsObj[key]);
 			}  console.log("intObjs = %O, intTagObj = %O, intType = %O", intObjs, intTagObj, intTypeObj);
 
 			preppedData.interaction = intObjs;
-			preppedData.intTag = arrangeDataObjByKey(intTagObj);
+			preppedData.intTag = arrangeTags(intTagObj);
 			preppedData.interactionType = arrangeDataObjByKey(intTypeObj);
 
-			function getIntTagRef(intTags) {
+			function addTags(intTags, rcrd) {
 				if (intTags === null) { return null }
-				return intTags.map(function(tagStr){
-					if (intTagObj[tagStr] === undefined) { 
-						intTagObj[tagStr] = {
-							tempId: intTagId++,
-							tag: tagStr		 };
-					}
-			  		return intTagObj[tagStr].tempId;
+				intTags.forEach(function(tagStr){
+					if (intTagObj[tagStr] === undefined) { intTagObj[tagStr] = []; } 
+					intTagObj[tagStr].push(rcrd.tempId);
 				});
+			}
+			function arrangeTags(intTagObj) {
+				var tagId = 1;
+				var prepped = {};
+				for (var tag in intTagObj) {
+					prepped[tagId++] = {
+						tag: tag,
+						interaction: intTagObj[tag],
+					};
+				}  console.log("prepped tag data = %O", prepped);
+				return prepped;
 			}
 			function getIntTypeRef(intTypeStr) {
 				if (intTypeStr === null) {return null}
