@@ -222,6 +222,7 @@
 		function buildInteractionObjs(rcrds) {				console.log("buildInteractionObjs called")
 			var intTagId = intTypeId = 1;
 			var intTagObj = {};
+			var citTagObj = {};
 			var intObjs = {};
 			var intTypeObj = {};
 			var preppedObj = {};
@@ -238,23 +239,33 @@
 			}  console.log("intObjs = %O, intTagObj = %O, intType = %O", intObjs, intTagObj, intTypeObj);
 
 			preppedData.interaction = intObjs;
-			preppedData.intTag = arrangeTags(intTagObj);
+			preppedData.tag = arrangeTags(intTagObj);
 			preppedData.interactionType = arrangeDataObjByKey(intTypeObj);
 
 			function addTags(intTags, rcrd) {
 				if (intTags === null) { return null }
 				intTags.forEach(function(tagStr){
+					if (tagStr === "Secondary") { processCitTag(tagStr, rcrd); }
 					if (intTagObj[tagStr] === undefined) { intTagObj[tagStr] = []; } 
 					intTagObj[tagStr].push(rcrd.tempId);
 				});
+			}
+			function processCitTag(tag, rcrd) {
+				if (citTagObj[tag] === undefined) { citTagObj[tag] = []; } 
+				if (citTagObj[tag].indexOf(rcrd.citation.citId) === -1) { citTagObj[tag].push(rcrd.citation.citId); }
 			}
 			function arrangeTags(intTagObj) {
 				var tagId = 1;
 				var prepped = {};
 				for (var tag in intTagObj) {
+					var intTag = intTagObj[tag] || null;
+					var citTag = citTagObj[tag] || null;
+
 					prepped[tagId++] = {
 						tag: tag,
-						interaction: intTagObj[tag],
+						interaction: citTag ? null : intTag,
+						citation: citTag,
+						constrainedToEntity: tag === "Secondary" ? "Citation" : "Interaction"
 					};
 				}  console.log("prepped tag data = %O", prepped);
 				return prepped;
