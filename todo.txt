@@ -1,60 +1,34 @@
 Merged up until push entity begins 36507fd47d47699e4a55c665b4ab65533f7983b2
 
 
+
+
 -----0603----------TODO------------
---remove nulls from author full nammes-> json (saves) 
---Wrap ajax code with authentication check
---Add new fields to entity show pages
---test, dev, and prod on server
-	--create testDb 
-	--populate and test
+DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
+
+--filtering on group column for taxa doesn't work
+-- -All-
+
+--update db: domain = realm
+
+--fix int export
+	--How to get plant/arthopod to interaction export
+	--add objClass and objOrder to intexprt
+
+--track down : I think the authors witnessed the leaf-eating though they do cite that other authors have too. 
 
 
+
+
+
+
+
+--LONGTERM--
+	--prog bar isn't updating as it should
 
 
 
 Notes:
-0603
-	Trouble with setting properties on Authorsp
-
-
------------Entity Relationships---------
-author>   XX     <attribution>		<Citation
-publication>
-
-country> 		<location
-habtype>
-region>
-
-level>
-taxon>      <interaction
-inttag>
-inttype>
-
-
-
-
-no prep
-	author
-	publication	
-	country
-	habtype
-	region
-	level
-	inttag
-	inttype
-
-
-
-one relationship
-	citation - pub
-	taxa - lvl
-
-multi
-	attribution
-	interaction
-
-
 
 
 
@@ -110,3 +84,13 @@ Validation reporting notes:
 					citation
 				Citation:
 					author
+
+
+
+=========================================================================
+
+READ ME
+
+HOW TO RUN TESTS
+	phpunit -c app/ tests	
+	phpunit -c app/ tests/AppBundle/Controller/<Entity>ControllerTest.php						
