@@ -622,8 +622,7 @@
 /* -----Interaction Helpers--------------------------------------------------------------- */
 
   function fillInIds() {
-		var newRcrdAry = attachTempIds(entityObj.curRcrds);
-		entityObj.curRcrds = newRcrdAry;
+		entityObj.curRcrds = attachTempIds(entityObj.curRcrds);
 	}
 	/**
 	 * Converts tag field for each record to an array and calls {@link ifSecondary } to merge tags with relevant fields.
@@ -653,9 +652,8 @@
 	}
 /* ------------------------Taxon Parse Methods------------------------------------------------ */
 /**
- * Extracts taxa data from each record, concatonates subjTaxon and objTaxon fields with data, and
- * adds these strings to each record as references to later rematch the records and their completed
- * subject and object taxa records.
+ * Extracts taxa data from each record, replaces these with subject and object id references for merging
+ * with the completed subject and object taxa records.
  */
 	function extractTaxaCols() {
 		var subjFields = JSON.parse(JSON.stringify(entityParams.taxon.subjCols));
@@ -669,20 +667,19 @@
 
 		for (var key in recrdsObj) {
 			var newRcrd = extrctAndReplaceTaxaFields(recrdsObj[key][0], key);
-			if (newRcrd !== false) { recrdsObj[key] = [newRcrd]; }
-		}	//	console.log("taxaRcrds = %O", taxaRcrds);
+			recrdsObj[key] = [newRcrd];
+		}		console.log("taxaRcrds = %O", taxaRcrds);
 
 		storeTaxaData(taxaRcrds);
 
 		function extrctAndReplaceTaxaFields(recrd, key) {
 			var taxaRcrd = buildTaxaRcrd(recrd);
-			var result = replaceTaxaWithStrng(recrd, key);
-			if (result !== false) {taxaRcrds.push(taxaRcrd)};
+			var result = replaceTaxaWithRef(recrd, key);
+			if (result !== false) {taxaRcrds[recrd.tempId] = taxaRcrd};
 			return result;
 		}
-
 		function buildTaxaRcrd(recrd) {
-			var taxonRcrd = {};
+			var taxonRcrd = { tempId: recrd.tempId };
 			extrctTaxaFields(recrd);
 
 			return taxonRcrd;
@@ -691,40 +688,15 @@
 				taxaFields.forEach(function(field) { taxonRcrd[field] = recrd[field]; });
 			}
 		} /* End buildTaxaRcrd */
-		function replaceTaxaWithStrng(recrd, key) {
-			recrd.subjTaxon = mergeTaxaFields(recrd, subjFields); if (recrd.subjTaxon === undefined) {console.log("subj saved as undefined. recrd = %O", recrd)}
-			recrd.objTaxon = mergeTaxaFields(recrd, objFields);  if (recrd.objTaxon === undefined) {console.log("obj saved as undefined. recrd = %O", recrd)}
-			var nulls = rprtNullTaxa(recrd.subjTaxon, recrd.objTaxon, recrd, key);
-			if (nulls === true) { return false; }
+		function replaceTaxaWithRef(recrd, key) {
+			recrd.subjTaxon = recrd.tempId; 
+			recrd.objTaxon = recrd.tempId;  
 			delteTaxaFields(recrd);
 
 			return recrd;
 		}
-		function mergeTaxaFields(recrd, fieldAry) {
-			var taxaNameStr = "";
-			fieldAry.forEach(function(field) { if (recrd[field] !== null) { taxaNameStr += recrd[field]; } });
-
-			return taxaNameStr;
-		}
 		function delteTaxaFields(recrd) {
 			taxaFields.forEach(function(field) { delete recrd[field]; });
-		}
-		function rprtNullTaxa(subjTaxon, objTaxon, recrd, key) {
-			var nulls = false;
-			if (objTaxon === "") {
-				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
-				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj = [];}
-				entityObj.taxon.valRpt.rcrdsWithNullReqFields.obj.push(recrd); // console.log("empty string saved for obj in recrdsObj =%O, recrd = %O, key = %s", recrdsObj, recrd, key)
-				nulls = true;
-			}
-			if (subjTaxon === "") {
-				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
-				if (entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj === undefined) {entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj = [];}
-				entityObj.taxon.valRpt.rcrdsWithNullReqFields.subj.push(recrd);
-				nulls = true;
-			}
-			if (nulls === true) { delete recrdsObj[key]; }
-			return nulls;
 		}
 		function storeTaxaData(taxaRcrds) {
 			entityObj.taxaRcrdObjsAry = taxaRcrds;
