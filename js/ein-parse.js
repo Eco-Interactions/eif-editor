@@ -724,7 +724,7 @@
         taxonRecrdObjsAry.forEach(function(recrd) { buildTaxaTree(recrd); });
 
         if (!isEmpty(nullKingdoms)) { rprtNullKingdoms() }                      console.log("mergeRefObj = %O, batTaxaRefObj = %O, objTaxaRefObj = %O", mergeRefObj, batTaxaRefObj, objTaxaRefObj)
-        if (!isEmpty(conflictedTaxaIds)) { rprtConflictedTaxon() }              console.log("conflictedTaxaIds = %O", conflictedTaxaIds);  
+        if (!isEmpty(conflictedTaxaObj)) { rprtConflictedTaxon() }              console.log("conflictedTaxaObj = %O", conflictedTaxaObj);  
                                                                                 console.log("taxonRecrdObjsAry = %O", taxonRecrdObjsAry)
         entityObj.taxon.batTaxa = batTaxaRefObj;                                console.log("taxaNameMap = %O", taxaNameMap); 
         entityObj.taxon.objTaxa = objTaxaRefObj;
@@ -786,52 +786,45 @@
                     mergeRefObj[tP.recrd.tempId][tP.role] = errors ? false : tP.taxaObjs[taxonName].tempId;         
                 }
             } /* End addTaxonData */
+        /*-------------- Taxon Data Fill and Conflict Methods ----------------*/
             /**
-             * First checks if this is already this highest level for this role in the record.
-             * Gets previously saved parent for this taxonName and gets the parent in this record;
-             * if they are different @ifTreesMerge is called to determine whether this is due to missing
-             * or conflicting data.
+             * First checks if this is already the highest level for this role in the record. (subject = Order; object = Kingdom)
+             * Gets the existing parent for this taxonName and gets the parent present in this record;
+             * if they are different @checkIfTreesMerge is called to determine whether this is due to missing or conflicting data.
              */
-            function fillInAnyNewData(taxonName, field, idx, tP) { console.log("fillInAnyNewData called. rcrd = %O", tP.recrd);
+            function fillInAnyNewData(taxonName, field, idx, tP) {              console.log("fillInAnyNewData called. rcrd = %O", tP.recrd);
                 if ( tP.fieldAry.indexOf(field) === tP.fieldAry.length - 1 ) { return; }  // console.log("last field in set");
                 if (tP.fieldAry[0] === field) { checkGenusField() }
                 var existingParentId = tP.taxaObjs[taxonName].parent;
                 var newParentId = linkparentTaxonId(idx, tP);
-                if ( newParentId !== existingParentId ) {  console.log("parent Id's don't match. new = %s, rcrd = %O, old = %s, rcrd = %O", newParentId, tP.recrd, existingParentId, taxonRecrdObjsAry[tP.recrd.tempId]);
-                    ifTreesMerge(taxonName, newParentId, existingParentId, tP); // console.log("parent rcrd", tP.taxaObjs[taxonName])
-                }
 
-                function checkGenusField() {
-                    if (tP.recrd[tP.fieldAry[1]] === null) { tP.recrd[tP.fieldAry[1]] = tP.genusParent; console.log("filled in genus"); }
+                if ( newParentId !== existingParentId ) { 
+                    checkIfTreesMerge(taxonName, newParentId, existingParentId, tP); 
                 }
-            }
+                // If Genus is null, set genus as the first word of the species string.
+                function checkGenusField() {
+                    if (tP.recrd[tP.fieldAry[1]] === null) { 
+                        tP.recrd[tP.fieldAry[1]] = tP.genusParent; }
+                }
             /**
-             * If the taxonName has a more specific direct parent in this record than in one previously
-             * processed, check and see if the parent tree merges at a later point. If they do, add this new taxon
-             * as the most direct parent. If the records have conflicting taxonNames at the same level they are quarantined and reported.
+             * If the taxon has a more specific direct parent in this record than in one previously processed, 
+             * check and see if the parent tree merges at a later point @doTreesMerge. If they do, 
+             * add this new taxon as the most direct parent. If the records have conflicting taxonNames 
+             * at the same level they are checked for validity and conflicts @checkForSharedTaxonymOrConflicts.
              */
-            function ifTreesMerge(taxonName, newParentId, existingParentId, tP) { console.log("ifTreesMerge called. taxaNameMap = %O, newParentId = %s", taxaNameMap, newParentId);
+            function checkIfTreesMerge(taxonName, newParentId, existingParentId, tP) { console.log("checkIfTreesMerge called. taxaNameMap = %O, newParentId = %s", taxaNameMap, newParentId);
                 // Grab the existing taxaObjs' parents' levels.
                 var newLvl = tP.taxaObjs[taxaNameMap[newParentId]].level;  
                 var oldLvl = tP.taxaObjs[taxaNameMap[tP.taxaObjs[taxonName].parent]].level; // console.log("newLvl = %s, oldLvl = ", newLvl, oldLvl);
                 if (newLvl !== oldLvl) { //console.log("newParent more specific");
                     doTreesMerge(newLvl, oldLvl, newParentId, existingParentId, tP);
-                } else {  console.log("conflict at same level");
-                    checkForSharedTaxonymOrConflicts();
-                }
-
-                function checkForSharedTaxonymOrConflicts(argument) {
-                    if (taxonCreatedWithSharedTaxonym(taxonName, newParentId, tP)) { console.log('taxonCreatedWithSharedTaxonym confirmed'); return; }
-                    if (speciesHasCorrectGenusParent(existingParentId, tP, newLvl)) { addUniqueTaxaWithSharedTaxonym(taxonName, tP);                        
-                    } else if (!(speciesHasCorrectGenusParent(existingParentId, tP, newLvl))) { 
-                        hasParentConflicts(taxonName, null, newLvl, tP);    
-                    } else { hasParentConflicts(taxonName, tP.taxaObjs[taxonName], newLvl, tP); }
-                }
-            } /* End ifTreesMerge */
+                } else { checkForSharedTaxonymOrConflicts(newLvl, oldLvl, newParentId, existingParentId, tP); }
+            } /* End checkIfTreesMerge */
             /**
-             * If the taxonName has a more specific direct parent in this record than in one previously
-             * processed, check and see if the parent tree merges at a later point. If they do, add this new taxon
-             * as the most direct parent.
+             * If the taxon has a more specific direct parent in this record than in one previously processed, 
+             * check and see if the parent tree merges at a later point @doTreesMerge. If they do, 
+             * add this new taxon as the most direct parent.
+             * NOTE: @confirmDirectRelationships yet to be written; will probably wait for case to emerge. 
              */
             function doTreesMerge(newLvl, oldLvl, newParentId, existingParentId, tP) {
                 if (newLvl > oldLvl) {   // more specific taxon
@@ -841,61 +834,104 @@
                 } else { confirmDirectRelationship(tP.taxaObjs[taxaNameMap[newParentId]], newParentId, ); }
 
                 function confirmDirectRelationships(existingTaxonObj, newParentId) {  console.log("trees don't merge. newParentId =%s, existing =%s, rcrd = %O, oldParent = %O", newParentId, existingParentId, tP.recrd, tP.taxaObjs[taxaNameMap[existingParentId].name]); 
-                    //  newLvl < oldLvl
-                    // Not sure what to check for here yet... So much else to do... I'll be back. *wait for me*
+                    //  newLvl < oldLvl  // Not sure what to check for here yet... So much else to do... I'll be back. *wait for me*
                 }
+            } /* End doTreesMerge */
+            /**
+             * If @taxonObjWasCreatedWithSharedTaxonym return false, check if @speciesHasCorrectGenusParent and,
+             * if so, @addUniqueTaxaWithSharedTaxonym. If the species and genus names conflict @hasParentConflicts 
+             * is called with the existing taxonObj unaffected. If there is another level with conflicting data 
+             * between the two records, both records are quarantined in @hasParentConflicts.
+             */
+            function checkForSharedTaxonymOrConflicts(newLvl, oldLvl, newParentId, existingParentId, tP) {
+                if ( taxonObjWasCreatedWithSharedTaxonym(taxonName, newParentId, tP) ) { return; }
+                if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) ) { addUniqueTaxaWithSharedTaxonym(taxonName, tP);                        
+                } else if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) === false ) { 
+                    hasParentConflicts(taxonName, null, newLvl, tP);      console.log("speciesHasInCorrectGenusParent")
+                } else { hasParentConflicts(taxonName, tP.taxaObjs[taxonName], newLvl, tP); }
             }
-            function taxonCreatedWithSharedTaxonym (taxonName, newParentId, tP) { console.log("taxonCreatedWithSharedTaxonym called for ", taxonName)
+            /**
+             *  Checks if current taxon has been previously created under a taxonName with an appended 
+             *  number by checking the parent of any matching taxonName found. If the parent matches, 
+             *  this taxon has already been created with the proper parent and there is nothing more to do.
+             */
+            function taxonObjWasCreatedWithSharedTaxonym (taxonName, newParentId, tP) { console.log("taxonObjWasCreatedWithSharedTaxonym called for ", taxonName)
                 var taxonym1 = taxonName + '-1';
                 return hasBeenCreated(taxonym1); 
-
+                /** Returns true if a taxon record is found with passed taxonym and the parents match. */
                 function hasBeenCreated(taxonym, cnt) {
                     if (taxonym in tP.taxaObjs) {
                         if ( tP.taxaObjs[taxonym].parent === newParentId ) { return true; 
                         } else {
                             var nextTaxonym = taxonym + '-' + ++cnt;
-                            return hasBeenCreated(nextTaxonym, cnt);
-                        }
+                            return hasBeenCreated(nextTaxonym, cnt); }
                     } else { return false; }
                 }
-            }
+            } /* End taxonObjWasCreatedWithSharedTaxonym */
+            /**
+             * If the conflicted level is Genus, check whether the genus portion of the species name string 
+             * from this record is the same as it's genus field. 
+             * If so, this taxonName is a unique taxon that shares a species name with another taxon. 
+             */
             function speciesHasCorrectGenusParent(existingParentId, tP, lvl) {   console.log("speciesHasCorrectGenusParent called.");
                 if (lvl === 6) {
                     var parentName = tP.recrd[tP.fieldAry[lvlAry[lvl]]];  console.log("parentName = %s, genusParent = %s", parentName, tP.genusParent)
                     return tP.genusParent === parentName;                   
-                } else { return false; }
+                } else { return null; }
             }
+            /**
+             * This taxonName is a unique taxon that shares a species name with another taxon.
+             * @appendNumToTaxonym and @addTaxonData. 
+             */
             function addUniqueTaxaWithSharedTaxonym(taxonName, tP) {  
                 var taxonym = appendNumToTaxonym(taxonName, tP);        //console.log("addUniqueTaxaWithSharedTaxonym new taxonym = ", taxonym)
                 addTaxonData(taxonym, tP.field, tP.idx, tP);
             }
+            /** Appends a number incrementally until a unique taxonym is found. */
             function appendNumToTaxonym(taxonName, tP) {
                 var count = 1;
                 var taxonym1 = taxonName + '-1';
                 return nextInTaxaObj(taxonName, taxonym1, count, tP);
-            }
-            function nextInTaxaObj(taxonName, taxonym, cnt, tP) {
-                if (taxonym in tP.taxaObjs) {
-                    var nextTaxonym = taxonName + '-' + ++cnt;  console.log("taxonym-# already present. next = ", nextTaxonym);
-                    return nextInTaxaObj(taxonName, nextTaxonym, cnt, tP)
-                } else { return taxonym; }
-            }
-            function hasParentConflicts(taxonName, existingTaxaObj, conflictingLvl, tP) {  console.log("hasParentConflicts called. arguments = %O", arguments);
-                initConflictedTaxaObj();  // console.log("oldParent name = %s, newParent name = %s", taxaNameMap[existingTaxaObj.parent], tP.recrd[tP.fieldAry[lvlAry[conflictingLvl]]]);
-                var conflictedAry = existingTaxaObj === null ? [tP.recrd.tempId] : [existingTaxaObj.rcrdId, tP.recrd.tempId];
-                conflictedTaxaIds[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]].push(conflictedAry); console.log("conflicting parents pushed = old.%O- new.%O ", existingTaxaObj === null ? null : taxonRecrdObjsAry[existingTaxaObj.rcrdId], taxonRecrdObjsAry[tP.recrd.tempId]);
                 
+                function nextInTaxaObj(taxonName, taxonym, cnt, tP) {
+                    if (taxonym in tP.taxaObjs) {
+                        var nextTaxonym = taxonName + '-' + ++cnt;  
+                        return nextInTaxaObj(taxonName, nextTaxonym, cnt, tP)
+                    } else { return taxonym; }
+                }
+            } /* End appendNumToTaxonym */
+            /** Adds conflcited records to the conflictedTaxaObj.      */
+            function hasParentConflicts(taxonName, existingTaxonObj, conflictingLvl, tP) {  console.log("hasParentConflicts called. arguments = %O", arguments);
+                initConflictedTaxaObj();  
+                if ( existingTaxonObj === null )    { addConflictedFields() 
+                } else { addConflictedPrnts() }     
+                /** Init the various properties of the conflictedTaxaObj as they're needed. */
                 function initConflictedTaxaObj() { if (tP.role === 'object') { console.log("objectRole added.") }
-                    if ( conflictedTaxaIds[tP.role] === undefined ) { conflictedTaxaIds[tP.role] = {}; }
-                    if ( conflictedTaxaIds[tP.role][taxonName] === undefined ) { conflictedTaxaIds[tP.role][[taxonName]] = {}; }
-                    // New property by level name
-                    if ( conflictedTaxaIds[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]] === undefined ) { 
-                        conflictedTaxaIds[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]] = []; }
+                    if ( conflictedTaxaObj[tP.role] === undefined ) { conflictedTaxaObj[tP.role] = {}; }
+                    if ( conflictedTaxaObj[tP.role][taxonName] === undefined ) { conflictedTaxaObj[tP.role][[taxonName]] = {}; }
+                    if ( existingTaxonObj === null ) { initConflictedFields() 
+                    } else { // New property by level name
+                        if ( conflictedTaxaObj[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]] === undefined ) { 
+                            conflictedTaxaObj[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]] = []; }
+                    }
+                    function initConflictedFields() {
+                        if ( conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields === undefined ) { 
+                            conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields = []; }
+                    }
+                } /* End initConflictedTaxaObj */
+                /** Pushes the taxonObj IDs onto the conflictedTaxaObj. */
+                function addConflictedFields() {
+                    conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields.push(tP.recrd.tempId); 
+                }
+                /** Pushes both taxonObj IDs onto the conflictedTaxaObj. */
+                function addConflictedPrnts() {                                 // console.log("conflicting parents pushed = old.%O- new.%O ", taxonRecrdObjsAry[existingTaxonObj.rcrdId], taxonRecrdObjsAry[tP.recrd.tempId]);
+                    var conflictedAry =[existingTaxonObj.rcrdId, tP.recrd.tempId];
+                    conflictedTaxaObj[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]].push(conflictedAry); 
                 }
             } /* End hasParentConflicts */
             /** 
              * Recurses through all parents of the 'newParentTaxonRcrd' and returns
-             * true if the tree merges back with the old parent taxon. 
+             * true if the tree merges back into the existing parent taxon. 
              */
             function treesMergeAtHigherLevel(newParentTaxonRcrd, existingParentId, tP) {
                 if (newParentTaxonRcrd.parent === null) { return false; }
@@ -905,6 +941,7 @@
                     return treesMergeAtHigherLevel(tP.taxaObjs[taxaNameMap[newParentTaxonRcrd.parent]], existingParentId, tP)
                 }
             }
+        /*-------------- Taxon Object Methods --------------------------------*/
             function buildTaxonObj(taxonName, field, idx, tP) { // console.log("buildTaxonObj called. arguemnts = %O", arguments);
                 var level = lvlAry[idx];
                 var kingdom = tP.role === "subject" ? "Animalia" : tP.recrd.objKingdom;
@@ -965,17 +1002,17 @@
             entityObj.taxon.valRpt.rcrdsWithNullReqFields.kingdom = nullKingdoms;
         }
         function rprtConflictedTaxon() {
-            for (var role in conflictedTaxaIds) {
-                for (var taxonName in conflictedTaxaIds[role]) {  //console.log("")
-                    for (var level in conflictedTaxaIds[role][taxonName]) {  //console.log("")
-                        conflictedTaxaIds[role][taxonName][level] = 
-                            conflictedTaxaIds[role][taxonName][level].filter(onlyUnique);
-                        conflictedTaxaIds[role][taxonName][level] = 
-                            replaceIdsWithRcrds(conflictedTaxaIds[role][taxonName][level], role);
+            for (var role in conflictedTaxaObj) {
+                for (var taxonName in conflictedTaxaObj[role]) {  //console.log("")
+                    for (var level in conflictedTaxaObj[role][taxonName]) {  //console.log("")
+                        conflictedTaxaObj[role][taxonName][level] = 
+                            conflictedTaxaObj[role][taxonName][level].filter(onlyUnique);
+                        conflictedTaxaObj[role][taxonName][level] = 
+                            replaceIdsWithRcrds(conflictedTaxaObj[role][taxonName][level], role);
                     }
                 }
             }
-            entityObj.taxon.valRpt.shareUnqKeyWithConflictedData = conflictedTaxaIds; // console.log(" conflicted taxa report obj = %O", entityObj.taxon.valRpt.shareUnqKeyWithConflictedData);
+            entityObj.taxon.valRpt.shareUnqKeyWithConflictedData = conflictedTaxaObj; // console.log(" conflicted taxa report obj = %O", entityObj.taxon.valRpt.shareUnqKeyWithConflictedData);
             
             function replaceIdsWithRcrds(taxaIdAry, role) {
                 var taxaObjs = role === "subject" ? batTaxaRefObj : objTaxaRefObj;
