@@ -652,7 +652,7 @@
     }
 /* ------------------------Taxon Parse Methods------------------------------------------------ */
 /**
- * Extracts taxa data from each record, replaces these with subject and object id references for merging
+ * Extracts taxa data from each record, which will be later linked by the record's ID 
  * with the completed subject and object taxa records.
  */
     function extractTaxaCols() {
@@ -674,9 +674,9 @@
 
         function extrctAndReplaceTaxaFields(recrd, key) {
             var taxaRcrd = buildTaxaRcrd(recrd);
-            var result = replaceTaxaWithRef(recrd, key);
-            if (result !== false) {taxaRcrds[recrd.tempId] = taxaRcrd};
-            return result;
+            delteTaxaFields(recrd);
+            taxaRcrds[recrd.tempId] = taxaRcrd;
+            return recrd;
         }
         function buildTaxaRcrd(recrd) {
             var taxonRcrd = { tempId: recrd.tempId };
@@ -688,13 +688,6 @@
                 taxaFields.forEach(function(field) { taxonRcrd[field] = recrd[field]; });
             }
         } /* End buildTaxaRcrd */
-        function replaceTaxaWithRef(recrd, key) {
-            recrd.subjTaxon = recrd.tempId; 
-            recrd.objTaxon = recrd.tempId;  
-            delteTaxaFields(recrd);
-
-            return recrd;
-        }
         function delteTaxaFields(recrd) {
             taxaFields.forEach(function(field) { delete recrd[field]; });
         }
@@ -728,6 +721,7 @@
                                                                                 console.log("taxonRecrdObjsAry = %O", taxonRecrdObjsAry)
         entityObj.taxon.batTaxa = batTaxaRefObj;                                console.log("taxaNameMap = %O", taxaNameMap); 
         entityObj.taxon.objTaxa = objTaxaRefObj;
+        entityObj.taxon.mergeRefs = mergeRefObj;
 
         function buildTaxaTree(recrd) {
             var lvlAry = [7, 6, 5, 4, 3, 2, 1]; // Used to reference back to the original hierarchy structure of the levels (i.e. Lvl Kingdom = 1)
