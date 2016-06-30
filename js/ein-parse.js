@@ -942,10 +942,16 @@
                 }
             }
         /*-------------- Taxon Object Methods --------------------------------*/
+        	/**
+        	 * Creates the taxon object, i.e. taxon record, that will be linked back into the 
+        	 * interaction records. There will one taxon record for each unique taxon at any 
+        	 * level in the records, linked to their parent and children by id.
+        	 */
             function buildTaxonObj(taxonName, field, idx, tP) { // console.log("buildTaxonObj called. arguemnts = %O", arguments);
                 var level = lvlAry[idx];
                 var kingdom = tP.role === "subject" ? "Animalia" : tP.recrd.objKingdom;
-                if (tP.fieldAry[0] === field) { checkGenus() }
+                // If this taxon is a Species   
+                if (tP.fieldAry[0] === field) { checkGenus() }		
                 if (errors) { return; }
 
                 var parentTaxonId = linkparentTaxonId(idx, tP);
@@ -961,66 +967,94 @@
                     };
                     taxaNameMap[tP.taxaObjs[taxonName].tempId] = taxonName; 
                 }
-                function checkGenus() { console.log("checking genus. genus field %s = ", tP.fieldAry[1], tP.recrd[tP.fieldAry[1]]);
-                    if (tP.recrd[tP.fieldAry[1]] === null) { tP.fieldAry[1] = tP.genusParent; console.log("filled in genus")
+                /**
+                 * If the Genus field is null, set with the genus from the species name. 
+                 * If Genus is set, check if it's a @validGenus.
+                 */
+                function checkGenus() { 										
+                    if (tP.recrd[tP.fieldAry[1]] === null) { 
+                    	tP.fieldAry[1] = tP.genusParent; 
                     } else if (!validGenus()) { conflictedGenusError(); }
                 }
-                function validGenus() { console.log("isValidGenus = ", tP.recrd[tP.fieldAry[1]] === tP.genusParent);
+                /** Check that the genus field value and the genus from the species name are the same. */
+                function validGenus() { 										// console.log("isValidGenus = ", tP.recrd[tP.fieldAry[1]] === tP.genusParent);
                     return tP.recrd[tP.fieldAry[1]] === tP.genusParent;
                 }
-                function conflictedGenusError() {
+                /** Add record with conflicted fields to the conflictedTaxaObj. Trigger end of build with errors=true. */
+                function conflictedGenusError() { 
                     hasParentConflicts(taxonName, null, 6, tP); 
                     errors = true;
                 }
             } /* End buildTaxonObj */
-            function linkparentTaxonId(idx, tP) {// console.log("linkparentTaxonId called. arguments = %O", arguments);
+            /**
+             * Finds the next field that has a value in it; this is the parent taxon. It is sent into
+             * @addTaxonData with it's related data. There the taxon is either created or checked for 
+             * new data. The parent's taxonObj id is returned, linking children to their parents.
+             */
+            function linkparentTaxonId(idx, tP) { 								// console.log("linkparentTaxonId called. arguments = %O", arguments);
                 if (idx === 6) { console.log("Error. Parent taxon idx too high. recrd = %O", tP.recrd); return null; }
                 var parentIdx = getParentLevel(tP, idx);
                 if (parentIdx === false) { return null; }
-                var parentField = tP.fieldAry[parentIdx];  //console.log("parentField = ", parentField)
-                var parentName = tP.recrd[parentField];  //console.log("parentName = ", parentName)
+                var parentField = tP.fieldAry[parentIdx];  						//console.log("parentField = ", parentField)
+                var parentName = tP.recrd[parentField];  						//console.log("parentName = ", parentName)
                 
                 addTaxonData(parentName, parentField, parentIdx, tP);
 
                 return tP.taxaObjs[parentName].tempId;
             }
-            function getParentLevel(tP, idx) {  //  console.log("getParentLevel called. idx = ", idx)
-                for (var i = ++idx; i <= 7; i++) {                      // if i ever gets to 7 then there is no value in kingdom(6)
+            /** Finds the next field that has a value. */
+            function getParentLevel(tP, idx) {  								// console.log("getParentLevel called. idx = ", idx)
+                for (var i = ++idx; i <= 7; i++) {                    			// 7 indicates there is no value in kingdom(6)
                     if (i === 7) { console.log("i=7; kingdom===null; no parent found at top of tree."); return false; }
                     if (tP.recrd[tP.fieldAry[i]] !== null) { return i; }
                 }
             }
-            function nullParentError(tP) { // console.log("nullParentError tP = %O", tP)
+            /** If no parent taxon is found, the record is quarantined and flagged.  */
+            function nullParentError(tP) { 										// console.log("nullParentError tP = %O", tP)
                 errors = true;
                 if (nullKingdoms[tP.role] === undefined) { nullKingdoms[tP.role] = [] };
-                nullKingdoms[tP.role].push(recrd);
+                nullKingdoms[tP.role].push(tP.recrd);
                 delete recrdsObj[tP.recrd.tempId];
             }
          } /* End buildTaxaTree */
+         /** If taxon records without kingdom values were found, they are added to the validation report. */
         function rprtNullKingdoms() {
             if (entityObj.taxon.valRpt.rcrdsWithNullReqFields === undefined) { entityObj.taxon.valRpt.rcrdsWithNullReqFields = {}; };
             entityObj.taxon.valRpt.rcrdsWithNullReqFields.kingdom = nullKingdoms;
         }
+        /** 
+         * Conflicted taxa quarantined here by ID reference are replaced with their records and 
+         * added to the validation reort. The source interaction records are thus quarantined.  
+         */
         function rprtConflictedTaxon() {
+        	var rcrdIds = [];
             for (var role in conflictedTaxaObj) {
-                for (var taxonName in conflictedTaxaObj[role]) {  //console.log("")
-                    for (var level in conflictedTaxaObj[role][taxonName]) {  //console.log("")
-                        conflictedTaxaObj[role][taxonName][level] = 
-                            conflictedTaxaObj[role][taxonName][level].filter(onlyUnique);
-                        conflictedTaxaObj[role][taxonName][level] = 
-                            replaceIdsWithRcrds(conflictedTaxaObj[role][taxonName][level], role);
+                for (var taxonName in conflictedTaxaObj[role]) {  				//console.log("")
+                    for (var field in conflictedTaxaObj[role][taxonName]) {  	//console.log("")
+                        conflictedTaxaObj[role][taxonName][field] = 
+                            conflictedTaxaObj[role][taxonName][field].filter(onlyUnique);
+                        conflictedTaxaObj[role][taxonName][field] = 
+                            replaceIdsWithRcrds(conflictedTaxaObj[role][taxonName][field], role);
                     }
                 }
             }
             entityObj.taxon.valRpt.shareUnqKeyWithConflictedData = conflictedTaxaObj; // console.log(" conflicted taxa report obj = %O", entityObj.taxon.valRpt.shareUnqKeyWithConflictedData);
-            
+            removeAffectedIntRcrds();
+
             function replaceIdsWithRcrds(taxaIdAry, role) {
                 var taxaObjs = role === "subject" ? batTaxaRefObj : objTaxaRefObj;
                 return taxaIdAry.map(function(recrdId){  //console.log("taxaObj = %O, rcrd = %O", taxonRecrdObjsAry[recrdId], taxaObjs[taxaNameMap[recrdId]], taxonRecrdObjsAry[recrdId]);
+                    rcrdIds.push(recrdId);
                     return taxonRecrdObjsAry[recrdId];
                 });
             }
+            function removeAffectedIntRcrds() {
+            	rcrdIds.forEach(function(id){
+	                delete recrdsObj[id];
+            	});
+            }
         }
+        /** Build taxonObjs for the top taxa and add them to the taxaNameMap reference object.  */
         function initTopTaxa() {
             taxaNameMap[1] = 'Animalia';
             taxaNameMap[2] = 'Chiroptera';
