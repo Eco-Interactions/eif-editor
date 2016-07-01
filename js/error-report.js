@@ -223,59 +223,118 @@ These names have been replaced with shorter ones. The table below shows the colu
 		      } /* End getLocNullRprt */
 		    } /* End addInvalidNulls */
 		    function concatLocFields(rcrd) {
-		      var concatLocFields = '';
-		      var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
-		      locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
-		      return concatLocFields;
+				var concatLocFields = '';
+				var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
+				locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
+					return concatLocFields;
 		    }
-		    function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
-		      var tempConflictsStrAry = [];
-		      errors = true;
-		      conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+		    function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+				var tempConflictsStrAry = [];
+				errors = true;
+				conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
-		      if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-		        } else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
+				if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
+				} else if (entityName === "taxon") { buildtaxaConflictRprt(conflictObj);
+				} else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
 
-		      for (var sharedKey in conflictObj.recrds) {
-		        tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
-		      }
-		      conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
+				for (var sharedKey in conflictObj.recrds) {
+					tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
+				}
+				conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
-		      function buildConflictRprts(recrdsAry, sharedKey) {
-		        var tempRprt = [];
-		        var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
-		        recrdsAry.forEach(function(recrd, idx) {
-		          entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
-		          if (entityName === "citation" || entityName === "author" ) { tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); }
-		        });
-		        entityName === "location" && tempRprt.push(locIntRcrds.join(''));
+				function buildtaxaConflictRprt(taxaConflicts) {
+					var tempStrAry = [];
+					var gRprt = [];
+					var tRprt = [];
+					var gCnflctCnt = 0;
+					var tCnflctCnt = 0;
+					var intRcrds = [];
+					var fields = {
+						subject: ['subjSpecies', 'subjGenus', 'subjFam', 'subjOrder'],
+						object: ['objSpecies', 'objGenus', 'objFam', 'objOrder', 'objClass', 'objPhylum', 'objKingdom']
+					};
 
-		        return tempRprt.join('\n');
+					for (var role in taxaConflicts) {
+						gRprt.push('\n' + ucfirst(role) + ' Taxa:');
+						for (var taxon in taxaConflicts[role]) {
+							getTaxaConflicts(taxon, role, taxaConflicts[role][taxon]);
+						}
+					}
+					combineRprts();
+					if (intRcrds.length > 0) {tempConflictsStrAry.push(taxonInfoStr(), tempStrAry.join('\n')); }
 
-		        function buildLocConflictRprt(recrd, idx) {
-		          var concatLocKey = concatLocFields(recrd);
-		          var intConflictIntro = '\n   Data Set ' + (idx + 1) + ' found in ' + conflictObj.intIds[sharedKey][concatLocKey].length + ' Interaction records at rows: ';
-		          locIntRcrds.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey][concatLocKey]));
-		          return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
+					function getTaxaConflicts(taxonName, role, taxonConflicts) {
+						for (var conflct in taxonConflicts) {
+							if (conflct === "rcrdsWithConflictedGenus") {
+								taxonConflicts[conflct].forEach(addGenusConflct)								
+							} else {
+								taxonConflicts[conflct].forEach(addTaxonConflict)
+							}
+						}
 
-		        }
-		      }
-		      function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
-		        var nullRefRslts = storedRprts.locNullRefs;
-		        conflictObj.intIds = {};
+						function addGenusConflct(genusConflct) {
+							++gCnflctCnt;
+							if ( intRcrds.indexOf(genusConflct.tempId) === -1 ) { intRcrds.push(genusConflct.tempId); }
+							gRprt.push('Row ' + genusConflct.tempId + ': Invalid Genus name "' 
+								+ genusConflct[fields[role][1]] + '" for Species "' + genusConflct[fields[role][0]] + '".');
+						}
+						function addTaxonConflict(taxaConflict) {
+							++tCnflctCnt;
+							if ( intRcrds.indexOf(taxaConflict.tempId) === -1 ) { intRcrds.push(taxaConflict.tempId); }
+							tRprt.push('Row ' + taxaConflict.tempId + ': Conflicting taxa fields: [GET ALL FIELDS WITH DATA].');
+						}
+					} /* End getTaxaConflicts */
+					function taxonInfoStr() {
+						return 'There are ' + intRcrds.length + 'rows with conflicted taxon data.';
+					}
+					function genusConflictInfoStr() {
+						return 'The Genus name does not match the Species name entered for ' + 
+							gCnflctCnt + ' taxa.';
+					}
+					function taxaConflictInfoStr() {
+						return 'There are ' + tCnflctCnt + 'taxa records with conflicted data in their parent chain found in ' 
+							' taxa in ' + gIntRcrdCnt + ' Interaction records.\n';
+					}
+					function combineRprts() {
+						if (gCnflctCnt > 0) { gRprt.unshift(genusConflictInfoStr()); }  console.log("gRprt = %O", gRprt);
+						if (tCnflctCnt > 0) { tRprt.unshift(taxaConflictInfoStr()); }		console.log("tempConflictsStrAry = %O", tempConflictsStrAry);
+						tempStrAry = gRprt.concat(tRprt);
+					}
+				} /* End buildtaxaConflictRprt */
+				function buildConflictRprts(recrdsAry, sharedKey) {
+					var tempRprt = [];
+					var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
+					recrdsAry.forEach(function(recrd, idx) {
+						entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
+						if (entityName === "citation" || entityName === "author" ) { tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); }
+					});
+					entityName === "location" && tempRprt.push(locIntRcrds.join(''));
 
-		        conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
+					return tempRprt.join('\n');
 
-		        for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
-		          var refObj = conflictObj.intIds[locDescKey] = {};
+					function buildLocConflictRprt(recrd, idx) {
+						var concatLocKey = concatLocFields(recrd);
+						var intConflictIntro = '\n   Data Set ' + (idx + 1) + ' found in ' + conflictObj.intIds[sharedKey][concatLocKey].length + ' Interaction records at rows: ';
+						locIntRcrds.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey][concatLocKey]));
+						return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
+					}
+				} /* End buildConflictRprts */
+				function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
+					var nullRefRslts = storedRprts.locNullRefs;
+					conflictObj.intIds = {};
 
-		          nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  // console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
-		            var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
-		            if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
-		            refObj[locFieldsStr].push(intId-1);
-		          });
-		        }                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-		      }
+					conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
+
+					for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
+						var refObj = conflictObj.intIds[locDescKey] = {};
+
+						nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  // console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
+							var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
+							if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
+							refObj[locFieldsStr].push(intId-1);
+						});
+					}                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
+				}
 		    } /* End addConflicts */
 		    function groupIntIds(intIdAry) {  //console.log("groupIntIds called. intIdAry = %O", arguments[0]);
 		      var procSeq, lastSeqId;
@@ -414,20 +473,22 @@ These names have been replaced with shorter ones. The table below shows the colu
 		} /* End buildRprt */
 	} /* End generateRprt */
 /*-----------------------Util Helpers---------------------------------*/
-  function pad (pad, str, padLeft) {
-    if (padLeft) {
-      return (pad + str).slice(-pad.length);
-    } else {
-      return (str + pad).substring(0, pad.length);
-    }
-  }
-  /**
-   * Checks if an object is empty
-   * @return {Boolean}     Returns false if key is found.
-   */
-  function isEmpty(obj) {
-    for (var x in obj) { return false; }
-    return true;
-  }
-
+	function pad (pad, str, padLeft) {
+		if (padLeft) {
+			return (pad + str).slice(-pad.length);
+		} else {
+			return (str + pad).substring(0, pad.length);
+		}
+	}
+	/**
+	* Checks if an object is empty
+	* @return {Boolean}     Returns false if key is found.
+	*/
+	function isEmpty(obj) {
+		for (var x in obj) { return false; }
+		return true;
+	}
+  	function ucfirst(string) { 
+		return string.charAt(0).toUpperCase() + string.slice(1); 
+	}
 }());

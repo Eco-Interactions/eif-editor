@@ -722,8 +722,7 @@
                                          
     	[batTaxaRefObj, objTaxaRefObj].forEach(mergeTaxaNameObjWithRcrds);
                                                                                 // console.log("taxonRecrdObjsAry = %O", taxonRecrdObjsAry)
-        // entityObj.taxon.batTaxa = mergeWithRcrds(batTaxaRefObj);                                // console.log("taxaNameMap = %O", taxaNameMap); 
-        // entityObj.taxon.objTaxa = mergeWithRcrds(objTaxaRefObj);
+                                       
         entityObj.taxon.taxonObjs = taxaNameMap;
         entityObj.taxon.mergeRefs = mergeRefObj;
         entityObj.taxon.nameMap = taxaNameMap;
@@ -915,13 +914,13 @@
                             conflictedTaxaObj[tP.role][taxonName][tP.fieldAry[lvlAry[conflictingLvl]]] = []; }
                     }
                     function initConflictedFields() {
-                        if ( conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields === undefined ) { 
-                            conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields = []; }
+                        if ( conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedGenus === undefined ) { 
+                            conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedGenus = []; }
                     }
                 } /* End initConflictedTaxaObj */
                 /** Pushes the taxonObj IDs onto the conflictedTaxaObj. */
                 function addConflictedFields() {
-                    conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedFields.push(tP.recrd.tempId); 
+                    conflictedTaxaObj[tP.role][taxonName].rcrdsWithConflictedGenus.push(tP.recrd.tempId); 
                 }
                 /** Pushes both taxonObj IDs onto the conflictedTaxaObj. */
                 function addConflictedPrnts() {                                 // console.log("conflicting parents pushed = old.%O- new.%O ", taxonRecrdObjsAry[existingTaxonObj.rcrdId], taxonRecrdObjsAry[tP.recrd.tempId]);
@@ -1110,11 +1109,10 @@
      */
     function mergeTaxaIntoInteractions() {
     	var recrdsObj = entityObj.curRcrds; 
-	    var taxonObjs = entityObj.taxon.taxonObjs;								console.log("mergeRefs = %O", mergeRefs); 
+	    var taxonObjs = entityObj.taxon.taxonObjs;								console.log("taxonObjs = %O", taxonObjs); 
 	    var mergeRefs = entityObj.taxon.mergeRefs;								console.log("mergeRefs = %O", mergeRefs); 
-	    var taxaNameMap = entityObj.taxon.nameMap;								console.log("taxaNameMap = %O", taxaNameMap);
 
-	    for (var rcrdId in recrdsObj) {											console.log("mergeTaxaIntoInteractions rcrd = %O", recrdsObj[rcrdId][0]);
+	    for (var rcrdId in recrdsObj) {											//console.log("mergeTaxaIntoInteractions rcrd = %O", recrdsObj[rcrdId][0]);
             recrdsObj[rcrdId][0].subjTaxon = taxonObjs[mergeRefs[rcrdId].subject];
             recrdsObj[rcrdId][0].objTaxon = taxonObjs[mergeRefs[rcrdId].object];	
 	    }
