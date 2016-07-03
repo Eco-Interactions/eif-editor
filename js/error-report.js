@@ -163,7 +163,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 		          var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
 		          if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
 		          } else {
-		            taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + 'ect taxon: ' + intIds.join(', ') + '.');
+		            taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + ' taxon: ' + intIds.join(', ') + '.');
 		          }
 		        }
 		      } /* End processTaxonNullRprt */
@@ -228,7 +228,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 				locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
 					return concatLocFields;
 		    }
-		    function addConflicts(conflictObj, entityName) { console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+		    function addConflicts(conflictObj, entityName) { 					// console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
 				var tempConflictsStrAry = [];
 				errors = true;
 				conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
@@ -242,63 +242,87 @@ These names have been replaced with shorter ones. The table below shows the colu
 				}
 				conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
-				function buildtaxaConflictRprt(taxaConflicts) {
+				function buildtaxaConflictRprt(taxaConflicts) {  				// console.log("buildTaxaRprt. taxaConflicts = %O", taxaConflicts);
 					var tempStrAry = [];
 					var gRprt = [];
 					var tRprt = [];
 					var gCnflctCnt = 0;
 					var tCnflctCnt = 0;
 					var intRcrds = [];
+					var gConflctStrngs = { subject: [], object: [] };
+					var tConflctStrngs = { subject: {}, object: {} };
 					var fields = {
 						subject: ['subjSpecies', 'subjGenus', 'subjFam', 'subjOrder'],
 						object: ['objSpecies', 'objGenus', 'objFam', 'objOrder', 'objClass', 'objPhylum', 'objKingdom']
 					};
 
-					for (var role in taxaConflicts) {
-						gRprt.push('\n' + ucfirst(role) + ' Taxa:');
-						for (var taxon in taxaConflicts[role]) {
-							getTaxaConflicts(taxon, role, taxaConflicts[role][taxon]);
-						}
+					for (var conflct in taxaConflicts) {
+						if (conflct === "conflictedGenus") { getTaxaConflicts(taxaConflicts[conflct], conflct, addGenusConflct, gRprt, gConflctStrngs); // taxonConflicts[conflct].forEach(addGenusConflct); 
+						} else {
+							getTaxaConflicts(taxaConflicts[conflct], conflct, addTaxonConflct, tRprt, tConflctStrngs);
+						} 
 					}
-					combineRprts();
+					combineAllRprts();
 					if (intRcrds.length > 0) {tempConflictsStrAry.push(taxonInfoStr(), tempStrAry.join('\n')); }
 
-					function getTaxaConflicts(taxonName, role, taxonConflicts) {
-						for (var conflct in taxonConflicts) {
-							if (conflct === "rcrdsWithConflictedGenus") {
-								taxonConflicts[conflct].forEach(addGenusConflct)								
-							} else {
-								taxonConflicts[conflct].forEach(addTaxonConflict)
+					function getTaxaConflicts(conflct, conflctType, rprtFunc, rprtAry, conflctStrngs) {
+						for (var role in conflct) {
+							for (var taxon in conflct[role]) {
+								conflct[role][taxon].forEach(function(conflctdRcrd) {
+									rprtFunc(role, taxon, conflctdRcrd, conflctStrngs, conflctType)
+								});
 							}
 						}
-
-						function addGenusConflct(genusConflct) {
-							++gCnflctCnt;
-							if ( intRcrds.indexOf(genusConflct.tempId) === -1 ) { intRcrds.push(genusConflct.tempId); }
-							gRprt.push('Row ' + genusConflct.tempId + ': Invalid Genus name "' 
-								+ genusConflct[fields[role][1]] + '" for Species "' + genusConflct[fields[role][0]] + '".');
-						}
-						function addTaxonConflict(taxaConflict) {
-							++tCnflctCnt;
-							if ( intRcrds.indexOf(taxaConflict.tempId) === -1 ) { intRcrds.push(taxaConflict.tempId); }
-							tRprt.push('Row ' + taxaConflict.tempId + ': Conflicting taxa fields: [GET ALL FIELDS WITH DATA].');
-						}
+						// rprtAry.push(combineRprt(conflctStrngs));  console.log("rprtAry =%O", rprtAry)
 					} /* End getTaxaConflicts */
+					function addGenusConflct(role, taxon, conflctdRcrd, conflctStrngs) {
+						++gCnflctCnt;
+						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
+						conflctStrngs[role].push('Row ' + conflctdRcrd.tempId + ': Invalid Genus name "' 
+							+ conflctdRcrd[fields[role][1]] + '" for Species "' + conflctdRcrd[fields[role][0]] + '".');
+					}
+					function addTaxonConflct(role, taxon, conflctdRcrd, conflctStrngs, conflctdField) {		
+						++tCnflctCnt;
+						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
+						if ( conflctStrngs[role][conflctdField] === undefined ) { conflctStrngs[role][conflctdField] = []; }
+						conflctStrngs[role][conflctdField].push(conflctdRcrd.tempId);
+					}
 					function taxonInfoStr() {
-						return 'There are ' + intRcrds.length + 'rows with conflicted taxon data.';
+						return '--There are ' + intRcrds.length + ' rows with conflicted taxon data.';
 					}
 					function genusConflictInfoStr() {
-						return 'The Genus name does not match the Species name entered for ' + 
-							gCnflctCnt + ' taxa.';
+						return '-The Genus name does not match the Species name entered for ' + gCnflctCnt + ' taxa.';
 					}
-					function taxaConflictInfoStr() {
-						return 'There are ' + tCnflctCnt + 'taxa records with conflicted data in their parent chain found in ' 
-							' taxa in ' + gIntRcrdCnt + ' Interaction records.\n';
+					function taxaConflictInfoStr() {  
+						return '-There are ' + tCnflctCnt + ' taxa records with conflicted data in their parent chain.';
 					}
-					function combineRprts() {
-						if (gCnflctCnt > 0) { gRprt.unshift(genusConflictInfoStr()); }  console.log("gRprt = %O", gRprt);
-						if (tCnflctCnt > 0) { tRprt.unshift(taxaConflictInfoStr()); }		console.log("tempConflictsStrAry = %O", tempConflictsStrAry);
+					function combineAllRprts() {
+						var gRprt = [], tRprt = [];
+						if (gCnflctCnt > 0) { gRprt = [ genusConflictInfoStr(), gRoleStrngs(gConflctStrngs), smlDivider ]; }  		
+						if (tCnflctCnt > 0) { tRprt = [ taxaConflictInfoStr(), tRoleStrngs(tConflctStrngs) ]; }				
 						tempStrAry = gRprt.concat(tRprt);
+					}
+					function gRoleStrngs(conflctStrngs) {
+						var strngs = [];
+						for (var role in conflctStrngs) {
+							if (conflctStrngs[role].length > 0) {
+								strngs.push(('\n' + ucfirst(role) + ' Taxon:'), conflctStrngs[role].join('\n'));
+							}
+						}
+						return strngs.join('\n');
+					}
+					function tRoleStrngs(conflctStrngs) {  						//console.log("tRoleStrngs(conflctStrngs) = %O", conflctStrngs)
+						var strngs = [];
+						for (var role in conflctStrngs) {
+							if (!isEmpty(conflctStrngs[role])) { strngs.push(('\n' + ucfirst(role) + ' Taxon:')); }
+							for (var level in conflctStrngs[role]) {
+								var sortedIds = conflctStrngs[role][level].sort(ascNumericSort);
+								strngs.push(
+									'\nThere are ' + conflctStrngs[role][level].length + ' records that have conflicts with field "' + level + '":', 
+									'Rows: ' + groupIntIds(sortedIds));
+							}
+						}
+						return strngs.join('\n');
 					}
 				} /* End buildtaxaConflictRprt */
 				function buildConflictRprts(recrdsAry, sharedKey) {
@@ -306,7 +330,9 @@ These names have been replaced with shorter ones. The table below shows the colu
 					var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
 					recrdsAry.forEach(function(recrd, idx) {
 						entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
-						if (entityName === "citation" || entityName === "author" ) { tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); }
+						if (entityName === "citation" || entityName === "author" ) { 
+							tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); 
+						}
 					});
 					entityName === "location" && tempRprt.push(locIntRcrds.join(''));
 
@@ -490,5 +516,9 @@ These names have been replaced with shorter ones. The table below shows the colu
 	}
   	function ucfirst(string) { 
 		return string.charAt(0).toUpperCase() + string.slice(1); 
+	}
+	/** Comparisson filter param for .sort. (ascending numerical order:  a1.sort(ascNumericSort)); */
+	function ascNumericSort(a,b) {
+	  return a-b;
 	}
 }());
