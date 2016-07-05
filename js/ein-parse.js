@@ -619,45 +619,78 @@
             recrd.locDesc = newLocDesc.trim();   //console.log("newLocDesc= %s", newLocDesc);
         }
     }/* End autoFillLocDesc */
-    function valCountriesAndRegions() {  console.log("rcrdsObj = %O", entityObj.curRcrds)
+    /**
+     * For each record, if a country is reported, that country is matched to it's member of the 
+     * regions object ane the regions in the record and in the object are compared for equality. If 
+     * the record has no region, it is filled in; if the regions are not equal, the region in the record 
+     * is checked against known variants. If a match can not be derived, for either country or region,
+     * (TODO: ADD::) the records are quarantined and reported. 
+     */
+    function valCountriesAndRegions() {                                         
         var rcrdsObj = entityObj.curRcrds;
-        var countries = buildCountryRefObj();   console.log("countries = %O", countries) 
+        var countries = buildCountryRefObj();   
         
         for (var locDesc in rcrdsObj) { checkCntryAndRegion(rcrdsObj[locDesc]); }
 
         function checkCntryAndRegion(rcrdsAry) { //console.log("checkCntryAndRegion called. rcrdsAry = %O", rcrdsAry)
             rcrdsAry.forEach(function(rcrd){
                 if (rcrd.country === null) { return; }
-                if (rcrd.country in countries) { console.log("----country key found")
-                    checkRegion()
-                } else if (countryCanBeDetermined(rcrd.country)) { console.log("--------country can be determined") 
-                    checkRegion()
-                } else { console.log("unable to determine country") }
+                if (rcrd.country in countries) { //console.log("----country key found")
+                    checkRegion(rcrd)
+                } else if (countryCanBeDetermined(rcrd.country, rcrd)) { //console.log("--------country can be determined") 
+                    checkRegion(rcrd)
+                } else { console.log("unable to determine country = %s, rcrd = %O ", rcrd.country, rcrd) }
             });
 
-            function countryCanBeDetermined(cntryStr) {
-                if (cntryStrInCntryKey(cntryStr) || cntryHasNameVariant(cntryStr)) {
+            function countryCanBeDetermined(cntryStr, rcrd) {
+                if (cntryStrInCntryKey(cntryStr, rcrd) || cntryHasNameVariant(cntryStr, rcrd)) {
                     return true;
                 } else { return false; }
             } 
-            function cntryStrInCntryKey(cntryStr) {
+            function cntryStrInCntryKey(cntryStr, rcrd) {
                 var capsCntry = cntryStr.toUpperCase();
 
                 for (var cntryKey in countries) {
                     var capsCntryKey = cntryKey.toUpperCase(); 
-                    if (capsCntryKey.search(capsCntry) !== -1) { return true; }
+                    if (capsCntryKey.search(capsCntry) !== -1) { //console.log("cntryStrInCntryKey found. org = %s, new = %s", cntryStr, cntryKey)
+                        rcrd.country = cntryKey;
+                        return true; 
+                    }
                 }
             }
-                
-            function cntryHasNameVariant(cntryStr) {
-                var cntryNameVariations = { 
+            function cntryHasNameVariant(cntryStr, rcrd) {
+                var nameVariations = { 
                     "USA": "United States",
+                    "US Virgin Islands": "Virgin Islands, U.S.",
+                    "Niue Island": "Niue",
+                    "Java": "Indonesia",
                 };
-
+                if (cntryStr in nameVariations) { //console.log("cntryHasNameVariant. org = %s, new = %s", cntryStr, nameVariations[cntryStr])
+                    rcrd.country = nameVariations[cntryStr];
+                    return true; 
+                }
             }
-            function checkRegion() { 
-                // body...
-            }
+            function checkRegion(rcrd) { 
+                var cntryRegion = countries[rcrd.country];// console.log("cntryRegion = ", cntryRegion);
+                if (rcrd.region === null) { rcrd.region = cntryRegion; //console.log("------------region null.") 
+                } else if (rcrd.region === cntryRegion) { //console.log("------------regions equal") 
+                } else if ( regionCanBeDetermined() ) {// console.log("--------regions can be determined") 
+                } else { console.log("unable to determine region. rcrd = %O", rcrd) }
+                
+                function regionCanBeDetermined() { //console.log("regionCanBeDetermined?? region = %s, rcrd = %O", rcrd.region, rcrd)    
+                    var nameVariations = {
+                        "Caribbean": "Caribbean Islands",
+                        "West Africa": "Sub-Saharan Africa",
+                    }
+                    if (rcrd.region in nameVariations) { //console.log("regionCanBeDetermined. org = %s, new = %s, rcrd = %O", rcrd.region, nameVariations[rcrd.region], rcrd)
+                        rcrd.region = nameVariations[rcrd.region];
+                        return true; 
+                    } else if (rcrd.country === "Mexico" && rcrd.region === "North America") {
+                        rcrd.region = "Central America";
+                        return true;                     
+                    } else { return false; }
+                }
+            } /* End checkRegion */
         } /* End checkCntryAndRegion */
     } /* End valCountriesAndRegions */
     /** Builds and object keyed by country with top region as it's value */
