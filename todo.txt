@@ -1,72 +1,49 @@
-Merged up until push entity begins 36507fd47d47699e4a55c665b4ab65533f7983b2
-
-
-
-
 -----0603----------TODO------------
 DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
 
---filtering on group column for taxa doesn't work
--- -All-
-
---update db: domain = realm
-
---fix int export
-	--How to get plant/arthopod to interaction export
-	--add objClass and objOrder to intexprt
-
---track down : I think the authors witnessed the leaf-eating though they do cite that other authors have too. 
 
 
 
-----taxa multiples = 
-	onethera
-	calophyllum
+
+----------------------------------------------------------------------------------
+--SHORTTERM--
+	--Editor
+		--add invalid country and region check error handling (@checkCntryAndRegion & checkRegion)
+		--track down : I think the authors witnessed the leaf-eating though they do cite that other authors have too. 
+	--Site-
+		--Filtering on group column for taxa doesn't work
+		--fix int export
+			--How to get plant/arthopod to interaction export
+			--add objClass and objOrder to intexprt
 
 
 
 
 --LONGTERM--
-	--prog bar isn't updating as it should
+	--Editor-
+	    --prog bar isn't updating as it should
+	    --Add error handling to webview
+		--Parsing
+	    	--catch tags with single character??
+			--Create complex error catch
+	--Site-
+		--add subregions to regions
+		--Taxonym need a collection of namings
+		--update: domain = realm
 
 
 
+
+---------------------------------------------------------------------------------------------------------------------
 Notes:
 
 
-Fixing Taxa Notes:
-	Cheecking for null taxa used to happen where the names were concatonated together...
-		now needs to happen where taxa recrds are built into objects
-	check for same level, conflicting parents.
+	--Zenbol-
+		--PAYMENT PAGE FOR WHM
+		--CRON JOB BACKUPS
 
-	add rcrdsWithConflicts to error checking, reporting, and all-errors set
-
-
-
-
-
-
-
----TODO---
-Add error handling to webview
-
-catch tags with single character??
-
-Taxonym need a collection of namings
-
-
-
-
-Taylor:
-	leave targeturl set to false unless role beta or higher?
-
-
-
-
-GENERAL WORK MOVING FORWARD
-	--PAYMENT PAGE FOR WHM
-	--CRON JOB BACKUPS
-
+	--Spctrm-
+		--CREATE JS SNIPPETS FILE
 -------------------------------------------------------------------------------------------------------
 Validation reporting notes:
 
