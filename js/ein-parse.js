@@ -39,7 +39,7 @@
             name: 'location',
             unqKey: ['locDesc'],
             cols:   ['locDesc', 'elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'],
-            parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts],
+            parseMethods: [extractCols, deDupIdenticalRcrds, autoFillLocDesc, restructureIntoRcrdsObj, autoFillAndCollapseRecords, hasConflicts, valCountriesAndRegions],
             validationResults: {}
         },
         publication: {
@@ -619,6 +619,67 @@
             recrd.locDesc = newLocDesc.trim();   //console.log("newLocDesc= %s", newLocDesc);
         }
     }/* End autoFillLocDesc */
+    function valCountriesAndRegions() {  console.log("rcrdsObj = %O", entityObj.curRcrds)
+        var rcrdsObj = entityObj.curRcrds;
+        var countries = buildCountryRefObj();   console.log("countries = %O", countries) 
+        
+        for (var locDesc in rcrdsObj) { checkCntryAndRegion(rcrdsObj[locDesc]); }
+
+        function checkCntryAndRegion(rcrdsAry) { //console.log("checkCntryAndRegion called. rcrdsAry = %O", rcrdsAry)
+            rcrdsAry.forEach(function(rcrd){
+                if (rcrd.country === null) { return; }
+                if (rcrd.country in countries) { console.log("----country key found")
+                    checkRegion()
+                } else if (countryCanBeDetermined(rcrd.country)) { console.log("--------country can be determined") 
+                    checkRegion()
+                } else { console.log("unable to determine country") }
+            });
+
+            function countryCanBeDetermined(cntryStr) {
+                if (cntryStrInCntryKey(cntryStr) || cntryHasNameVariant(cntryStr)) {
+                    return true;
+                } else { return false; }
+            } 
+            function cntryStrInCntryKey(cntryStr) {
+                var capsCntry = cntryStr.toUpperCase();
+
+                for (var cntryKey in countries) {
+                    var capsCntryKey = cntryKey.toUpperCase(); 
+                    if (capsCntryKey.search(capsCntry) !== -1) { return true; }
+                }
+            }
+                
+            function cntryHasNameVariant(cntryStr) {
+                var cntryNameVariations = { 
+                    "USA": "United States",
+                };
+
+            }
+            function checkRegion() { 
+                // body...
+            }
+        } /* End checkCntryAndRegion */
+    } /* End valCountriesAndRegions */
+    /** Builds and object keyed by country with top region as it's value */
+    function buildCountryRefObj() {
+        var countries = {};
+        for (var region in ein.regions) {
+            if (Array.isArray(ein.regions[region])) { addCountries(ein.regions[region], region) 
+            } else {
+                for (var subRegion in ein.regions[region]) {
+                    addCountries(ein.regions[region][subRegion], region)
+                }
+            }
+        }
+        return countries;
+
+        function addCountries(cntryAry, region) {
+            cntryAry.forEach(function(cntry){
+                var cntryStr = cntry.split('[')[0].trim(); 
+                countries[cntryStr] = region;  
+            });
+        }
+    } /* End buildCountryRefObj */
 /* -----Interaction Helpers--------------------------------------------------------------- */
 
   function fillInIds() {
