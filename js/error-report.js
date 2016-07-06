@@ -242,7 +242,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 				}
 				conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
-				function buildtaxaConflictRprt(taxaConflicts) {  				// console.log("buildTaxaRprt. taxaConflicts = %O", taxaConflicts);
+				function buildtaxaConflictRprt(taxaConflicts) {  			//	 console.log("buildTaxaRprt. taxaConflicts = %O", taxaConflicts);
 					var tempStrAry = [];
 					var gRprt = [];
 					var tRprt = [];
@@ -256,42 +256,54 @@ These names have been replaced with shorter ones. The table below shows the colu
 						object: ['objSpecies', 'objGenus', 'objFam', 'objOrder', 'objClass', 'objPhylum', 'objKingdom']
 					};
 
-					for (var conflct in taxaConflicts) {
-						if (conflct === "conflictedGenus") { getTaxaConflicts(taxaConflicts[conflct], conflct, addGenusConflct, gRprt, gConflctStrngs); // taxonConflicts[conflct].forEach(addGenusConflct); 
-						} else {
-							getTaxaConflicts(taxaConflicts[conflct], conflct, addTaxonConflct, tRprt, tConflctStrngs);
-						} 
+					for (var conflct in taxaConflicts) {//  console.log("conflict = ", conflct)
+						for (var role in taxaConflicts[conflct]) {
+							if (conflct === "conflictedGenus") { getGenusConflicts(taxaConflicts[conflct][role], role); // taxonConflicts[conflct].forEach(addGenusConflct); 
+							} else { getTaxaConflicts(taxaConflicts[conflct][role], role, conflct) }
+						}
 					}
 					combineAllRprts();
 					if (intRcrds.length > 0) {tempConflictsStrAry.push(taxonInfoStr(), tempStrAry.join('\n')); }
 
-					function getTaxaConflicts(conflct, conflctType, rprtFunc, rprtAry, conflctStrngs) {
-						for (var role in conflct) {
-							for (var taxon in conflct[role]) {
-								conflct[role][taxon].forEach(function(conflctdRcrd) {
-									rprtFunc(role, taxon, conflctdRcrd, conflctStrngs, conflctType)
+					function getGenusConflicts(roleConflicts, role) {// console.log("getGenusConflicts called.")
+						for (var taxon in roleConflicts) {
+							roleConflicts[taxon].forEach(function(conflctdRcrd) {
+								addGenusConflct(role, taxon, conflctdRcrd)
+							});
+						} 
+					} /* End getGenusConflicts */
+					function getTaxaConflicts(roleConflicts, role, conflctdField) { 				// console.log("getTaxonConflct called.")
+						for (var taxon in roleConflicts) {
+							for (var parentTaxon in roleConflicts[taxon]){
+								roleConflicts[taxon][parentTaxon].forEach(function(conflctdRcrd) {
+									addTaxonConflct(role, taxon, parentTaxon, conflctdRcrd, conflctdField)
 								});
 							}
 						}
-						// rprtAry.push(combineRprt(conflctStrngs));  console.log("rprtAry =%O", rprtAry)
-					} /* End getTaxaConflicts */
-					function addGenusConflct(role, taxon, conflctdRcrd, conflctStrngs) {
+					}
+					function addGenusConflct(role, taxon, conflctdRcrd) {  							// console.log("addGenusConflct called. arguments = %O", arguments)
 						++gCnflctCnt;
 						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
-						conflctStrngs[role].push('Row ' + conflctdRcrd.tempId + ': Invalid Genus name "' 
-							+ conflctdRcrd[fields[role][1]] + '" for Species "' + conflctdRcrd[fields[role][0]] + '".');
+						gConflctStrngs[role].push('Row ' + conflctdRcrd.tempId + ': Genus name "' 
+							+ conflctdRcrd[fields[role][1]] + '" conflicts with Species "' + conflctdRcrd[fields[role][0]] + '".');
 					}
-					function addTaxonConflct(role, taxon, conflctdRcrd, conflctStrngs, conflctdField) {		
+					function addTaxonConflct(role, taxon, parentTaxon, conflctdRcrd, conflctdField) {	//	console.log("addTaxonConflct called. arguments = %O", arguments)
 						++tCnflctCnt;
 						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
-						if ( conflctStrngs[role][conflctdField] === undefined ) { conflctStrngs[role][conflctdField] = []; }
-						conflctStrngs[role][conflctdField].push(conflctdRcrd.tempId);
+						initProps();
+						tConflctStrngs[role][conflctdField][taxon][parentTaxon].push(conflctdRcrd.tempId);
+
+						function initProps() {
+							if ( tConflctStrngs[role][conflctdField] === undefined ) { tConflctStrngs[role][conflctdField] = {}; }
+							if ( tConflctStrngs[role][conflctdField][taxon] === undefined ) { tConflctStrngs[role][conflctdField][taxon] = {}; }
+							if ( tConflctStrngs[role][conflctdField][taxon][parentTaxon] === undefined ) { tConflctStrngs[role][conflctdField][taxon][parentTaxon] = []; }
+						}
 					}
 					function taxonInfoStr() {
-						return '--There are ' + intRcrds.length + ' rows with conflicted taxon data.';
+						return '\n--There are ' + intRcrds.length + ' rows with conflicted taxon data.';
 					}
 					function genusConflictInfoStr() {
-						return '-The Genus name does not match the Species name entered for ' + gCnflctCnt + ' taxa.';
+						return '-There are ' + gCnflctCnt + ' taxa records where the Genus does not match the Species entered.';
 					}
 					function taxaConflictInfoStr() {  
 						return '-There are ' + tCnflctCnt + ' taxa records with conflicted data in their parent chain.';
@@ -313,17 +325,40 @@ These names have been replaced with shorter ones. The table below shows the colu
 					}
 					function tRoleStrngs(conflctStrngs) {  						//console.log("tRoleStrngs(conflctStrngs) = %O", conflctStrngs)
 						var strngs = [];
+						var fieldMap = {
+							"subjFam": "Family",   "objFam": "Family", 
+							"subjOrder": "Order",  "objOrder": "Order", 
+							"objClass": "Class",   "objPhylum": "Phylum", "objKingdom": "Kingdom" 
+						};
+						var fields = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
 						for (var role in conflctStrngs) {
 							if (!isEmpty(conflctStrngs[role])) { strngs.push(('\n' + ucfirst(role) + ' Taxon:')); }
-							for (var level in conflctStrngs[role]) {
-								var sortedIds = conflctStrngs[role][level].sort(ascNumericSort);
-								strngs.push(
-									'\nThere are ' + conflctStrngs[role][level].length + ' records that have conflicts with field "' + level + '":', 
-									'Rows: ' + groupIntIds(sortedIds));
-							}
+							getTaxaConflictStrs(conflctStrngs[role]);
 						}
+
+						function getTaxaConflictStrs(roleConflicts) { 
+							for (var level in roleConflicts) {
+								var prevLvl = fields[fields.indexOf(fieldMap[level]) - 1]; 
+								strngs.push(smlDivider + '\n--"'+ fieldMap[level] + '" conflicts:');
+								getFieldConflictStrs(roleConflicts[level], level);
+							}
+
+							function getFieldConflictStrs(levelConflicts, level) {
+								for (var taxonName in levelConflicts) {
+									strngs.push('\n-' + prevLvl + ' ' + taxonName + ': ');
+									getParentConflictStrs(levelConflicts[taxonName], level);
+								}
+							}
+							function getParentConflictStrs(taxonConflicts, level) {
+								for (var parentTaxon in taxonConflicts){
+									var sortedIds = taxonConflicts[parentTaxon].sort(ascNumericSort); // console.log("sortedIds = ", sortedIds)
+									strngs.push(taxonConflicts[parentTaxon].length + 
+										' records with ' + fieldMap[level] + ' "' + parentTaxon + '" on Rows: ' + groupIntIds(sortedIds));
+								}
+							}
+						} /* End getTaxaConflictStrs */
 						return strngs.join('\n');
-					}
+					}/* End tRoleStrngs */
 				} /* End buildtaxaConflictRprt */
 				function buildConflictRprts(recrdsAry, sharedKey) {
 					var tempRprt = [];
@@ -335,7 +370,6 @@ These names have been replaced with shorter ones. The table below shows the colu
 						}
 					});
 					entityName === "location" && tempRprt.push(locIntRcrds.join(''));
-
 					return tempRprt.join('\n');
 
 					function buildLocConflictRprt(recrd, idx) {
@@ -345,7 +379,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 						return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
 					}
 				} /* End buildConflictRprts */
-				function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
+				function getIntIdsForRcrds() {  								// console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
 					var nullRefRslts = storedRprts.locNullRefs;
 					conflictObj.intIds = {};
 
@@ -354,18 +388,18 @@ These names have been replaced with shorter ones. The table below shows the colu
 					for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
 						var refObj = conflictObj.intIds[locDescKey] = {};
 
-						nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  // console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
-							var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
+						nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  				// console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
+							var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);				// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
 							if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
 							refObj[locFieldsStr].push(intId-1);
 						});
-					}                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
+					}                                           				// console.log("conflictObj.intIds = %O", conflictObj.intIds);
 				}
 		    } /* End addConflicts */
-		    function groupIntIds(intIdAry) {  //console.log("groupIntIds called. intIdAry = %O", arguments[0]);
+		    function groupIntIds(intIdAry) {  									// console.log("groupIntIds called. intIdAry = %O", arguments[0]);
 		      var procSeq, lastSeqId;
 		      var idSeqAry = [];
-		      intIdAry.forEach(function(id, i){      // console.log("id = %s, i=%s", id, i)
+		      intIdAry.forEach(function(id, i){      							// console.log("id = %s, i=%s", id, i)
 		        if (i === 0) {
 		          procSeq = lastSeqId = id;
 		          if (intIdAry.length === 1) { finalSeq(id) }

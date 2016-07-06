@@ -762,7 +762,7 @@
         for (var key in recrdsObj) {
             var newRcrd = extrctAndReplaceTaxaFields(recrdsObj[key][0], key);
             recrdsObj[key] = [newRcrd];
-        }       console.log("taxaRcrds = %O", taxaRcrds);
+        }    //   console.log("taxaRcrds = %O", taxaRcrds);
 
         storeTaxaData(taxaRcrds);
 
@@ -889,11 +889,11 @@
              */
             function fillInAnyNewData(taxonName, field, idx, tP) {  
                 if ( tP.fieldAry.indexOf(field) === tP.fieldAry.length - 1 ) { return; }   //console.log("last field in set"); 
-                if (tP.fieldAry[0] === field) { checkGenusField() }   
+                if (tP.fieldAry[0] === field) { checkGenusField() }   //If species...
                 var existingParentId = tP.taxaObjs[taxonName].parent;
                 var newParentId = linkparentTaxonId(idx, tP);
 
-                if ( newParentId !== existingParentId ) { 
+                if ( newParentId !== existingParentId ) {
                     checkIfTreesMerge(taxonName, newParentId, existingParentId, tP); 
                 }
                 // If Genus is null, set genus as the first word of the species string.
@@ -911,7 +911,7 @@
             function checkIfTreesMerge(taxonName, newParentId, existingParentId, tP) { // console.log("checkIfTreesMerge called. taxaNameMap = %O, newParentId = %s", taxaNameMap, newParentId);
                 // Grab the existing taxaObjs' parents' levels.
                 var newLvl = tP.taxaObjs[taxaNameMap[newParentId]].level;  
-                var existingLvl = tP.taxaObjs[taxaNameMap[tP.taxaObjs[taxonName].parent]].level; // console.log("newLvl = %s, existingLvl = ", newLvl, existingLvl);
+                var existingLvl = tP.taxaObjs[taxaNameMap[existingParentId]].level; // console.log("newLvl = %s, existingLvl = ", newLvl, existingLvl);
                 if (newLvl !== existingLvl) {
                     doTreesMerge(newLvl, existingLvl, newParentId, existingParentId, tP);
                 } else { checkForSharedTaxonymOrConflicts(taxonName, newLvl, newParentId, existingParentId, tP); }
@@ -956,7 +956,7 @@
                 if ( taxonObjWasCreatedWithSharedTaxonym(taxonName, newParentId, tP) ) { return; }
                 if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) ) { addUniqueTaxaWithSharedTaxonym(taxonName, tP);                        
                 } else if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) === false ) { 
-                    hasParentConflicts(taxonName, null, newLvl, tP);                                //  console.log("speciesHasInCorrectGenusParent")
+                    hasParentConflicts(taxonName, null, newLvl, tP); if (taxonName === "Acacia") { console.log("Acacia - corGenus return false")  }                            //  console.log("speciesHasInCorrectGenusParent")
                 } else { hasParentConflicts(taxonName, tP.taxaObjs[taxonName], newLvl, tP); }
             }
             /**
@@ -1010,7 +1010,7 @@
                 }
             } /* End appendNumToTaxonym */
             /** Adds conflcited records to the conflictedTaxaObj.      */
-            function hasParentConflicts(taxonName, existingTaxonObj, conflictingLvl, tP) { // console.log("hasParentConflicts called. arguments = %O", arguments);  
+            function hasParentConflicts(taxonName, existingTaxonObj, conflictingLvl, tP) {
                 if ( existingTaxonObj === null ) { 
                     initConflictedGenus();
                     addConflictedGenus() ;
@@ -1030,7 +1030,7 @@
                     if ( conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role] === undefined ) { 
                          conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role] = {}; }
                     if ( conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role][taxonName] === undefined ) { 
-                         conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role][taxonName] = []; }
+                         conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role][taxonName] = {}; }
                 }
                 /** Pushes the taxonObj IDs onto the conflictedTaxaObj. */
                 function addConflictedGenus() {
@@ -1038,7 +1038,23 @@
                 }
                 /** Pushes both taxonObj IDs onto the conflictedTaxaObj. */
                 function addConflictedTaxa() { // console.log("conflicting parents pushed = old.%O- new.%O ", taxonRecrdObjsAry[existingTaxonObj.tempId], taxonRecrdObjsAry[tP.recrd.tempId]);
-                    conflictedTaxaObj[tP.fieldAry[lvlAry[conflictingLvl]]][tP.role][taxonName].push(existingTaxonObj.tempId, tP.recrd.tempId); 
+                    var level = tP.fieldAry[lvlAry[conflictingLvl]];
+                    var existingParentName = taxaNameMap[existingTaxonObj.parent]; 
+                    var newParentName = tP.recrd[level];
+                    initParentTaxaProps(existingParentName, newParentName);
+                    addTaxaIds();
+
+                    function addTaxaIds() {
+                        conflictedTaxaObj[level][tP.role][taxonName][existingParentName].push(existingTaxonObj.rcrdId); 
+                        conflictedTaxaObj[level][tP.role][taxonName][newParentName].push(tP.recrd.tempId); 
+                    }
+
+                    function initParentTaxaProps() {
+                        if (conflictedTaxaObj[level][tP.role][taxonName][existingParentName] === undefined) {
+                            conflictedTaxaObj[level][tP.role][taxonName][existingParentName] = []; }
+                        if (conflictedTaxaObj[level][tP.role][taxonName][newParentName] === undefined) {
+                            conflictedTaxaObj[level][tP.role][taxonName][newParentName] = []; }
+                    }
                 }
             } /* End hasParentConflicts */
             /** 
@@ -1142,17 +1158,27 @@
         	var rcrdIds = [];
             for (var conflct in conflictedTaxaObj) {
                 for (var role in conflictedTaxaObj[conflct]) {  				//console.log("")
-                    for (var taxonName in conflictedTaxaObj[conflct][role]) {  	//console.log("")
-                        conflictedTaxaObj[conflct][role][taxonName] = 
-                            conflictedTaxaObj[conflct][role][taxonName].filter(onlyUnique);
-                        conflictedTaxaObj[conflct][role][taxonName] = 
-                            replaceIdsWithRcrds(conflictedTaxaObj[conflct][role][taxonName], role);
+                    for (var taxonName in conflictedTaxaObj[conflct][role]) {  ///	console.log("conflictedTaxaObj[conflct][role][taxonName] = %O", conflictedTaxaObj[conflct][role][taxonName])
+                        if (Array.isArray(conflictedTaxaObj[conflct][role][taxonName])) {
+                            conflictedTaxaObj[conflct][role][taxonName] = rprtGenusConflicts(conflictedTaxaObj[conflct][role][taxonName])
+                        } else { rprtLevelConflicts(conflictedTaxaObj[conflct][role][taxonName]); }
                     }
                 }
             }
             entityObj.taxon.valRpt.shareUnqKeyWithConflictedData = conflictedTaxaObj; // console.log(" conflicted taxa report obj = %O", entityObj.taxon.valRpt.shareUnqKeyWithConflictedData);
             removeAffectedIntRcrds();
 
+            function rprtGenusConflicts(conflictAry) {//  console.log("-------------------rprtGenusConflicts called. ary = %O", conflictAry)
+                conflictAry = conflictAry.filter(onlyUnique);
+                return replaceIdsWithRcrds(conflictAry, role);                        
+
+            }
+            function rprtLevelConflicts(taxaNameConflicts) {
+                for (var parentName in taxaNameConflicts){
+                    taxaNameConflicts[parentName] = taxaNameConflicts[parentName].filter(onlyUnique);
+                    taxaNameConflicts[parentName] = replaceIdsWithRcrds(taxaNameConflicts[parentName], role);
+                }
+            }
             function replaceIdsWithRcrds(taxaIdAry, role) {
                 var taxaObjs = role === "subject" ? batTaxaRefObj : objTaxaRefObj;
                 return taxaIdAry.map(function(recrdId){ // console.log("taxaObj = %O, rcrd = %O", taxaObjs[taxaNameMap[recrdId]], taxonRecrdObjsAry[recrdId]);
@@ -1166,7 +1192,7 @@
         } /* End rprtConflictedTaxon */
         function rprtNullTaxa() {
             for (var role in nullTaxa) { nullTaxa[role] = nullTaxa[role].map(replaceIdWithRcrdAndDeleteRef); }
-            entityObj.taxon.valRpt.rcrdsWithNullReqFields = nullTaxa; console.log(" null taxa report obj = %O", entityObj.taxon.valRpt.rcrdsWithNullReqFields);
+            entityObj.taxon.valRpt.rcrdsWithNullReqFields = nullTaxa; //console.log(" null taxa report obj = %O", entityObj.taxon.valRpt.rcrdsWithNullReqFields);
 
             function replaceIdWithRcrdAndDeleteRef(rcrdId) {
                 delete recrdsObj[rcrdId];
@@ -1231,8 +1257,8 @@
      */
     function mergeTaxaIntoInteractions() {
     	var recrdsObj = entityObj.curRcrds; 
-	    var taxonObjs = entityObj.taxon.taxonObjs;								console.log("taxonObjs = %O", taxonObjs); 
-	    var mergeRefs = entityObj.taxon.mergeRefs;								console.log("mergeRefs = %O", mergeRefs); 
+	    var taxonObjs = entityObj.taxon.taxonObjs;							     //	console.log("taxonObjs = %O", taxonObjs); 
+	    var mergeRefs = entityObj.taxon.mergeRefs;								// console.log("mergeRefs = %O", mergeRefs); 
 
 	    for (var rcrdId in recrdsObj) {											//console.log("mergeTaxaIntoInteractions rcrd = %O", recrdsObj[rcrdId][0]);
             recrdsObj[rcrdId][0].subjTaxon = taxonObjs[mergeRefs[rcrdId].subject];
