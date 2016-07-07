@@ -22,7 +22,7 @@
 		buildInteractionObjs(resultData.interaction.finalRecords);
 		addLevels();
 		addDomains();
-		// console.log("preppedData = %O", preppedData)
+		console.log("preppedData = %O", preppedData)
 		return JSON.stringify(preppedData, null, 2);
 
 		function addLevels () {
@@ -181,8 +181,8 @@
 				locations[rcrd.tempId].elevationMax = rcrd.elevRangeMax,
 				locations[rcrd.tempId].latitude = rcrd.lat,
 				locations[rcrd.tempId].longitude = rcrd.long,
-				locations[rcrd.tempId].country = addCntryRef(rcrd.country),
 				locations[rcrd.tempId].region = addRegionRef(rcrd.region),
+				locations[rcrd.tempId].country = addCntryRef(rcrd.country, rcrd.region),
 				locations[rcrd.tempId].habitatType = addHabRef(rcrd.habType)
 			}  					//	console.log("locations = %O", locations);
 								
@@ -191,12 +191,13 @@
 			preppedData.habitatType = arrangeDataObjByKey(habitatType);
 			preppedData.location = locations;
 
-			function addCntryRef(countryName) {
+			function addCntryRef(countryName, regionName) {
 				if (countryName === null) {return null}
 				if (country[countryName] === undefined) { 
 					country[countryName] = {
 						tempId: cntryId++,
-						name: countryName   }; 
+						name: countryName,
+						defaultRegion: region[regionName].tempId   }; 
 				}
 				return country[countryName].tempId;
 			}
