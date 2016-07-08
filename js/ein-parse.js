@@ -98,9 +98,9 @@
         };
         if ("taxon" in entityObj) { // console.log("taxa data being stored = %O", entityObj.taxon.valRpt)
             entityObj.valResults.taxon = {
-                taxaObjs: entityObj.taxon.taxaObjs,
-                valRpt: entityObj.taxon.valRpt          //isEmpty(entityObj.taxon.valRpt) ? null :
-            }; // console.log("entityObj.valResults = %O", entityObj.valResults);
+                taxaObjs: entityObj.taxon.taxonObjs,
+                valRpt: entityObj.taxon.valRpt     
+            }; 
         }
     }
     /**
