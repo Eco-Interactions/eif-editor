@@ -816,7 +816,7 @@
         if (!isEmpty(conflictedTaxaObj)) { rprtConflictedTaxon() }              // console.log("conflictedTaxaObj = %O", conflictedTaxaObj);  
         if (!isEmpty(nullTaxa)) { rprtNullTaxa() }                              // console.log("conflictedTaxaObj = %O", conflictedTaxaObj);  
                                          
-    	[batTaxaRefObj, objTaxaRefObj].forEach(mergeTaxaNameObjWithRcrds);      // console.log("taxonRecrdObjsAry = %O", taxonRecrdObjsAry)
+    	[batTaxaRefObj, objTaxaRefObj].forEach(mergeRefsWithRcrds);      // console.log("taxonRecrdObjsAry = %O", taxonRecrdObjsAry)
                                        
         entityObj.taxon.taxonObjs = taxaNameMap;
         entityObj.taxon.mergeRefs = mergeRefObj;
@@ -1245,11 +1245,22 @@
                 },
             };
         } /* End initTopTaxa */
-        function mergeTaxaNameObjWithRcrds(taxonRcrdAryByRole) {
-        	for (var taxonName in taxonRcrdAryByRole) {
-        		var taxonObj = taxonRcrdAryByRole[taxonName];
-        		taxaNameMap[taxonObj.tempId] = taxonObj;
-        	}
+        function mergeRefsWithRcrds(taxonRcrdAryByRole) {
+            mergeParentRcrds();
+            mergeTaxaNameMapWithRcrds();                   	
+
+            function mergeParentRcrds() {
+                for (var taxonName in taxonRcrdAryByRole) {
+                    var taxonObj = taxonRcrdAryByRole[taxonName];
+                    taxonObj.parent = taxonRcrdAryByRole[taxaNameMap[taxonObj.parent]];
+                }
+            }
+            function mergeTaxaNameMapWithRcrds() {
+                for (var taxonName in taxonRcrdAryByRole) {
+                    var taxonObj = taxonRcrdAryByRole[taxonName];
+                    taxaNameMap[taxonObj.tempId] = taxonObj;                
+                }
+            }
         }
     } /* End buildTaxonObjs */
     /**
