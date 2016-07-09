@@ -1252,7 +1252,8 @@
             function mergeParentRcrds() {
                 for (var taxonName in taxonRcrdAryByRole) {
                     var taxonObj = taxonRcrdAryByRole[taxonName];
-                    taxonObj.parent = taxonRcrdAryByRole[taxaNameMap[taxonObj.parent]];
+                    var parentObj = taxonRcrdAryByRole[taxaNameMap[taxonObj.parent]];
+                    taxonObj.parent = parentObj || null;
                 }
             }
             function mergeTaxaNameMapWithRcrds() {
