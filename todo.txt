@@ -6,11 +6,23 @@ DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
 
 
 ----------------------------------------------------------------------------------
+---Next---
+	--Alphabetize regions and coutries in "tree"
+	--build uniqFilter
+	--Active Filters Displayed for User
+	--Expand all grouped rows button
+
+
+
+
+
+
 --SHORTTERM--
 	--Editor
+	    --Admin sign-in css is broken
 		--add invalid country and region check error handling (@checkCntryAndRegion & checkRegion)
-		--track down : I think the authors witnessed the leaf-eating though they do cite that other authors have too. 
 	--Site-
+		--Grid adv.search working with more than one region
 		--Filtering on group column for taxa doesn't work
 		--fix int export
 			--How to get plant/arthopod to interaction export
@@ -36,6 +48,16 @@ DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
 
 ---------------------------------------------------------------------------------------------------------------------
 Notes:
+
+--Email
+	row 1898: Something weird with the formatting was causing the csv export to 
+		break that row into two
+	row 4024: Looks like a note got pasted into objFam
+
+
+
+
+
 
 
 	--Zenbol-
