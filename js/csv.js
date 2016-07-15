@@ -12,6 +12,7 @@
   /* Dictionary for standardized headers that should eventually become its own file when any more top keys are added */
   var hdrDict = {
     interaction: {
+      "Comments": "note",
       "Primary or Secondary interaction": "directness",
       "Citation Number": "citId",
       "Citation Short Description": "citShortDesc",

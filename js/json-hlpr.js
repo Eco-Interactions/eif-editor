@@ -244,6 +244,7 @@
 
 			for (var key in rcrdsObj) {
 				intObjs[key] = {};
+				intObjs[key].note = rcrdsObj[key].note;				
 				intObjs[key].citation = rcrdsObj[key].citation.citId;
 				intObjs[key].location = rcrdsObj[key].location === null ? null : rcrdsObj[key].location.tempId;
 				intObjs[key].interactionType = getIntTypeRef(rcrdsObj[key].intType);

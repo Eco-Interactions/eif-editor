@@ -30,7 +30,7 @@
             subEntities: ['location'],
             unqKey: ['id', 'tempId'],
             splitField: 'intTag',
-            cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objPhylum', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
+            cols: ['directness', 'citId', 'locDesc', 'intType', 'intTag', 'note', 'subjOrder', 'subjFam', 'subjGenus', 'subjSpecies', 'objKingdom', 'objPhylum', 'objClass', 'objOrder', 'objFam', 'objGenus', 'objSpecies'],
             parseMethods: [autoFillLocDesc, fillInIds, extractCols, restructureIntoRcrdsObj, extractTaxaCols, buildTaxonObjs, mergeTaxaIntoInteractions, splitFieldIntoAry, mergeSecondaryTags, checkCitId],
             validationResults: {},
             taxaRcrdObjsAry: {}
@@ -716,7 +716,7 @@
 /* -----Interaction Helpers--------------------------------------------------------------- */
 
   function fillInIds() {
-        entityObj.curRcrds = attachTempIds(entityObj.curRcrds);
+        entityObj.curRcrds = attachTempIds(entityObj.curRcrds);  //console.log("entityObj.curRcrds = %O", entityObj.curRcrds)
     }
     /**
      * Converts tag field for each record to an array and calls {@link ifSecondary} to merge tags with relevant fields.
@@ -1437,7 +1437,7 @@
             ein.tools.setProgress(93)
             ein.parse.mergeDataSet([], resultData.citation, citSubAry, mergeIntoInteractions)
 
-            function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) { // console.log("resultData = %O", resultData); // var cb = callback || null        //  console.log("resultData = %O", resultData);
+            function mergeIntoInteractions(fSysIdAry, mergedCitRecrds) {  console.log("resultData = %O", resultData); // var cb = callback || null        //  console.log("resultData = %O", resultData);
                 var valData = validMode ? resultData : false;
                 storeTaxaResults();
                 ein.tools.setProgress(96);
