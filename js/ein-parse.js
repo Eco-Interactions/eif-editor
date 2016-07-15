@@ -853,8 +853,9 @@
                 });
                 if (!taxaFound) { addNullTaxa(recrd, role); }
             }
-            function foundMostSpecificLevel(tP) {                               // console.log("foundMostSpecificLevel called. tP = %O", tP);  // tP = taxaParams
-                var taxonName = (tP.field === "objSpecies" || tP.field === "subjSpecies") ? getSpecies(tP.recrd[tP.field], tP) : tP.recrd[tP.field];
+            function foundMostSpecificLevel(tP) {                               
+                var taxonName = tP.recrd[tP.field];                             // console.log("foundMostSpecificLevel for %s. tP = %O", taxonName, tP);  // tP = taxaParams
+                if (tP.field === "objSpecies" || tP.field === "subjSpecies") { getGenusStr(tP.recrd[tP.field], tP) }
                 addTaxonData(taxonName, tP.field, tP.idx, tP);                
                 addMergeObjRef(taxonName, tP);
                 
@@ -863,17 +864,16 @@
                 if (mergeRefObj[tP.recrd.tempId] === undefined) { mergeRefObj[tP.recrd.tempId] = {}; }
                 mergeRefObj[tP.recrd.tempId][tP.role] = errors ? false : tP.taxaObjs[taxonName].tempId;         
             }
-            // The first word of the species taxonym is added to tP for later comparison. 
-            function getSpecies(genusSpeciesStr, tP) {  
+            //  The first word of the species taxonym is added to tP for later comparison. 
+            function getGenusStr(genusSpeciesStr, tP) {  
                 var nameAry = genusSpeciesStr.split(" ");
-                tP.genusParent = nameAry[0];                                    // console.log("getSpecies called. tP.genusParent = ", tP.genusParent)
-                return nameAry[1];
+                tP.genusParent = nameAry[0];
             }
             /**
              * If taxonName already exists as a taxaObj, check for new data. Otherwise, build the taxon obj.
              * Add taxon's new taxaObj id to the reference object for later merging with interactions.
              */
-            function addTaxonData(taxonName, field, idx, tP) { // if (taxonName === 'Arthropoda') {console.log("addTaxonData called. taxonName = ", taxonName);}
+            function addTaxonData(taxonName, field, idx, tP) {  //console.log("addTaxonData called. taxonName = ", taxonName);
                 if (taxonName in tP.taxaObjs) { fillInAnyNewData(taxonName, field, idx, tP);
                 } else { buildTaxonObj(taxonName, field, idx, tP); }
             } /* End addTaxonData */
@@ -887,9 +887,9 @@
              * Gets the existing parent for this taxonName and gets the parent present in this record;
              * if they are different @checkIfTreesMerge is called to determine whether this is due to missing or conflicting data.
              */
-            function fillInAnyNewData(taxonName, field, idx, tP) {  
+            function fillInAnyNewData(taxonName, field, idx, tP) {            //  console.log("fillInAnyNewData aclled for ", taxonName); 
                 if ( tP.fieldAry.indexOf(field) === tP.fieldAry.length - 1 ) { return; }   //console.log("last field in set"); 
-                if (tP.fieldAry[0] === field) { checkGenusField() }   //If species...
+                if (tP.fieldAry[0] === field) { fillNullGenus() }   //If species...
                 var existingParentId = tP.taxaObjs[taxonName].parent;
                 var newParentId = linkparentTaxonId(idx, tP);
 
@@ -897,7 +897,7 @@
                     checkIfTreesMerge(taxonName, newParentId, existingParentId, tP); 
                 }
                 // If Genus is null, set genus as the first word of the species string.
-                function checkGenusField() {
+                function fillNullGenus() {
                     if (tP.recrd[tP.fieldAry[1]] === null) { 
                         tP.recrd[tP.fieldAry[1]] = tP.genusParent; }
                 }
@@ -956,7 +956,7 @@
                 if ( taxonObjWasCreatedWithSharedTaxonym(taxonName, newParentId, tP) ) { return; }
                 if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) ) { addUniqueTaxaWithSharedTaxonym(taxonName, tP);                        
                 } else if ( speciesHasCorrectGenusParent(existingParentId, tP, newLvl) === false ) { 
-                    hasParentConflicts(taxonName, null, newLvl, tP); if (taxonName === "Acacia") { console.log("Acacia - corGenus return false")  }                            //  console.log("speciesHasInCorrectGenusParent")
+                    hasParentConflicts(taxonName, null, newLvl, tP); 
                 } else { hasParentConflicts(taxonName, tP.taxaObjs[taxonName], newLvl, tP); }
             }
             /**
@@ -992,12 +992,12 @@
              * This taxonName is a unique taxon that shares a species name with another taxon.
              * @appendNumToTaxonym and @addTaxonData. 
              */
-            function addUniqueTaxaWithSharedTaxonym(taxonName, tP) {  
+            function addUniqueTaxaWithSharedTaxonym(taxonName, tP) {             console.log("addUniqueTaxaWithSharedTaxonym called for %s. %O", taxonName, tP)
                 var taxonym = appendNumToTaxonym(taxonName, tP);   				//console.log("addUniqueTaxaWithSharedTaxonym new taxonym = ", taxonym)
                 addTaxonData(taxonym, tP.field, tP.idx, tP);
             }
             /** Appends a number incrementally until a unique taxonym is found. */
-            function appendNumToTaxonym(taxonName, tP) {
+            function appendNumToTaxonym(taxonName, tP) {  
                 var count = 1;
                 var taxonym1 = taxonName + '-1';
                 return nextInTaxaObj(taxonName, taxonym1, count, tP);
@@ -1075,7 +1075,7 @@
         	 * interaction records. There will one taxon record for each unique taxon at any 
         	 * level in the records, linked to their parent and children by id.
         	 */
-            function buildTaxonObj(taxonName, field, idx, tP) { // console.log("buildTaxonObj called. arguemnts = %O", arguments);
+            function buildTaxonObj(taxonName, field, idx, tP) { //console.log("buildTaxonObj called. arguemnts = %O", arguments);
                 var level = lvlAry[idx];
                 var kingdom = tP.role === "subject" ? "Animalia" : tP.recrd.objKingdom;
                 // If this taxon is a Species   
@@ -1119,7 +1119,7 @@
              * @addTaxonData with it's related data. There the taxon is either created or checked for 
              * new data. The parent's taxonObj id is returned, linking children to their parents.
              */
-            function linkparentTaxonId(idx, tP) { 								// console.log("linkparentTaxonId called. arguments = %O", arguments);
+            function linkparentTaxonId(idx, tP) { 								//console.log("linkparentTaxonId called. arguments = %O", arguments);
                 if (idx === 6) { console.log("Error. Parent taxon idx too high. recrd = %O", tP.recrd); return null; }
                 var parentIdx = getParentLevel(tP, idx);
                 if (parentIdx === false) { return null; }

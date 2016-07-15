@@ -79,7 +79,7 @@
 		function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called. rcrds = %O", rcrds);
 			var taxonObjs = {};
 			for (var rcrdId in rcrds) {						
-				var displayName = rcrds[rcrdId].level === 7 ? rcrds[rcrdId].parent.name + ' ' + rcrds[rcrdId].name : rcrds[rcrdId].name; 
+				var displayName = rcrds[rcrdId].name; 
 				taxonObjs[rcrds[rcrdId].tempId] = {};
 				taxonObjs[rcrds[rcrdId].tempId].level = rcrds[rcrdId].level;
 				taxonObjs[rcrds[rcrdId].tempId].displayName = displayName;
