@@ -2,18 +2,17 @@
 DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
 
 
-
-
-
 ----------------------------------------------------------------------------------
 ---Next---
-	--Alphabetize regions and coutries in "tree"
-	--build uniqFilter
 	--Active Filters Displayed for User
 	--Expand all grouped rows button
+	--Clear Filters
+	--How-to search page
+		-header tooltips??
 
-
-
+notes-
+	wrote this because ag-grid is not calling the custom isFilterActive func 
+		when determining whether to show the filter icon or not... i think. 
 
 
 
@@ -66,6 +65,30 @@ Notes:
 
 	--Spctrm-
 		--CREATE JS SNIPPETS FILE
+			function sortProperties(obj) {
+			    var sortable=[];
+			    var returnObj = {};
+
+			    for(var key in obj) {  					// convert object into array
+			        if(obj.hasOwnProperty(key))
+			            sortable.push([key, obj[key]]); // each item is an array in format [key, value]
+			    }
+			    
+			    sortable.sort(function(a, b) {			// sort items by value
+			        var x=a[1].toLowerCase(),
+			            y=b[1].toLowerCase();
+			        return x<y ? -1 : x>y ? 1 : 0;
+			    });
+			    sortable.forEach(rebuildObj); // array in format [ [ key1, val1 ], [ key2, val2 ], ... ]
+
+			    return returnObj;
+
+			    function rebuildObj(keyValAry) {
+			    	var key = keyValAry[0];
+			    	var val = keyValAry[1];
+			    	returnObj[key] = val;
+			    }
+			}
 -------------------------------------------------------------------------------------------------------
 Validation reporting notes:
 
