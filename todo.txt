@@ -1,18 +1,38 @@
------0603----------TODO------------
 DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
+
+Questions::
+
+
+
+CHECK HOMEPAGE FONT SIZE ONCE PUSHED
+
+
+-- TODO --
+
+---- fix export pages
+
+-- add click event exit for menu
+
+--reword final line of history and add chrome app to future devs
+
+
+
+
+
+=========== EMAIL ==================
+I can add a site map to the ToS that would allow users to jump around the sections,
+	going directly to citation and other areas of interest.
+
+
+
+
 
 
 ----------------------------------------------------------------------------------
 ---Next---
-	--Active Filters Displayed for User
-	--Expand all grouped rows button
-	--Clear Filters
 	--How-to search page
-		-header tooltips??
 
-notes-
-	wrote this because ag-grid is not calling the custom isFilterActive func 
-		when determining whether to show the filter icon or not... i think. 
+notes- 
 
 
 
@@ -21,11 +41,10 @@ notes-
 	    --Admin sign-in css is broken
 		--add invalid country and region check error handling (@checkCntryAndRegion & checkRegion)
 	--Site-
-		--Grid adv.search working with more than one region
-		--Filtering on group column for taxa doesn't work
-		--fix int export
-			--How to get plant/arthopod to interaction export
-			--add objClass and objOrder to intexprt
+		-- add copy
+		-- fix exports??
+		-- t&c presentation
+		-- css replacing and cleanup
 
 
 
@@ -38,24 +57,17 @@ notes-
 	    	--catch tags with single character??
 			--Create complex error catch
 	--Site-
-		--add subregions to regions
-		--Taxonym need a collection of namings
-		--update: domain = realm
+		-- test for optimizations
+		-- responsive
+		-- wsyiwyg editor for content blocks
+		-- Taxonym need a collection of namings
+		-- update: domain = realm
 
 
 
 
 ---------------------------------------------------------------------------------------------------------------------
 Notes:
-
---Email
-	row 1898: Something weird with the formatting was causing the csv export to 
-		break that row into two
-	row 4024: Looks like a note got pasted into objFam
-
-
-
-
 
 
 
@@ -128,4 +140,12 @@ READ ME
 
 HOW TO RUN TESTS
 	phpunit -c app/ tests	
-	phpunit -c app/ tests/AppBundle/Controller/<Entity>ControllerTest.php						
+	phpunit -c app/ tests/AppBundle/Controller/<Entity>ControllerTest.php		
+
+
+Deployment Steps:
+	>Cache busting:
+		config.yml:
+			"Framework:
+				assets:
+	        		version: 'v%'"				
