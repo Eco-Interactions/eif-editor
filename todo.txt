@@ -1,39 +1,105 @@
 DOCUMENT EVERYTHING MOVING FORWARD AND BACKWARDS
 
+TODO
+	----Barro Island (dup??)
+	--Consolidate migrations?
+
+LOC DISPLYNAME~~
+
+
+Import Process::
+	Add SourceTypes
+
+	Start Importing Sources::
+		Publications->
+			New source. Type "Publication"
+				import issue, vol, pages
+
+ 				citations => set as parent;
+
+		Authors->
+			New source. Type "Author"
+				citations => set as parent;
+
+		Citations->
+			Add source type "Citation".
+			parent => should be set by now.
+			
+
+
+Unfinished db migrations: Foundations for the Source restructure and some reorganizing of db table columns.
+Building the new Source structure: Created new SourceType entity, renamed and refactored Citation into Source and have added a Citation entity for its special properties. Mass commit; my bad.
+
+
+
+Src types
+	Publisher
+	Publication
+	Citation
+	Author
+
+
+
 Questions::
+Notes::
+
+	location desc field not specified as a unique field.
+
+
+	deployment process
+		- file upload
+		- database schema update
 
 
 
-CHECK HOMEPAGE FONT SIZE ONCE PUSHED
+
+::EMAIL::
+
+Changes::
+	- USA -> United States
+	- Suriam -> Suriname
+	- Virgin Islands -> Virgin Islands, Britain
+	- Trinidad -> Trinidad and Tobago
+	- Central America, South America -> Central & South America
 
 
--- TODO --
 
----- fix export pages
 
+
+
+
+-- Short Range TODO --
+##Delete comments from prod files##
+
+--Functional testing for search page and wysiwyg 
+---- create 'new data loading' popup for search page data updates
 -- add click event exit for menu
+-- add a site map to the ToS that would allow users to jump around the sections,
+	going directly to citation and other areas of interest.
+-- Alphabetize config 
 
---reword final line of history and add chrome app to future devs
+--add tips and search page static content to content blocks and wysiwyg
 
+
+--wysiwyg
+	--move save and cancel against the far right
+	--get that save svg working
+
+
+
+Best practices:
+	comments:
+		//right against the first letter to exclude uncommented instances of that word (consoles being the best ever to isolate)
 
 
 
 
 =========== EMAIL ==================
-I can add a site map to the ToS that would allow users to jump around the sections,
-	going directly to citation and other areas of interest.
-
-
-
 
 
 
 ----------------------------------------------------------------------------------
 ---Next---
-	--How-to search page
-
-notes- 
-
 
 
 --SHORTTERM--
@@ -56,6 +122,9 @@ notes-
 		--Parsing
 	    	--catch tags with single character??
 			--Create complex error catch
+		--Update code for new loc/source structures
+			--Remove '-Unspecified' locDesc concats 
+			--update autoGen LocDesc
 	--Site-
 		-- test for optimizations
 		-- responsive
@@ -149,3 +218,5 @@ Deployment Steps:
 			"Framework:
 				assets:
 	        		version: 'v%'"				
+
+
