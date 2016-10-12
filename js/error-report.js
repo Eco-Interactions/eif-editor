@@ -163,7 +163,7 @@ These names have been replaced with shorter ones. The table below shows the colu
 		          var intIds = recrdsAry.map(function(recrd){ return recrd.tempId+1 });
 		          if (nullType === "kingdom") { taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing an object kingdom: ' + intIds.join(', ') + '.')
 		          } else {
-		            taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + 'ect taxon: ' + intIds.join(', ') + '.');
+		            taxonStrAry.push('--There are ' + recrdCnt + ' interaction records missing ' + nullType + ' taxon: ' + intIds.join(', ') + '.');
 		          }
 		        }
 		      } /* End processTaxonNullRprt */
@@ -223,64 +223,183 @@ These names have been replaced with shorter ones. The table below shows the colu
 		      } /* End getLocNullRprt */
 		    } /* End addInvalidNulls */
 		    function concatLocFields(rcrd) {
-		      var concatLocFields = '';
-		      var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
-		      locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
-		      return concatLocFields;
+				var concatLocFields = '';
+				var locFields = ['elev', 'elevRangeMax', 'lat', 'long', 'region', 'country', 'habType'];
+				locFields.forEach(function(field){ if(rcrd[field] !== null) { concatLocFields += rcrd[field] }});  //console.log("concatLocFields = ", concatLocFields)
+					return concatLocFields;
 		    }
-		    function addConflicts(conflictObj, entityName) { //console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
-		      var tempConflictsStrAry = [];
-		      errors = true;
-		      conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
+		    function addConflicts(conflictObj, entityName) { 					// console.log("conflictObj = %O, entityName = %s", conflictObj, entityName);
+				var tempConflictsStrAry = [];
+				errors = true;
+				conflictsStr = divider + '\n  Conflicting data.\n' + divider + '\n';  // After processing, only if there are invalid nulls to report, this needs to be at the start of the string returned to report all invalid nulls, once and only if there are any at all to report. This is not the way this goal should be accomplished ultimately.
 
-		      if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-		        } else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
+				if (entityName === "location") { getIntIdsForRcrds(); //console.log("conflictObj.intIds = %O", conflictObj.intIds);
+				} else if (entityName === "taxon") { buildtaxaConflictRprt(conflictObj);
+				} else { conflictsStrAry.push('\n-- ' + 'There are ' + conflictObj.conCnt + ' ' + entityName + ' records with the same ' + unqKeyDict[conflictObj.unqKey] + ' and conflicting data in other fields.'); }
 
-		      for (var sharedKey in conflictObj.recrds) {
-		        tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
-		      }
-		      conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
+				for (var sharedKey in conflictObj.recrds) {
+					tempConflictsStrAry.push('\n-' + conflictObj.unqKey + ': ' + sharedKey + '\n' + buildConflictRprts(conflictObj.recrds[sharedKey], sharedKey));
+				}
+				conflictsStrAry.push(tempConflictsStrAry.join('\n' + smlDivider + '\n') + '\n' + divider );
 
-		      function buildConflictRprts(recrdsAry, sharedKey) {
-		        var tempRprt = [];
-		        var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
-		        recrdsAry.forEach(function(recrd, idx) {
-		          entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
-		          if (entityName === "citation" || entityName === "author" ) { tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); }
-		        });
-		        entityName === "location" && tempRprt.push(locIntRcrds.join(''));
+				function buildtaxaConflictRprt(taxaConflicts) {  			//	 console.log("buildTaxaRprt. taxaConflicts = %O", taxaConflicts);
+					var tempStrAry = [];
+					var gRprt = [];
+					var tRprt = [];
+					var gCnflctCnt = 0;
+					var tCnflctCnt = 0;
+					var intRcrds = [];
+					var gConflctStrngs = { subject: [], object: [] };
+					var tConflctStrngs = { subject: {}, object: {} };
+					var fields = {
+						subject: ['subjSpecies', 'subjGenus', 'subjFam', 'subjOrder'],
+						object: ['objSpecies', 'objGenus', 'objFam', 'objOrder', 'objClass', 'objPhylum', 'objKingdom']
+					};
 
-		        return tempRprt.join('\n');
+					for (var conflct in taxaConflicts) {//  console.log("conflict = ", conflct)
+						for (var role in taxaConflicts[conflct]) {
+							if (conflct === "conflictedGenus") { getGenusConflicts(taxaConflicts[conflct][role], role); // taxonConflicts[conflct].forEach(addGenusConflct); 
+							} else { getTaxaConflicts(taxaConflicts[conflct][role], role, conflct) }
+						}
+					}
+					combineAllRprts();
+					if (intRcrds.length > 0) {tempConflictsStrAry.push(taxonInfoStr(), tempStrAry.join('\n')); }
 
-		        function buildLocConflictRprt(recrd, idx) {
-		          var concatLocKey = concatLocFields(recrd);
-		          var intConflictIntro = '\n   Data Set ' + (idx + 1) + ' found in ' + conflictObj.intIds[sharedKey][concatLocKey].length + ' Interaction records at rows: ';
-		          locIntRcrds.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey][concatLocKey]));
-		          return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
+					function getGenusConflicts(roleConflicts, role) {// console.log("getGenusConflicts called.")
+						for (var taxon in roleConflicts) {
+							roleConflicts[taxon].forEach(function(conflctdRcrd) {
+								addGenusConflct(role, taxon, conflctdRcrd)
+							});
+						} 
+					} /* End getGenusConflicts */
+					function getTaxaConflicts(roleConflicts, role, conflctdField) { 				// console.log("getTaxonConflct called.")
+						for (var taxon in roleConflicts) {
+							for (var parentTaxon in roleConflicts[taxon]){
+								roleConflicts[taxon][parentTaxon].forEach(function(conflctdRcrd) {
+									addTaxonConflct(role, taxon, parentTaxon, conflctdRcrd, conflctdField)
+								});
+							}
+						}
+					}
+					function addGenusConflct(role, taxon, conflctdRcrd) {  							// console.log("addGenusConflct called. arguments = %O", arguments)
+						++gCnflctCnt;
+						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
+						gConflctStrngs[role].push('Row ' + conflctdRcrd.tempId + ': Genus name "' 
+							+ conflctdRcrd[fields[role][1]] + '" conflicts with Species "' + conflctdRcrd[fields[role][0]] + '".');
+					}
+					function addTaxonConflct(role, taxon, parentTaxon, conflctdRcrd, conflctdField) {	//	console.log("addTaxonConflct called. arguments = %O", arguments)
+						++tCnflctCnt;
+						if ( intRcrds.indexOf(conflctdRcrd.tempId) === -1 ) { intRcrds.push(conflctdRcrd.tempId); }
+						initProps();
+						tConflctStrngs[role][conflctdField][taxon][parentTaxon].push(conflctdRcrd.tempId);
 
-		        }
-		      }
-		      function getIntIdsForRcrds() {  //console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
-		        var nullRefRslts = storedRprts.locNullRefs;
-		        conflictObj.intIds = {};
+						function initProps() {
+							if ( tConflctStrngs[role][conflctdField] === undefined ) { tConflctStrngs[role][conflctdField] = {}; }
+							if ( tConflctStrngs[role][conflctdField][taxon] === undefined ) { tConflctStrngs[role][conflctdField][taxon] = {}; }
+							if ( tConflctStrngs[role][conflctdField][taxon][parentTaxon] === undefined ) { tConflctStrngs[role][conflctdField][taxon][parentTaxon] = []; }
+						}
+					}
+					function taxonInfoStr() {
+						return '\n--There are ' + intRcrds.length + ' rows with conflicted taxon data.';
+					}
+					function genusConflictInfoStr() {
+						return '-There are ' + gCnflctCnt + ' taxa records where the Genus does not match the Species entered.';
+					}
+					function taxaConflictInfoStr() {  
+						return '-There are ' + tCnflctCnt + ' taxa records with conflicted data in their parent chain.';
+					}
+					function combineAllRprts() {
+						var gRprt = [], tRprt = [];
+						if (gCnflctCnt > 0) { gRprt = [ genusConflictInfoStr(), gRoleStrngs(gConflctStrngs), smlDivider ]; }  		
+						if (tCnflctCnt > 0) { tRprt = [ taxaConflictInfoStr(), tRoleStrngs(tConflctStrngs) ]; }				
+						tempStrAry = gRprt.concat(tRprt);
+					}
+					function gRoleStrngs(conflctStrngs) {
+						var strngs = [];
+						for (var role in conflctStrngs) {
+							if (conflctStrngs[role].length > 0) {
+								strngs.push(('\n' + ucfirst(role) + ' Taxon:'), conflctStrngs[role].join('\n'));
+							}
+						}
+						return strngs.join('\n');
+					}
+					function tRoleStrngs(conflctStrngs) {  						//console.log("tRoleStrngs(conflctStrngs) = %O", conflctStrngs)
+						var strngs = [];
+						var fieldMap = {
+							"subjFam": "Family",   "objFam": "Family", 
+							"subjOrder": "Order",  "objOrder": "Order", 
+							"objClass": "Class",   "objPhylum": "Phylum", "objKingdom": "Kingdom" 
+						};
+						var fields = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
+						for (var role in conflctStrngs) {
+							if (!isEmpty(conflctStrngs[role])) { strngs.push(('\n' + ucfirst(role) + ' Taxon:')); }
+							getTaxaConflictStrs(conflctStrngs[role]);
+						}
 
-		        conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
+						function getTaxaConflictStrs(roleConflicts) { 
+							for (var level in roleConflicts) {
+								var prevLvl = fields[fields.indexOf(fieldMap[level]) - 1]; 
+								strngs.push(smlDivider + '\n--"'+ fieldMap[level] + '" conflicts:');
+								getFieldConflictStrs(roleConflicts[level], level);
+							}
 
-		        for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
-		          var refObj = conflictObj.intIds[locDescKey] = {};
+							function getFieldConflictStrs(levelConflicts, level) {
+								for (var taxonName in levelConflicts) {
+									strngs.push('\n-' + prevLvl + ' ' + taxonName + ': ');
+									getParentConflictStrs(levelConflicts[taxonName], level);
+								}
+							}
+							function getParentConflictStrs(taxonConflicts, level) {
+								for (var parentTaxon in taxonConflicts){
+									var sortedIds = taxonConflicts[parentTaxon].sort(ascNumericSort); // console.log("sortedIds = ", sortedIds)
+									strngs.push(taxonConflicts[parentTaxon].length + 
+										' records with ' + fieldMap[level] + ' "' + parentTaxon + '" on Rows: ' + groupIntIds(sortedIds));
+								}
+							}
+						} /* End getTaxaConflictStrs */
+						return strngs.join('\n');
+					}/* End tRoleStrngs */
+				} /* End buildtaxaConflictRprt */
+				function buildConflictRprts(recrdsAry, sharedKey) {
+					var tempRprt = [];
+					var locIntRcrds = [];     //'\n'- to seperate by one additional line the int ids and the location field data.
+					recrdsAry.forEach(function(recrd, idx) {
+						entityName === "location" && tempRprt.push(buildLocConflictRprt(recrd, idx));
+						if (entityName === "citation" || entityName === "author" ) { 
+							tempRprt.push('      ' + addFieldsInRecrd(recrd, conflictObj.unqKey, ["tempId"])); 
+						}
+					});
+					entityName === "location" && tempRprt.push(locIntRcrds.join(''));
+					return tempRprt.join('\n');
 
-		          nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  // console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
-		            var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
-		            if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
-		            refObj[locFieldsStr].push(intId-1);
-		          });
-		        }                                             //console.log("conflictObj.intIds = %O", conflictObj.intIds);
-		      }
+					function buildLocConflictRprt(recrd, idx) {
+						var concatLocKey = concatLocFields(recrd);
+						var intConflictIntro = '\n   Data Set ' + (idx + 1) + ' found in ' + conflictObj.intIds[sharedKey][concatLocKey].length + ' Interaction records at rows: ';
+						locIntRcrds.push(intConflictIntro + groupIntIds(conflictObj.intIds[sharedKey][concatLocKey]));
+						return '      Data Set ' + (idx + 1) + '- ' + addFieldsInRecrd(recrd, conflictObj.unqKey);
+					}
+				} /* End buildConflictRprts */
+				function getIntIdsForRcrds() {  								// console.log("storedRprts.locNullRefs = %O", storedRprts.locNullRefs);
+					var nullRefRslts = storedRprts.locNullRefs;
+					conflictObj.intIds = {};
+
+					conflictsStrAry.push("\n--Location Descriptions that have conflicting data in other location fields:");
+
+					for (var locDescKey in nullRefRslts.intIdRefs) { // console.log("locDescKey = ", locDescKey);
+						var refObj = conflictObj.intIds[locDescKey] = {};
+
+						nullRefRslts.intIdRefs[locDescKey].forEach(function(intId){  				// console.log("%s intId = %s, orgIntRcrds = %O", locDescKey, intId, resultData.interaction.orgRcrdAry);
+							var locFieldsStr = concatLocFields(resultData.interaction.orgRcrdAry[intId-2]);				// console.log("locDescKey %s. resultData.interaction.orgRcrdAry[intId-2] = %O", locDescKey,  resultData.interaction.orgRcrdAry[intId-2]);
+							if (!(locFieldsStr in refObj)) { refObj[locFieldsStr] = [] }
+							refObj[locFieldsStr].push(intId-1);
+						});
+					}                                           				// console.log("conflictObj.intIds = %O", conflictObj.intIds);
+				}
 		    } /* End addConflicts */
-		    function groupIntIds(intIdAry) {  //console.log("groupIntIds called. intIdAry = %O", arguments[0]);
+		    function groupIntIds(intIdAry) {  									// console.log("groupIntIds called. intIdAry = %O", arguments[0]);
 		      var procSeq, lastSeqId;
 		      var idSeqAry = [];
-		      intIdAry.forEach(function(id, i){      // console.log("id = %s, i=%s", id, i)
+		      intIdAry.forEach(function(id, i){      							// console.log("id = %s, i=%s", id, i)
 		        if (i === 0) {
 		          procSeq = lastSeqId = id;
 		          if (intIdAry.length === 1) { finalSeq(id) }
@@ -414,20 +533,26 @@ These names have been replaced with shorter ones. The table below shows the colu
 		} /* End buildRprt */
 	} /* End generateRprt */
 /*-----------------------Util Helpers---------------------------------*/
-  function pad (pad, str, padLeft) {
-    if (padLeft) {
-      return (pad + str).slice(-pad.length);
-    } else {
-      return (str + pad).substring(0, pad.length);
-    }
-  }
-  /**
-   * Checks if an object is empty
-   * @return {Boolean}     Returns false if key is found.
-   */
-  function isEmpty(obj) {
-    for (var x in obj) { return false; }
-    return true;
-  }
-
+	function pad (pad, str, padLeft) {
+		if (padLeft) {
+			return (pad + str).slice(-pad.length);
+		} else {
+			return (str + pad).substring(0, pad.length);
+		}
+	}
+	/**
+	* Checks if an object is empty
+	* @return {Boolean}     Returns false if key is found.
+	*/
+	function isEmpty(obj) {
+		for (var x in obj) { return false; }
+		return true;
+	}
+  	function ucfirst(string) { 
+		return string.charAt(0).toUpperCase() + string.slice(1); 
+	}
+	/** Comparisson filter param for .sort. (ascending numerical order:  a1.sort(ascNumericSort)); */
+	function ascNumericSort(a,b) {
+	  return a-b;
+	}
 }());

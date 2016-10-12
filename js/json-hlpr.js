@@ -22,7 +22,7 @@
 		buildInteractionObjs(resultData.interaction.finalRecords);
 		addLevels();
 		addDomains();
-		// console.log("preppedData = %O", preppedData)
+		console.log("preppedData = %O", preppedData)
 		return JSON.stringify(preppedData, null, 2);
 
 		function addLevels () {
@@ -76,14 +76,14 @@
 			for (var key in refObj) { preppedObj[refObj[key].tempId] = refObj[key]; }
 			return preppedObj;
 		}
-		function buildTaxonObjs(rcrds) {  	//console.log("buildTaxonObjs called. rcrds = %O", rcrds);
+		function buildTaxonObjs(rcrds) {  	console.log("buildTaxonObjs called. rcrds = %O", rcrds);
 			var taxonObjs = {};
-			for (var rcrd in rcrds) {						
-				var displayName = rcrds[rcrd].level === 7 ? rcrds[rcrd].parent.name + ' ' + rcrds[rcrd].name : rcrds[rcrd].name; 
-				taxonObjs[rcrds[rcrd].tempId] = {};
-				taxonObjs[rcrds[rcrd].tempId].level = rcrds[rcrd].level;
-				taxonObjs[rcrds[rcrd].tempId].displayName = displayName;
-				taxonObjs[rcrds[rcrd].tempId].parentTaxon = rcrds[rcrd].parent === null ? null : rcrds[rcrd].parent.tempId;
+			for (var rcrdId in rcrds) {						
+				var displayName = rcrds[rcrdId].name; 
+				taxonObjs[rcrds[rcrdId].tempId] = {};
+				taxonObjs[rcrds[rcrdId].tempId].level = rcrds[rcrdId].level;
+				taxonObjs[rcrds[rcrdId].tempId].displayName = displayName;
+				taxonObjs[rcrds[rcrdId].tempId].parentTaxon = rcrds[rcrdId].parent === null ? null : rcrds[rcrdId].parent.tempId;
 			}
 			preppedData.taxon = taxonObjs;										//	console.log("taxon rcrds = %O", rcrds)
 		}
@@ -91,8 +91,8 @@
 			var preppedObjs = {};
 			var authRcrds = stripArray(resultData.author.finalRecords);  //console.log("rcrds = %s", JSON.stringify(stripArray(rcrds)))
 
-			for (var rcrd in authRcrds) {
-				var rcrd = authRcrds[rcrd];
+			for (var rcrdId in authRcrds) {
+				var rcrd = authRcrds[rcrdId];
 				var suffix = rcrd.suffix ? " " + rcrd.suffix : "";
 				var middle = rcrd.middle ? rcrd.middle + " " : ""; 
 				var first = rcrd.first  ? rcrd.first + " " : ''; 
@@ -165,10 +165,11 @@
 			return pubObj === null ? null : refObj.publication[pubObj.pubTitle].tempId;
 		}
 		function buildLocationObjs(rcrds) {				console.log("buildLocationObjs called. rcrds = %O", rcrds)
-			var cntryId = regionId = habId = 1;
+			var cntryId = regionId = habId = regLocId = 1;
 			var habitatType = {};
 			var country = {};
 			var region = {};
+			var reg_loc = {}
 			var locations = {};			//console.log("locations = %O", locations);
 			var strippedRcrds = stripArray(resultData.location.finalRecords);  //console.log("rcrdsObj[Object.keys(rcrdsObj)[0]] = %O", rcrdsObj[Object.keys(rcrdsObj)[0]])
 			var locRcrds = strippedRcrds[Object.keys(strippedRcrds)[0]].id === undefined ? addTempIds(strippedRcrds) : rcrdsObj;
@@ -181,8 +182,8 @@
 				locations[rcrd.tempId].elevationMax = rcrd.elevRangeMax,
 				locations[rcrd.tempId].latitude = rcrd.lat,
 				locations[rcrd.tempId].longitude = rcrd.long,
-				locations[rcrd.tempId].country = addCntryRef(rcrd.country),
-				locations[rcrd.tempId].region = addRegionRef(rcrd.region),
+				locations[rcrd.tempId].region = addRegionRef(rcrd.region, rcrd.tempId),
+				locations[rcrd.tempId].country = addCntryRef(rcrd.country, rcrd.region),
 				locations[rcrd.tempId].habitatType = addHabRef(rcrd.habType)
 			}  					//	console.log("locations = %O", locations);
 								
@@ -190,22 +191,35 @@
 			preppedData.region = arrangeDataObjByKey(region);
 			preppedData.habitatType = arrangeDataObjByKey(habitatType);
 			preppedData.location = locations;
+			preppedData.region_locs = reg_loc;
 
-			function addCntryRef(countryName) {
+
+			function addCntryRef(countryName, regionName) {
 				if (countryName === null) {return null}
 				if (country[countryName] === undefined) { 
 					country[countryName] = {
 						tempId: cntryId++,
-						name: countryName   }; 
+						name: countryName,
+						region: region[regionName].tempId   }; 
 				}
 				return country[countryName].tempId;
 			}
-			function addRegionRef(regionName) {
+			function addRegionRef(regionName, locId) {
 				if (regionName === null) {return null}
 				if (region[regionName] === undefined) { 
 					region[regionName] = {
-						tempId: regionId++,
-						description: regionName  };
+						tempId: regionId,
+						description: regionName  
+					};
+					reg_loc[regLocId++] = {
+						region: regionId++,
+						location: locId
+					};
+				} else {
+					reg_loc[regLocId++] = {
+						region: region[regionName].tempId,
+						location: locId
+					};
 				}
 			    return [region[regionName].tempId];
 			}
@@ -230,6 +244,7 @@
 
 			for (var key in rcrdsObj) {
 				intObjs[key] = {};
+				intObjs[key].note = rcrdsObj[key].note;				
 				intObjs[key].citation = rcrdsObj[key].citation.citId;
 				intObjs[key].location = rcrdsObj[key].location === null ? null : rcrdsObj[key].location.tempId;
 				intObjs[key].interactionType = getIntTypeRef(rcrdsObj[key].intType);

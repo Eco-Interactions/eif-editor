@@ -26,6 +26,7 @@
       {headerName: "Id", field: "id", width: 50,  filter: 'number'},
       {headerName: "Interaction Type", field: "intType", width: 150},
       {headerName: "Int Tags", field: "intTag", width: 100},
+      {headerName: "Note", field: "note", width: 150, filter: 'text'},
       {headerName: "Subject Kingdom", field: "subjKngdm", width: 150},
       {headerName: "Subject Taxon", field: "subjTaxon", width: 200, filter: 'text'},
       {headerName: "Object Kingdom", field: "objKngdm", width: 150},
@@ -61,11 +62,12 @@ function buildRowData(recrdsObj) {// console.log("buildRowData called.");
 	}																																											//console.log("data rows about to be returned: %O", dataRows)
 	return dataRows;
 
-	function translateRecrdIntoRow(recrd) {//console.log("recrd = %O", recrd)
+	function translateRecrdIntoRow(recrd) {        //console.log("recrd = %O", recrd)
 		var row =  {
 			id: recrd.tempId,
 			intType: recrd.intType,
 			intTag: getIntTags(recrd),
+            note: recrd.note,
 			subjKngdm: recrd.subjTaxon.kingdom,
 			subjTaxon: getTaxon(recrd, "subjTaxon"),
 			objKngdm: recrd.objTaxon.kingdom,
@@ -117,9 +119,9 @@ function getIntTags(recrd) {
 function getTaxon(recrd, role) {	//			console.log("getTaxon arguments = %O", arguments);
 	var levels = { 1: "Kingdom", 2: "Phylum", 3: "Class", 4: "Order", 5: "Family", 6: "Genus", 7: "Species" };
 	var taxonLvl = recrd[role].level;
-	var taxonName = taxonLvl === 7 ? recrd[role].parent.name : levels[recrd[role].level];
-	taxonName += ' ' + recrd[role].name;
-	return taxonName;
+	var taxonName = [recrd[role].name];
+    if (taxonLvl !== 7) { taxonName.unshift(levels[recrd[role].level]) }
+	return taxonName.join(' ');
 }
 function getAuthors(recrd) {
 	if (recrd.citation.author !== undefined && recrd.citation.author !== null) {
